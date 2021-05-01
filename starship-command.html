@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Starship Control</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <!-- <link rel='stylesheet' type='text/css' media='screen' href='main.css'> -->
+    <!-- <script src='main.js'></script> -->
+</head>
+
+<style>
+    body {
+        background-color: #000000;
+        color: #888888;
+        font-family: 'Arial';
+        font-size: 11px;
+    }
+
+    canvas {
+        border: 1px solid #222222;
+        margin: auto;
+        display: block;
+    }
+</style>
+
+<body>
+    <canvas id="canvas" width="1722px" height="861px"></canvas>
+    <div id="log">log</div>
+</body>
+
+<script>
+    "use strict";
+
+    class Body {
+
+        constructor(x, y, r, name, color = "#888888", vx = 0, vy = 0) {
+            this.x = x;
+            this.y = y;
+            this.r = r;
+
+            this.name = name;
+            this.color = color;
+
+            this.vx = vx;
+            this.vy = vy;
+            this.ax = 0;
+            this.ay = 0;
+
+            this.trailLine = [];
+            this.parent;
+        }
+
+        setVelCirc(body) {
+
+            let dx = this.x - body.x;
+            let dy = this.y - body.y;
+            let dist2 = dx ** 2 + dy ** 2;
+            let dist = dist2 ** (1 / 2);
+
+            let target_mass = body.r ** 3;
+
+            this.vx += (target_mass / dist) ** 0.5 * dy / dist;
+            this.vy += (target_mass / dist) ** 0.5 * -dx / dist;
+        }
+
+        calcGrav(bodies, precision, gravMap, badPrecision, logMap) {
+
+            this.ax = 0;
+            this.ay = 0;
+
+            for (const body of bodies) {
+
+                if (this === body) { continue; }
+
+                let gravName = body.name + "<-" + this.name;
+                // if (this.name != "ship" && gravMap[gravName] == null) { continue; }
+
+                let dx = body.x - this.x;
+                let dy = body.y - this.y;
+
+                let dist2 = dx ** 2 + dy ** 2;
+                let dist = dist2 ** (1 / 2);
+
+                let target_mass = body.r ** 3;
+                let this_mass = this.r ** 3;
+
+                let grav = target_mass * this_mass / dist2;
+
+                let ax = grav / this_mass * dx / dist / precision;
+                let ay = grav / this_mass * dy / dist / precision;
+
+                if (Math.hypot(ax, ay) / dist >= 0.1 && precision < 10000) {
+                    badPrecision.badPrecision = true;
+                    return;
+                }
+
+                this.ax += ax;
+                this.ay += ay;
+
+                logMap[gravName] = Math.hypot(ax * precision, ay * precision);
+            }
+        }
+
+        move(precision) {
+
+            this.vx += this.ax;
+            this.vy += this.ay;
+
+            this.x += this.vx / precision;
+            this.y += this.vy / precision;
+        }
+
+        calcTrail(parent) {
+
+            if (this.parent == null) {
+                this.parent = parent;
+
+            } else if (this.parent != parent) {
+                this.parent = parent;
+                this.trailLine = [];
+            }
+
+            if (parent == null) { return; }
+
+            this.trailLine.push({ x: this.x - parent.x, y: this.y - parent.y });
+
+            if (this.trailLine.length >= 3) {
+
+                // reduce nodes (if a trail section is shorter than radius/100, remove middle node)
+                let p1 = this.trailLine[this.trailLine.length - 1];
+                let p2 = this.trailLine[this.trailLine.length - 3];
+
+                let p1p2 = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
+                let p1p0 = p1.x ** 2 + p1.y ** 2;
+
+                if (p1p2 < p1p0 / 100 ** 2) { this.trailLine.splice(this.trailLine.length - 2, 1); }
+
+                // cut trail end (if trail end's distance to trail head is less than 1% of diameter, remove trail end nodes)
+                let pn = this.trailLine[this.trailLine.length - 1];
+                let pm = this.trailLine[Math.trunc(this.trailLine.length / 2)];
+
+                for (let i = 0; i < Math.trunc(this.trailLine.length / 2); i++) {
+
+                    let p0 = this.trailLine[i];
+                    let p0pn = (p0.x - pn.x) ** 2 + (p0.y - pn.y) ** 2;
+                    let pmpn = (pm.x - pn.x) ** 2 + (pm.y - pn.y) ** 2;
+
+                    if (p0pn < pmpn * 0.01) {
+                        this.trailLine.splice(0, i + 1);
+                        i = 0;
+                    }
+                }
+            }
+
+        }
+
+        calcTraj(bodies, precision, gravMap, parent, logMap) {
+
+        }
+
+        drawBody(ctx, camera) {
+
+            let zoom = 2 ** (camera.z / 4);
+
+            let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
+            let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
+            let nr = Math.max(this.r / zoom, 2);
+
+            ctx.beginPath();
+            ctx.arc(nx, ny, nr, 0, 2 * Math.PI);
+
+            // ctx.strokeStyle = this.color;
+            // ctx.stroke();
+
+            ctx.fillStyle = this.color;
+            ctx.fill();
+        }
+
+        drawTrail(ctx, camera) {
+
+            let zoom = 2 ** (camera.z / 4);
+
+            if (this.trailLine[0] != null) {
+                ctx.beginPath();
+                for (let i = 0; i < this.trailLine.length; i++) {
+
+                    let nx = (this.trailLine[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+                    let ny = (this.trailLine[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+                    if (i === 0) {
+                        ctx.moveTo(nx, ny);
+                    } else {
+                        ctx.lineTo(nx, ny);
+                    }
+                }
+                ctx.strokeStyle = this.color;
+                ctx.stroke();
+            }
+        }
+    }
+
+    class Camera {
+        constructor(x = 0, y = 0, z = 0) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    }
+
+    class Game {
+
+        constructor() {
+
+            this.c = document.getElementById("canvas");
+            this.ctx = this.c.getContext("2d");
+
+            this.isPause = false;
+            this.simSpeed = 1;
+            this.precision = 10000;
+
+            this.camera = new Camera(0, 0, -10);
+            this.baseable = [];
+            this.base = 3;
+            this.isFollowShip = true;
+
+            this.bodies = [];
+            this.bodiesMap = {};
+
+            this.logMap = {};
+
+            this.gravMap = {};
+            let gravList = ['sun<-mercury', 'sun<-venus', 'sun<-moon', 'sun<-earth', 'sun<-mars', 'earth<-moon', 'sun<-jupiter', 'sun<-saturn', 'moon<-earth', 'sun<-uranus', 'sun<-neptune'];
+            for (const grav of gravList) { this.gravMap[grav] = 1; }
+
+        }
+
+        wheel(event) {
+            event.preventDefault();
+            this.camera.z += Math.sign(event.deltaY);
+        }
+
+        keydown(event) {
+
+            let mod = event.ctrlKey * 4 + event.shiftKey * 2 + event.altKey * 1;
+            switch (mod + "_" + event.code) {
+
+                case "0_Space": event.preventDefault(); this.togglePause(); break;
+                case "0_Digit1": event.preventDefault(); this.simSpeed = 10 ** 0; break;
+                case "0_Digit2": event.preventDefault(); this.simSpeed = 10 ** 1; break;
+                case "0_Digit3": event.preventDefault(); this.simSpeed = 10 ** 2; break;
+                case "0_Digit4": event.preventDefault(); this.simSpeed = 10 ** 3; break;
+                case "0_Digit5": event.preventDefault(); this.simSpeed = 10 ** 4; break;
+
+                case "0_F1": event.preventDefault(); this.precision = 10000; break;
+                case "0_F2": event.preventDefault(); this.precision = 100; break;
+                case "0_F3": event.preventDefault(); this.precision = 1; break;
+                case "0_F4": event.preventDefault(); this.precision = 0.01; break;
+
+                case "0_KeyG": event.preventDefault(); this.cycleBase(); break;
+                case "2_KeyG": event.preventDefault(); this.cycleBaseBack(); break;
+                case "0_KeyF": event.preventDefault(); this.toggleFollow(); break;
+
+                case "0_KeyW": event.preventDefault(); this.accelerate(); break;
+                case "0_KeyS": event.preventDefault(); this.decelerate(); break;
+                case "0_KeyA": event.preventDefault(); this.moveLeft(); break;
+                case "0_KeyD": event.preventDefault(); this.moveRight(); break;
+            }
+        }
+
+        togglePause() {
+            this.isPause = !this.isPause
+            this.gameLoop();
+        }
+
+        toggleFollow() {
+            this.isFollowShip = !this.isFollowShip;
+        }
+
+        cycleBase() {
+
+            this.base++;
+            if (this.base === this.baseable.length) { this.base = 0; }
+
+            this.isFollowShip = false;
+            this.moveCamera();
+
+            // this.bodiesMap.ship.parent = this.baseable[this.base];
+        }
+
+        cycleBaseBack() {
+
+            this.base--;
+            if (this.base < 0) { this.base = this.baseable.length - 1; }
+
+            this.isFollowShip = false;
+            this.moveCamera();
+
+            // this.bodiesMap.ship.parent = this.baseable[this.base];
+        }
+
+        moveCamera() {
+
+            let follow;
+
+            if (this.isFollowShip) {
+                follow = this.bodiesMap.ship;
+            } else {
+                follow = this.baseable[this.base];
+            }
+
+            this.camera.x = follow.x;
+            this.camera.y = follow.y;
+
+            // let earth = this.bodiesMap.earth;
+            // let moon = this.bodiesMap.moon;
+            // let a1 = earth.r ** 3 / (earth.r ** 3 + moon.r ** 3);
+            // let a2 = moon.r ** 3 / (earth.r ** 3 + moon.r ** 3);
+            // this.camera.x = earth.x * a1 + moon.x * a2;
+            // this.camera.y = earth.y * a1 + moon.y * a2;
+        }
+
+        calShipDir() {
+            let ship = this.bodiesMap.ship;
+            let base = this.bodies[this.base];
+
+            let dvx = ship.vx - base.vx;
+            let dvy = ship.vy - base.vy;
+
+            let a = Math.hypot(dvx, dvy);
+
+            return [dvx / a, dvy / a];
+        }
+
+        accelerate() {
+            let direction = this.calShipDir();
+
+            let ship = this.bodiesMap.ship;
+            ship.vx += direction[0] * 100;
+            ship.vy += direction[1] * 100;
+        }
+
+        decelerate() {
+            let direction = this.calShipDir();
+
+            let ship = this.bodiesMap.ship;
+            ship.vx += direction[0] * -100;
+            ship.vy += direction[1] * -100;
+        }
+
+        moveRight() {
+            let direction = this.calShipDir();
+
+            let ship = this.bodiesMap.ship;
+            ship.vx += -direction[1] * 100;
+            ship.vy += direction[0] * 100;
+        }
+
+        moveLeft() {
+            let direction = this.calShipDir();
+
+            let ship = this.bodiesMap.ship;
+            ship.vx += direction[1] * 100;
+            ship.vy += -direction[0] * 100;
+        }
+
+        initiate() {
+
+            this.c.addEventListener("wheel", this.wheel.bind(this), false);
+            document.body.addEventListener("keydown", this.keydown.bind(this), false);
+
+            // ========================
+
+            let sun = new Body(0, 0, 696340, "sun", "#FFE600");
+            this.bodies.push(sun); this.bodiesMap.sun = sun;
+
+            // ========================
+
+            let mercury = new Body(47065000, 0, 2439.7, "mercury", "#A0A0A0");
+            this.bodies.push(mercury); this.bodiesMap.mercury = mercury;
+            mercury.setVelCirc(sun);
+
+            let venus = new Body(107930000, 0, 6051.8, "venus", "#FFD9A0");
+            this.bodies.push(venus); this.bodiesMap.venus = venus;
+            venus.setVelCirc(sun);
+
+            // ========================
+
+            let earth = new Body(150750000, 0, 6371, "earth", "#0094FF");
+            this.bodies.push(earth); this.bodiesMap.earth = earth;
+            earth.setVelCirc(sun);
+
+            let moon = new Body(150750000 + 6371 + 384400, 0, 1737.1, "moon", "#767676");
+            this.bodies.push(moon); this.bodiesMap.moon = moon;
+            moon.setVelCirc(earth);
+            moon.setVelCirc(sun);
+
+            // ========================
+
+            let mars = new Body(246890000, 0, 3389.5, "mars", "#C74E33");
+            this.bodies.push(mars); this.bodiesMap.mars = mars;
+            mars.setVelCirc(sun);
+
+            let jupiter = new Body(756910000, 0, 69911, "jupiter", "#B86739");
+            this.bodies.push(jupiter); this.bodiesMap.jupiter = jupiter;
+            jupiter.setVelCirc(sun);
+
+            let saturn = new Body(1488400000, 0, 58232, "saturn", "#FFD480");
+            this.bodies.push(saturn); this.bodiesMap.saturn = saturn;
+            saturn.setVelCirc(sun);
+
+            let uranus = new Body(2955100000, 0, 25362, "uranus", "#80FFE0");
+            this.bodies.push(uranus); this.bodiesMap.uranus = uranus;
+            uranus.setVelCirc(sun);
+
+            let neptune = new Body(4475600000, 0, 24622, "neptune", "#349EFF");
+            this.bodies.push(neptune); this.bodiesMap.neptune = neptune;
+            neptune.setVelCirc(sun);
+
+            // ========================
+
+            for (let body of this.bodies) {
+                this.baseable.push(body);
+            }
+
+            let ship = new Body(150750000 + 6371 + 100, 0, 0.01, "ship", "#00FFA3");
+            this.bodies.push(ship); this.bodiesMap.ship = ship;
+            ship.setVelCirc(earth);
+            ship.setVelCirc(sun);
+        }
+
+        async gameLoop() {
+
+            const timer = ms => new Promise(res => setTimeout(res, ms));
+
+            while (true) {
+
+                // if (!this.isPause) {
+                for (let i = 0; i < this.simSpeed; i++) { this.moveBodies(); }
+                this.calcTrail();
+                this.calTraj();
+                // }
+
+                this.draw();
+                this.log();
+
+                if (this.isPause) { return; }
+
+                await timer(1);
+            }
+        }
+
+        moveBodies() {
+
+            let badPrecision = { badPrecision: false };
+
+            while (true) {
+                for (const body of this.bodies) {
+                    body.calcGrav(this.bodies, this.precision, this.gravMap, badPrecision, this.logMap);
+                    if (badPrecision.badPrecision) { break; }
+                }
+
+                if (badPrecision.badPrecision) {
+                    badPrecision.badPrecision = false;
+                    this.precision *= 100;
+                } else { break; }
+            }
+
+            for (const body of this.bodies) {
+                body.move(this.precision);
+            }
+        }
+
+        calcTrail() {
+
+            let planets = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+
+            for (const planet of planets) {
+                this.bodiesMap[planet].calcTrail(this.bodiesMap.sun);
+            }
+            this.bodiesMap.moon.calcTrail(this.bodiesMap.earth);
+
+            this.bodiesMap.ship.calcTrail(this.bodies[this.base]);
+        }
+
+        calTraj() {
+            this.bodiesMap.ship.calcTraj(this.bodies, this.precision, this.gravMap, this.bodies[this.base], this.logMap);
+        }
+
+        draw() {
+            let offScreenCanvas = document.createElement("canvas");
+            offScreenCanvas.width = this.c.width;
+            offScreenCanvas.height = this.c.height;
+
+            let offCtx = offScreenCanvas.getContext("2d");
+
+            this.moveCamera();
+
+            for (const body of this.bodies) {
+                body.drawBody(offCtx, this.camera);
+                body.drawTrail(offCtx, this.camera);
+            }
+
+            this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
+            this.ctx.fillRect(0, 0, offCtx.canvas.width, offCtx.canvas.height);
+
+            this.ctx.filter = 'blur(4px)';
+            this.ctx.drawImage(offScreenCanvas, 0, 0);
+
+            this.ctx.filter = "none";
+            this.ctx.drawImage(offScreenCanvas, 0, 0);
+        }
+
+        log() {
+            let logStr = "";
+            logStr += "base: " + this.bodies[this.base].name + "<br>";
+            // logStr += "follow: " + this.bodies[this.follow].name + "<br>";
+            logStr += "simSpeed: " + this.simSpeed + "<br>";
+            logStr += "precision: " + this.precision + "<br>";
+            logStr += "zoom: " + this.camera.z + "<br>";
+
+            logStr += Object.keys(this.logMap).length + "<br>";
+
+            for (let key in this.logMap) {
+                logStr += key + ": " + this.logMap[key] + "<br>";
+            }
+
+            let log = document.getElementById("log");
+            log.innerHTML = logStr;
+        }
+    }
+
+    let game = new Game();
+    game.initiate();
+    game.gameLoop();
+
+</script>
+
+</html>
