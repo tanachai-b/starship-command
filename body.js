@@ -77,7 +77,7 @@ class Body {
             let ax = grav / this_mass * dx / dist / precision;
             let ay = grav / this_mass * dy / dist / precision;
 
-            if (Math.hypot(ax, ay) / dist >= 0.1 && precision < 10000) {
+            if (Math.hypot(ax, ay) / dist >= (1 / 60) && precision < 10000) {
                 badPrecision.badPrecision = true;
                 return;
             }
@@ -85,7 +85,7 @@ class Body {
             this.ax += ax;
             this.ay += ay;
 
-            logMap[gravName] = Math.hypot(ax * precision, ay * precision);
+            // logMap[gravName] = Math.hypot(ax * precision, ay * precision);
         }
     }
 
@@ -98,7 +98,7 @@ class Body {
         this.y += this.vy / precision;
     }
 
-    calcTrail() {
+    calcTrail(logMap) {
 
         if (this.parent == null) { return; }
 
@@ -113,7 +113,7 @@ class Body {
             let p1p2 = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
             let p1p0 = p1.x ** 2 + p1.y ** 2;
 
-            if (p1p2 < p1p0 / 100 ** 2) { this.trailLine.splice(this.trailLine.length - 2, 1); }
+            if (p1p2 < p1p0 / 60 ** 2) { this.trailLine.splice(this.trailLine.length - 2, 1); }
 
             // cut trail end (if trail end's distance to trail head is less than 1% of diameter, remove trail end nodes)
             let pn = this.trailLine[this.trailLine.length - 1];
@@ -125,13 +125,18 @@ class Body {
                 let p0pn = (p0.x - pn.x) ** 2 + (p0.y - pn.y) ** 2;
                 let pmpn = (pm.x - pn.x) ** 2 + (pm.y - pn.y) ** 2;
 
-                if (p0pn < pmpn * 0.01) {
+                if (p0pn < pmpn * 0.1 ** 2) {
                     this.trailLine.splice(0, i + 1);
                     i = 0;
                 }
             }
         }
 
+        if (this.trailLine.length > 720) {
+            this.trailLine.splice(0, this.trailLine.length - 720);
+        }
+
+        logMap[this.name] = this.trailLine.length;
     }
 
     calcTraj(bodies, precision, gravMap, parent, logMap) {
@@ -140,7 +145,7 @@ class Body {
 
     drawBody(ctx, camera) {
 
-        let zoom = 2 ** (camera.z / 4);
+        let zoom = 2 ** (camera.zoom / 4);
 
         let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
         let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
@@ -158,7 +163,7 @@ class Body {
 
     drawTrail(ctx, camera) {
 
-        let zoom = 2 ** (camera.z / 4);
+        let zoom = 2 ** (camera.zoom / 4);
 
         if (this.trailLine[0] != null) {
             ctx.beginPath();
