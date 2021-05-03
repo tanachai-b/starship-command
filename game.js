@@ -169,29 +169,29 @@ class Game {
 
         // ========================
 
-        let sun = new Body(0, 0, 696340, "sun", "#FFE600");
+        let sun = new Body(0, 0, 696340, "sun", "#FFF200");
         this.bodies.push(sun); this.bodiesMap.sun = sun;
 
         // ========================
 
-        let mercury = new Body(47065000, 0, 2439.7, "mercury", "#A0A0A0");
+        let mercury = new Body(47065000, 0, 2439.7, "mercury", "#B0B0B0");
         this.bodies.push(mercury); this.bodiesMap.mercury = mercury;
         mercury.setVelCirc(sun);
 
-        let venus = new Body(107930000, 0, 6051.8, "venus", "#FFD9A0");
+        let venus = new Body(107930000, 0, 6051.8, "venus", "#FFECA0");
         this.bodies.push(venus); this.bodiesMap.venus = venus;
         venus.setVelCirc(sun);
 
-        // ========================
-
-        let earth = new Body(150750000, 0, 6371, "earth", "#0094FF");
+        let earth = new Body(150750000, 0, 6371, "earth", "#006AFF");
         this.bodies.push(earth); this.bodiesMap.earth = earth;
         earth.setVelCirc(sun);
 
-        let moon = new Body(150750000 + 6371 + 384400, 0, 1737.1, "moon", "#767676");
+        // ========================
+
+        let moon = new Body(150750000 + 6371 + 384400, 0, 1737.1, "moon", "#B5B0A3");
         this.bodies.push(moon); this.bodiesMap.moon = moon;
-        moon.setVelCirc(earth);
         moon.setVelCirc(sun);
+        moon.setVelCirc(earth);
 
         // ========================
 
@@ -199,19 +199,19 @@ class Game {
         this.bodies.push(mars); this.bodiesMap.mars = mars;
         mars.setVelCirc(sun);
 
-        let jupiter = new Body(756910000, 0, 69911, "jupiter", "#B86739");
+        let jupiter = new Body(756910000, 0, 69911, "jupiter", "#A6662B");
         this.bodies.push(jupiter); this.bodiesMap.jupiter = jupiter;
         jupiter.setVelCirc(sun);
 
-        let saturn = new Body(1488400000, 0, 58232, "saturn", "#FFD480");
+        let saturn = new Body(1488400000, 0, 58232, "saturn", "#FFE4A6");
         this.bodies.push(saturn); this.bodiesMap.saturn = saturn;
         saturn.setVelCirc(sun);
 
-        let uranus = new Body(2955100000, 0, 25362, "uranus", "#80FFE0");
+        let uranus = new Body(2955100000, 0, 25362, "uranus", "#80FFE8");
         this.bodies.push(uranus); this.bodiesMap.uranus = uranus;
         uranus.setVelCirc(sun);
 
-        let neptune = new Body(4475600000, 0, 24622, "neptune", "#349EFF");
+        let neptune = new Body(4475600000, 0, 24622, "neptune", "#2B7CFF");
         this.bodies.push(neptune); this.bodiesMap.neptune = neptune;
         neptune.setVelCirc(sun);
 
@@ -223,8 +223,8 @@ class Game {
 
         let ship = new Body(150750000 + 6371 + 100, 0, 0.01, "ship", "#00FFA3");
         this.bodies.push(ship); this.bodiesMap.ship = ship;
-        ship.setVelCirc(earth);
         ship.setVelCirc(sun);
+        ship.setVelCirc(earth);
     }
 
     async gameLoop() {
@@ -294,7 +294,8 @@ class Game {
 
         this.moveCamera();
 
-        for (const body of this.bodies) {
+        for (let i = this.bodies.length - 1; i >= 0; i--) {
+            let body = this.bodies[i];
             body.drawBody(offCtx, this.camera);
             body.drawTrail(offCtx, this.camera);
         }
