@@ -19,25 +19,6 @@ class Body {
         this.trailLine = [];
     }
 
-    switchParent(newParent) {
-
-        let x1 = this.parent.x;
-        let y1 = this.parent.y;
-
-        let x2 = newParent.x;
-        let y2 = newParent.y;
-
-        let dx = x2 - x1;
-        let dy = y2 - y1;
-
-        for (let point of this.trailLine) {
-            point.x -= dx;
-            point.y -= dy;
-        }
-
-        this.parent = newParent;
-    }
-
     setVelCirc(body) {
 
         let dx = this.x - body.x;
@@ -51,7 +32,7 @@ class Body {
         this.vy += (target_mass / dist) ** 0.5 * -dx / dist;
     }
 
-    calcGrav(bodies, precision, gravMap, badPrecision, logMap) {
+    calcGrav(bodies, precision, badPrecision, gravMap, logMap) {
 
         this.ax = 0;
         this.ay = 0;
@@ -98,7 +79,26 @@ class Body {
         this.y += this.vy / precision;
     }
 
-    calcTrail(logMap) {
+    switchParent(newParent) {
+
+        let x1 = this.parent.x;
+        let y1 = this.parent.y;
+
+        let x2 = newParent.x;
+        let y2 = newParent.y;
+
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+
+        for (let point of this.trailLine) {
+            point.x -= dx;
+            point.y -= dy;
+        }
+
+        this.parent = newParent;
+    }
+
+    addTrail(logMap) {
 
         if (this.parent == null) { return; }
 

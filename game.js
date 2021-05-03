@@ -106,8 +106,7 @@ class Game {
 
             // if (!this.isPause) {
             for (let i = 0; i < this.simSpeed; i++) { this.moveBodies(); }
-            this.calcTrail();
-            this.calTraj();
+            this.calcTraj();
             // }
 
             this.moveCamera();
@@ -126,7 +125,7 @@ class Game {
 
         while (true) {
             for (let body of this.bodies) {
-                body.calcGrav(this.bodies, this.precision, this.gravMap, badPrecision, this.logMap);
+                body.calcGrav(this.bodies, this.precision, badPrecision, this.gravMap, this.logMap);
                 if (badPrecision.badPrecision) { break; }
             }
 
@@ -138,14 +137,11 @@ class Game {
 
         for (let body of this.bodies) {
             body.move(this.precision);
+            body.addTrail(this.logMap);
         }
     }
 
-    calcTrail() {
-        for (let body of this.bodies) { body.calcTrail(this.logMap); }
-    }
-
-    calTraj() {
+    calcTraj() {
         this.bodiesMap.ship.calcTraj(this.bodies, this.precision, this.gravMap, this.bodies[this.base], this.logMap);
     }
 
@@ -228,7 +224,7 @@ class Game {
             case "0_Digit2": event.preventDefault(); this.simSpeed = 10 ** 1; break;
             case "0_Digit3": event.preventDefault(); this.simSpeed = 10 ** 2; break;
             case "0_Digit4": event.preventDefault(); this.simSpeed = 10 ** 3; break;
-            case "0_Digit5": event.preventDefault(); this.simSpeed = 10 ** 4; break;
+            // case "0_Digit5": event.preventDefault(); this.simSpeed = 10 ** 4; break;
 
             case "0_F1": event.preventDefault(); this.precision = 10000; break; // surface
             case "0_F2": event.preventDefault(); this.precision = 100; break; // moons
