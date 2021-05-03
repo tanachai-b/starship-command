@@ -1,20 +1,41 @@
+"use strict";
+
 class Body {
 
-    constructor(x, y, r, name, color = "#888888", vx = 0, vy = 0) {
-        this.x = x;
-        this.y = y;
-        this.r = r;
+    constructor(name, color = "#888888", parent, radius, x, y) {
 
         this.name = name;
         this.color = color;
+        this.parent = parent;
+        this.radius = radius;
 
-        this.vx = vx;
-        this.vy = vy;
+        this.x = x;
+        this.y = y;
+        this.vx = 0;
+        this.vy = 0;
         this.ax = 0;
         this.ay = 0;
 
         this.trailLine = [];
-        this.parent;
+    }
+
+    switchParent(newParent) {
+
+        let x1 = this.parent.x;
+        let y1 = this.parent.y;
+
+        let x2 = newParent.x;
+        let y2 = newParent.y;
+
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+
+        for (let point of this.trailLine) {
+            point.x -= dx;
+            point.y -= dy;
+        }
+
+        this.parent = newParent;
     }
 
     setVelCirc(body) {
@@ -24,7 +45,7 @@ class Body {
         let dist2 = dx ** 2 + dy ** 2;
         let dist = dist2 ** (1 / 2);
 
-        let target_mass = body.r ** 3;
+        let target_mass = body.radius ** 3;
 
         this.vx += (target_mass / dist) ** 0.5 * dy / dist;
         this.vy += (target_mass / dist) ** 0.5 * -dx / dist;
@@ -35,7 +56,7 @@ class Body {
         this.ax = 0;
         this.ay = 0;
 
-        for (const body of bodies) {
+        for (let body of bodies) {
 
             if (this === body) { continue; }
 
@@ -48,8 +69,8 @@ class Body {
             let dist2 = dx ** 2 + dy ** 2;
             let dist = dist2 ** (1 / 2);
 
-            let target_mass = body.r ** 3;
-            let this_mass = this.r ** 3;
+            let target_mass = body.radius ** 3;
+            let this_mass = this.radius ** 3;
 
             let grav = target_mass * this_mass / dist2;
 
@@ -77,19 +98,11 @@ class Body {
         this.y += this.vy / precision;
     }
 
-    calcTrail(parent) {
+    calcTrail() {
 
-        if (this.parent == null) {
-            this.parent = parent;
+        if (this.parent == null) { return; }
 
-        } else if (this.parent != parent) {
-            this.parent = parent;
-            this.trailLine = [];
-        }
-
-        if (parent == null) { return; }
-
-        this.trailLine.push({ x: this.x - parent.x, y: this.y - parent.y });
+        this.trailLine.push({ x: this.x - this.parent.x, y: this.y - this.parent.y });
 
         if (this.trailLine.length >= 3) {
 
@@ -131,7 +144,7 @@ class Body {
 
         let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
         let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
-        let nr = Math.max(this.r / zoom, 2);
+        let nr = Math.max(this.radius / zoom, 2);
 
         ctx.beginPath();
         ctx.arc(nx, ny, nr, 0, 2 * Math.PI);
