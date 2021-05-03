@@ -2,15 +2,17 @@
 
 class Body {
 
-    constructor(name, color = "#888888", parent, radius, x, y) {
+    constructor(name, color = "#888888", radius, parent, distance, angle) {
 
         this.name = name;
         this.color = color;
-        this.parent = parent;
         this.radius = radius;
 
-        this.x = x;
-        this.y = y;
+        this.parent = parent;
+
+        this.x = ((parent === null) ? 0 : parent.x) + distance * Math.cos(angle);
+        this.y = ((parent === null) ? 0 : parent.y) + distance * Math.sin(angle);
+
         this.vx = 0;
         this.vy = 0;
         this.ax = 0;
@@ -42,7 +44,7 @@ class Body {
             if (this === body) { continue; }
 
             let gravName = body.name + "<-" + this.name;
-            // if (this.name != "ship" && gravMap[gravName] == null) { continue; }
+            // if (this.name != "ship" && gravMap[gravName] === null) { continue; }
 
             let dx = body.x - this.x;
             let dy = body.y - this.y;
@@ -100,7 +102,7 @@ class Body {
 
     addTrail(logMap) {
 
-        if (this.parent == null) { return; }
+        if (this.parent === null) { return; }
 
         this.trailLine.push({ x: this.x - this.parent.x, y: this.y - this.parent.y });
 
@@ -139,7 +141,7 @@ class Body {
         logMap[this.name] = this.trailLine.length;
     }
 
-    calcTraj(bodies, precision, gravMap, parent, logMap) {
+    calcTraj(bodies, precision, gravMap, logMap) {
 
     }
 
