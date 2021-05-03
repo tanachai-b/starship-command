@@ -60,25 +60,40 @@ class Body {
             let ax = grav / this_mass * dx / dist / precision;
             let ay = grav / this_mass * dy / dist / precision;
 
-            if (Math.hypot(ax, ay) / dist >= (1 / 60) && precision < 10000) {
+            if (Math.hypot(ax, ay) / dist > (1 / 60) && precision < 10000) {
                 badPrecision.badPrecision = true;
-                return;
+                break;
+
+                // //way2:
+                // this.ax -= this.vx - this.parent.vx;
+                // this.ay -= this.vy - this.parent.vy;
+                // continue;
             }
 
             this.ax += ax;
             this.ay += ay;
 
-            // logMap[gravName] = Math.hypot(ax * precision, ay * precision);
+            logMap[gravName] = Math.round(Math.hypot(ax * precision, ay * precision) * 1000000)
         }
     }
 
-    move(precision) {
+    move(precision, isBadprecision) {
 
+        // if (!isBadprecision) {
         this.vx += this.ax;
         this.vy += this.ay;
 
         this.x += this.vx / precision;
         this.y += this.vy / precision;
+
+        // } else {
+
+        //     this.vx += this.parent.ax;
+        //     this.vy+= this.parent.ay;
+
+        //     this.x += this.parent.vx / precision;
+        //     this.y += this.parent.vy / precision;
+        // }
     }
 
     switchParent(newParent) {
@@ -138,7 +153,7 @@ class Body {
             this.trailLine.splice(0, this.trailLine.length - 720);
         }
 
-        logMap[this.name] = this.trailLine.length;
+        // logMap[this.name] = this.trailLine.length;
     }
 
     calcTraj(bodies, precision, gravMap, logMap) {

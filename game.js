@@ -57,47 +57,81 @@ class Game {
 
         // ========================
 
-        let mercury = new Body("mercury", "#B0B0B0", 2439.7, sun, 47065000, 0);
+        let mercury = new Body("mercury", "#B0B0B0", 2439.64, sun, 57909175, 0);
         this.bodies.push(mercury); this.bodiesMap.mercury = mercury;
         mercury.setVelCirc(sun);
 
-        let venus = new Body("venus", "#FFECA0", 6051.8, sun, 107930000, 0);
+        let venus = new Body("venus", "#FFECA0", 6051.59, sun, 108208930, 0);
         this.bodies.push(venus); this.bodiesMap.venus = venus;
         venus.setVelCirc(sun);
 
-        let earth = new Body("earth", "#006AFF", 6371, sun, 150750000, 0);
+        let earth = new Body("earth", "#006AFF", 6378.10, sun, 149597890, 0);
         this.bodies.push(earth); this.bodiesMap.earth = earth;
         earth.setVelCirc(sun);
 
-        let mars = new Body("mars", "#C74E33", 3389.5, sun, 246890000, 0);
+        let mars = new Body("mars", "#C74E33", 3397.00, sun, 227936640, 0);
         this.bodies.push(mars); this.bodiesMap.mars = mars;
         mars.setVelCirc(sun);
 
-        let jupiter = new Body("jupiter", "#A6662B", 69911, sun, 756910000, 0);
+        let jupiter = new Body("jupiter", "#A6662B", 71492.68, sun, 778412010, 0);
         this.bodies.push(jupiter); this.bodiesMap.jupiter = jupiter;
         jupiter.setVelCirc(sun);
 
-        let saturn = new Body("saturn", "#FFE4A6", 58232, sun, 1488400000, 0);
+        let saturn = new Body("saturn", "#FFE4A6", 60267.14, sun, 1426725400, 0);
         this.bodies.push(saturn); this.bodiesMap.saturn = saturn;
         saturn.setVelCirc(sun);
 
-        let uranus = new Body("uranus", "#80FFE8", 25362, sun, 2955100000, 0);
+        let uranus = new Body("uranus", "#80FFE8", 25557.25, sun, 2870972200, 0);
         this.bodies.push(uranus); this.bodiesMap.uranus = uranus;
         uranus.setVelCirc(sun);
 
-        let neptune = new Body("neptune", "#2B7CFF", 24622, sun, 4475600000, 0);
+        let neptune = new Body("neptune", "#2B7CFF", 24766.36, sun, 4498252900, 0);
         this.bodies.push(neptune); this.bodiesMap.neptune = neptune;
         neptune.setVelCirc(sun);
 
         // ========================
 
-        let moon = new Body("moon", "#B5B0A3", 1737.1, earth, 384400, 0);
+        let moon = new Body("moon", "#B5B0A3", 1737.1, earth, 384399, 0);
         this.bodies.push(moon); this.bodiesMap.moon = moon;
         moon.setVelCirc(sun);
         moon.setVelCirc(earth);
 
-        // ========================
+        let phobos = new Body("phobos", "#B5B0A3", 11.1, mars, 9377, 0);
+        this.bodies.push(phobos); this.bodiesMap.phobos = phobos;
+        phobos.setVelCirc(sun);
+        phobos.setVelCirc(mars);
 
+        let deimos = new Body("deimos", "#B5B0A3", 6.3, mars, 23460, 0);
+        this.bodies.push(deimos); this.bodiesMap.deimos = deimos;
+        deimos.setVelCirc(sun);
+        deimos.setVelCirc(mars);
+
+        let io = new Body("io", "#B5B0A3", 1815, jupiter, 421600, 0);
+        this.bodies.push(io); this.bodiesMap.io = io;
+        io.setVelCirc(sun);
+        io.setVelCirc(jupiter);
+
+        let europa = new Body("europa", "#B5B0A3", 1569, jupiter, 670900, 0);
+        this.bodies.push(europa); this.bodiesMap.europa = europa;
+        europa.setVelCirc(sun);
+        europa.setVelCirc(jupiter);
+
+        let ganymede = new Body("ganymede", "#B5B0A3", 2634.1, jupiter, 1070400, 0);
+        this.bodies.push(ganymede); this.bodiesMap.ganymede = ganymede;
+        ganymede.setVelCirc(sun);
+        ganymede.setVelCirc(jupiter);
+
+        let callisto = new Body("callisto", "#B5B0A3", 2410.3, jupiter, 1882700, 0);
+        this.bodies.push(callisto); this.bodiesMap.callisto = callisto;
+        callisto.setVelCirc(sun);
+        callisto.setVelCirc(jupiter);
+
+        let titan = new Body("titan", "#B5B0A3", 2576, saturn, 1221870, 0);
+        this.bodies.push(titan); this.bodiesMap.titan = titan;
+        titan.setVelCirc(sun);
+        titan.setVelCirc(saturn);
+
+        // ========================
 
         for (let body of this.bodies) {
 
@@ -114,12 +148,12 @@ class Game {
 
         // ========================
 
-        let ship = new Body("ship", "#00FFA3", 0.01, earth, 6371 + 384400 / 4, 0);
-        this.bodies.push(ship); this.bodiesMap.ship = ship;
-        ship.setVelCirc(sun);
-        ship.setVelCirc(earth);
+        // let ship = new Body("ship", "#00FFA3", 0.01, earth, 6371 + 100 + 384400 / 2, 0);
+        // this.bodies.push(ship); this.bodiesMap.ship = ship;
+        // ship.setVelCirc(sun);
+        // ship.setVelCirc(earth);
 
-        this.camShips.push(ship);
+        // this.camShips.push(ship);
     }
 
     async gameLoop() {
@@ -146,11 +180,17 @@ class Game {
     moveBodies() {
 
         let badPrecision = { badPrecision: false };
+        let badPrecBodies = {};
 
         while (true) {
             for (let body of this.bodies) {
                 body.calcGrav(this.bodies, this.precision, badPrecision, this.gravMap, this.logMap);
                 if (badPrecision.badPrecision) { break; }
+                // if (badPrecision.badPrecision) {
+                //     badPrecision.badPrecision = false;
+                //     badPrecBodies[body.name] = 1;
+                //     continue;
+                // }
             }
 
             if (badPrecision.badPrecision) {
@@ -159,14 +199,19 @@ class Game {
             } else { break; }
         }
 
+        // // this.logMap=[];
+        // for (let key in badPrecBodies) {
+        //     this.logMap["badprec:" + key] = badPrecBodies[key];
+        // }
+
         for (let body of this.bodies) {
-            body.move(this.precision);
+            body.move(this.precision, badPrecBodies[body.name] !== undefined);
             body.addTrail(this.logMap);
         }
     }
 
     calcTraj() {
-        this.bodiesMap.ship.calcTraj(this.bodies, this.precision, this.gravMap, this.logMap);
+        // this.bodiesMap.ship.calcTraj(this.bodies, this.precision, this.gravMap, this.logMap);
     }
 
     moveCamera() {
@@ -180,8 +225,8 @@ class Game {
 
         // let earth = this.bodiesMap.earth;
         // let moon = this.bodiesMap.moon;
-        // let a1 = earth.r ** 3 / (earth.r ** 3 + moon.r ** 3);
-        // let a2 = moon.r ** 3 / (earth.r ** 3 + moon.r ** 3);
+        // let a1 = earth.radius ** 3 / (earth.radius ** 3 + moon.radius ** 3);
+        // let a2 = moon.radius ** 3 / (earth.radius ** 3 + moon.radius ** 3);
         // this.camera.x = earth.x * a1 + moon.x * a2;
         // this.camera.y = earth.y * a1 + moon.y * a2;
     }
@@ -256,7 +301,7 @@ class Game {
             case "2_KeyZ": event.preventDefault(); this.cycleSolSysReverse(); break;
 
             case "0_KeyX": event.preventDefault(); this.cycleMoon(); break;
-            case "0_KeyX": event.preventDefault(); this.cycleMoonReverse(); break;
+            case "2_KeyX": event.preventDefault(); this.cycleMoonReverse(); break;
 
             case "0_KeyW": event.preventDefault(); this.accelerate(); break;
             case "0_KeyS": event.preventDefault(); this.decelerate(); break;
@@ -318,7 +363,7 @@ class Game {
         let moons = this.camMoons[this.camSolSys[this.focusSolSysIndex].name];
         if (moons === null) { return; }
 
-        this.focusMoonIndex = --this.focusMoonIndex + moons.length % moons.length;
+        this.focusMoonIndex = (--this.focusMoonIndex + moons.length) % moons.length;
         this.focusBody = moons[this.focusMoonIndex];
         this.focus = this.focusBody;
 
@@ -327,7 +372,7 @@ class Game {
 
     calcShipDir() {
         let ship = this.bodiesMap.ship;
-        let focus = this.bodies[this.focusBody];
+        let focus = this.focusBody;
 
         let dvx = ship.vx - focus.vx;
         let dvy = ship.vy - focus.vy;
