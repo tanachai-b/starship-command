@@ -10,8 +10,8 @@ class Body {
 
         this.parent = parent;
 
-        this.x = ((parent === null) ? 0 : parent.x) + distance * Math.cos(angle);
-        this.y = ((parent === null) ? 0 : parent.y) + distance * Math.sin(angle);
+        this.x = ((parent === null) ? 0 : parent.x) + distance * Math.cos(-angle / 180 * Math.PI);
+        this.y = ((parent === null) ? 0 : parent.y) + distance * Math.sin(-angle / 180 * Math.PI);
 
         this.vx = 0;
         this.vy = 0;
@@ -208,21 +208,14 @@ class Body {
         let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
         let nr = Math.max(this.radius / zoom, 2);
 
+        if (this.parent !== null) {
+            let dx = this.x - this.parent.x;
+            let dy = this.y - this.parent.y;
 
+            let dist = Math.hypot(dx, dy) / zoom;
 
-        if(this.parent!==null){
-        let dx = this.x - this.parent.x;
-        let dy = this.y - this.parent.y;
-
-        let dist = Math.hypot(dx, dy) / zoom;
-
-        if (dist < 20) { return; }
-
-
-
+            if (dist < 20) { return; }
         }
-
-
 
         let bodyName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
 
