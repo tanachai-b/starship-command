@@ -73,7 +73,7 @@ class Body {
             this.ax += ax;
             this.ay += ay;
 
-            logMap[gravName] = Math.round(Math.hypot(ax * precision, ay * precision) * 1000000)
+            // logMap[gravName] = Math.round(Math.hypot(ax * precision, ay * precision) * 1000000)
         }
     }
 
@@ -224,7 +224,7 @@ class Body {
 
         ctx.fillStyle = this.color;
         ctx.font = "10px sans-serif";
-        ctx.textBaseline = "top";
+        ctx.textBaseline = "middle";
         ctx.fillText(bodyName, nx + nr + 4, ny);
     }
 }

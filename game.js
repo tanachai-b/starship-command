@@ -168,7 +168,8 @@ class Game {
             // }
 
             this.moveCamera();
-            this.draw();
+            this.drawBodies();
+            this.drawUI();
             this.log();
 
             if (this.isPause) { return; }
@@ -231,7 +232,7 @@ class Game {
         // this.camera.y = earth.y * a1 + moon.y * a2;
     }
 
-    draw() {
+    drawBodies() {
         let offScreenCanvas = document.createElement("canvas");
         offScreenCanvas.width = this.c.width;
         offScreenCanvas.height = this.c.height;
@@ -253,6 +254,30 @@ class Game {
 
         this.ctx.filter = "none";
         this.ctx.drawImage(offScreenCanvas, 0, 0);
+    }
+
+    drawUI() {
+
+        let texts = [];
+        // texts.push("[F1] - [F4] : Simulation Precision");
+        texts.push("[1] - [4] : Time Warp");
+        texts.push("[Z], [Shift] + [Z] : Next, Previous Planet");
+        texts.push("[X], [Shift] + [X] : Next, Previous Moon");
+        // texts.push("[C], [Shift] + [C] : Next, Previous Ship");
+        // texts.push("[F] : Toggle Focus on Ship");
+
+        this.ctx.fillStyle = "rgba(0,0,0,0.5)";
+        this.ctx.fillRect(0, 0, 200, texts.length * 16 + 12);
+
+        this.ctx.fillStyle = "#888888";
+        this.ctx.font = "10px sans-serif";
+        this.ctx.textBaseline = "top";
+
+        let y = 0;
+        for (let text of texts) {
+            this.ctx.fillText(text, 8, 8 + y);
+            y += 16;
+        }
     }
 
     log() {
