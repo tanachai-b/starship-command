@@ -18,7 +18,9 @@ class Body {
         this.ax = 0;
         this.ay = 0;
 
-        this.trailLine = [];
+        this.trail = [];
+        this.trajectory = [];
+        this.trajPrecision = 1;
     }
 
     setVelCirc(body) {
@@ -36,10 +38,14 @@ class Body {
 
     calcGrav(bodies, precision, badPrecision, gravMap, logMap) {
 
+        // if(this.parent === null) {return;}
+
         this.ax = 0;
         this.ay = 0;
 
         for (let body of bodies) {
+
+            // if(body !== this.parent) { continue;}
 
             if (this === body) { continue; }
 
@@ -107,79 +113,153 @@ class Body {
         let dx = x2 - x1;
         let dy = y2 - y1;
 
-        for (let point of this.trailLine) {
+        for (let point of this.trail) {
             point.x -= dx;
             point.y -= dy;
         }
 
         this.parent = newParent;
+        this.trajPrecision = 1;
     }
 
     addTrail(logMap) {
 
         if (this.parent === null) { return; }
 
-        this.trailLine.push({ x: this.x - this.parent.x, y: this.y - this.parent.y });
+        this.trail.push({ x: this.x - this.parent.x, y: this.y - this.parent.y });
 
-        if (this.trailLine.length >= 3) {
+        if (this.trail.length >= 3) {
 
             // reduce nodes (if a trail section is shorter than radius/100, remove middle node)
-            let p1 = this.trailLine[this.trailLine.length - 1];
-            let p2 = this.trailLine[this.trailLine.length - 3];
+            let p1 = this.trail[this.trail.length - 1];
+            let p2 = this.trail[this.trail.length - 3];
 
             let p1p2 = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
             let p1p0 = p1.x ** 2 + p1.y ** 2;
 
-            if (p1p2 < p1p0 / 60 ** 2) { this.trailLine.splice(this.trailLine.length - 2, 1); }
+            if (p1p2 < p1p0 / 60 ** 2) { this.trail.splice(this.trail.length - 2, 1); }
 
             // cut trail end (if trail end's distance to trail head is less than 1% of diameter, remove trail end nodes)
-            let pn = this.trailLine[this.trailLine.length - 1];
-            let pm = this.trailLine[Math.trunc(this.trailLine.length / 2)];
+            let pn = this.trail[this.trail.length - 1];
+            let pm = this.trail[Math.round(this.trail.length / 2)];
 
-            for (let i = 0; i < Math.trunc(this.trailLine.length / 2); i++) {
+            for (let i = 0; i < Math.round(this.trail.length / 2); i++) {
 
-                let p0 = this.trailLine[i];
+                let p0 = this.trail[i];
                 let p0pn = (p0.x - pn.x) ** 2 + (p0.y - pn.y) ** 2;
                 let pmpn = (pm.x - pn.x) ** 2 + (pm.y - pn.y) ** 2;
 
                 if (p0pn < pmpn * 0.1 ** 2) {
-                    this.trailLine.splice(0, i + 1);
+                    this.trail.splice(0, i + 1);
                     i = 0;
                 }
             }
         }
 
-        if (this.trailLine.length > 720) {
-            this.trailLine.splice(0, this.trailLine.length - 720);
+        if (this.trail.length > 720) {
+            this.trail.splice(0, this.trail.length - 720);
         }
 
         // logMap[this.name] = this.trailLine.length;
     }
 
-    calcTraj(bodies, precision, gravMap, logMap) {
+    calcTrajectory(logMap) {
+
+        if (this.parent === null) { return; }
+
+        let tax = 0;
+        let tay = 0;
+
+        let tvx = this.vx - this.parent.vx;
+        let tvy = this.vy - this.parent.vy;
+
+        let tx = this.x - this.parent.x;
+        let ty = this.y - this.parent.y;
+
+        let tx0 = tx;
+        let ty0 = ty;
+
+        this.trajectory = [{ x: tx, y: ty }];
+
+        for (let time = 0; time < 360; time++) {
+
+            tax = 0;
+            tay = 0;
+
+            let dx = 0 - tx;
+            let dy = 0 - ty;
+
+            let dist = Math.hypot(dx, dy);
+            let grav = this.parent.radius ** 3 / dist ** 2 * this.trajPrecision;
+
+            tax += grav * dx / dist;
+            tay += grav * dy / dist;
+
+            tvx += tax;
+            tvy += tay;
+
+            tx += tvx * this.trajPrecision;
+            ty += tvy * this.trajPrecision;
+
+            this.trajectory.push({ x: tx, y: ty });
+
+            // check trajectory precision, too much, too less
+            let tv = Math.hypot(tvx, tvy) * this.trajPrecision;
+            if (tv > dist) { this.trajectory.pop(); break; }
+
+            if (tv / dist < (1 / 60)) {
+                this.trajPrecision *= 10 ** (1 / 3);
+
+            } else if (tv / dist > (2 / 60)) {
+                this.trajPrecision /= 10 ** (1 / 3);
+            }
+
+            this.trajPrecision = Math.max(this.trajPrecision, 0.0001);
+            this.trajPrecision = Math.min(this.trajPrecision, 10000);
+
+            // completed loop, break
+            let dt = Math.hypot(tx - tx0, ty - ty0);
+            if (dt < dist / 60 * 2 && time > 180) { break; }
+
+            // if (time >= 3) {
+            //     let x1 = this.trajectory[0].x;
+            //     let y1 = this.trajectory[0].y;
+            //     let x2 = this.trajectory[Math.round(this.trajectory.length / 2)].x - x1;
+            //     let y2 = this.trajectory[Math.round(this.trajectory.length / 2)].y - y1;
+            //     let x3 = tx - x1;
+            //     let y3 = ty - y1;
+            //     let sign1 = Math.sign(x1 * y2 - x2 * y1);
+            //     let sign2 = Math.sign(x1 * y3 - x3 * y1);
+
+            //     if (sign1 === sign2) {
+            //         logMap[this.name + " " + time] = Math.round((x1 * y2 - x2 * y1) / 1000000) + " " + Math.round((x1 * y3 - x3 * y1) / 1000000);
+            //         break;
+            //     }
+            // }
+        }
 
     }
 
     drawTrail(ctx, camera, logMap) {
 
+        if (this.trail.length == 0) { return; }
+
         let zoom = 2 ** (camera.zoom / 4);
 
-        if (this.trailLine[0] != null) {
-            ctx.beginPath();
-            for (let i = 0; i < this.trailLine.length; i++) {
+        ctx.beginPath();
+        for (let i = 0; i < this.trail.length; i++) {
 
-                let nx = (this.trailLine[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-                let ny = (this.trailLine[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+            let nx = (this.trail[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            let ny = (this.trail[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
 
-                if (i === 0) {
-                    ctx.moveTo(nx, ny);
-                } else {
-                    ctx.lineTo(nx, ny);
-                }
+            if (i === 0) {
+                ctx.moveTo(nx, ny);
+            } else {
+                ctx.lineTo(nx, ny);
             }
-            ctx.strokeStyle = this.color;
-            ctx.stroke();
         }
+        ctx.strokeStyle = this.color;
+        ctx.stroke();
     }
 
     drawBody(ctx, camera, logMap) {
@@ -226,5 +306,27 @@ class Body {
         ctx.font = "10px sans-serif";
         ctx.textBaseline = "middle";
         ctx.fillText(bodyName, nx + nr + 4, ny);
+    }
+
+    drawTrajectory(ctx, camera, logMap) {
+
+        if (this.trajectory.lenght == 0) { return; }
+
+        let zoom = 2 ** (camera.zoom / 4);
+
+        ctx.beginPath();
+        for (let i = 0; i < this.trajectory.length; i++) {
+
+            let nx = (this.trajectory[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            let ny = (this.trajectory[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            if (i === 0) {
+                ctx.moveTo(nx, ny);
+            } else {
+                ctx.lineTo(nx, ny);
+            }
+        }
+        ctx.strokeStyle = this.color;
+        ctx.stroke();
     }
 }

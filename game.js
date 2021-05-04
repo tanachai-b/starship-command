@@ -19,10 +19,10 @@ class Game {
         this.bodiesMap = {};
 
         this.isPause = false;
-        this.calcMulti = 100;
+        this.calcMulti = 1;
         this.precision = 1;
 
-        this.camera = new Camera(17);
+        this.camera = new Camera(40);
         this.isFollowShip = false;
 
         this.camSolSys = [];
@@ -43,6 +43,8 @@ class Game {
         this.gravMap = {};
         let gravList = ['sun<-mercury', 'sun<-venus', 'sun<-moon', 'sun<-earth', 'sun<-mars', 'earth<-moon', 'sun<-jupiter', 'sun<-saturn', 'moon<-earth', 'sun<-uranus', 'sun<-neptune'];
         for (let grav of gravList) { this.gravMap[grav] = 1; }
+
+        this.gameLoopCount = 0;
     }
 
     initiate() {
@@ -96,40 +98,40 @@ class Game {
         moon.setVelCirc(sun);
         moon.setVelCirc(earth);
 
-        let phobos = new Body("phobos", "#B5B0A3", 11.1, mars, 9377, 45);
-        this.bodies.push(phobos); this.bodiesMap.phobos = phobos;
-        phobos.setVelCirc(sun);
-        phobos.setVelCirc(mars);
+        // let phobos = new Body("phobos", "#B5B0A3", 11.1, mars, 9377, 45);
+        // this.bodies.push(phobos); this.bodiesMap.phobos = phobos;
+        // phobos.setVelCirc(sun);
+        // phobos.setVelCirc(mars);
 
-        let deimos = new Body("deimos", "#B5B0A3", 6.3, mars, 23460, -135);
-        this.bodies.push(deimos); this.bodiesMap.deimos = deimos;
-        deimos.setVelCirc(sun);
-        deimos.setVelCirc(mars);
+        // let deimos = new Body("deimos", "#B5B0A3", 6.3, mars, 23460, -135);
+        // this.bodies.push(deimos); this.bodiesMap.deimos = deimos;
+        // deimos.setVelCirc(sun);
+        // deimos.setVelCirc(mars);
 
-        let io = new Body("io", "#B5B0A3", 1815, jupiter, 421600, 15);
-        this.bodies.push(io); this.bodiesMap.io = io;
-        io.setVelCirc(sun);
-        io.setVelCirc(jupiter);
+        // let io = new Body("io", "#B5B0A3", 1815, jupiter, 421600, 15);
+        // this.bodies.push(io); this.bodiesMap.io = io;
+        // io.setVelCirc(sun);
+        // io.setVelCirc(jupiter);
 
-        let europa = new Body("europa", "#B5B0A3", 1569, jupiter, 670900, 105);
-        this.bodies.push(europa); this.bodiesMap.europa = europa;
-        europa.setVelCirc(sun);
-        europa.setVelCirc(jupiter);
+        // let europa = new Body("europa", "#B5B0A3", 1569, jupiter, 670900, 105);
+        // this.bodies.push(europa); this.bodiesMap.europa = europa;
+        // europa.setVelCirc(sun);
+        // europa.setVelCirc(jupiter);
 
-        let ganymede = new Body("ganymede", "#B5B0A3", 2634.1, jupiter, 1070400, 80);
-        this.bodies.push(ganymede); this.bodiesMap.ganymede = ganymede;
-        ganymede.setVelCirc(sun);
-        ganymede.setVelCirc(jupiter);
+        // let ganymede = new Body("ganymede", "#B5B0A3", 2634.1, jupiter, 1070400, 80);
+        // this.bodies.push(ganymede); this.bodiesMap.ganymede = ganymede;
+        // ganymede.setVelCirc(sun);
+        // ganymede.setVelCirc(jupiter);
 
-        let callisto = new Body("callisto", "#B5B0A3", 2410.3, jupiter, 1882700, -160);
-        this.bodies.push(callisto); this.bodiesMap.callisto = callisto;
-        callisto.setVelCirc(sun);
-        callisto.setVelCirc(jupiter);
+        // let callisto = new Body("callisto", "#B5B0A3", 2410.3, jupiter, 1882700, -160);
+        // this.bodies.push(callisto); this.bodiesMap.callisto = callisto;
+        // callisto.setVelCirc(sun);
+        // callisto.setVelCirc(jupiter);
 
-        let titan = new Body("titan", "#B5B0A3", 2576, saturn, 1221870, -80);
-        this.bodies.push(titan); this.bodiesMap.titan = titan;
-        titan.setVelCirc(sun);
-        titan.setVelCirc(saturn);
+        // let titan = new Body("titan", "#B5B0A3", 2576, saturn, 1221870, -80);
+        // this.bodies.push(titan); this.bodiesMap.titan = titan;
+        // titan.setVelCirc(sun);
+        // titan.setVelCirc(saturn);
 
         // ========================
 
@@ -164,7 +166,7 @@ class Game {
 
             // if (!this.isPause) {
             for (let i = 0; i < this.calcMulti; i++) { this.moveBodies(); }
-            this.calcTraj();
+            this.calcTrajectory();
             // }
 
             this.moveCamera();
@@ -173,7 +175,6 @@ class Game {
             this.log();
 
             if (this.isPause) { return; }
-
             await timer(1);
         }
     }
@@ -207,12 +208,12 @@ class Game {
 
         for (let body of this.bodies) {
             body.move(this.precision, badPrecBodies[body.name] !== undefined);
-            body.addTrail(this.logMap);
+            // body.addTrail(this.logMap);
         }
     }
 
-    calcTraj() {
-        // this.bodiesMap.ship.calcTraj(this.bodies, this.precision, this.gravMap, this.logMap);
+    calcTrajectory() {
+        for (let body of this.bodies) { body.calcTrajectory(this.logMap); }
     }
 
     moveCamera() {
@@ -244,6 +245,8 @@ class Game {
             body.drawTrail(offCtx, this.camera, this.logMap);
             body.drawBody(offCtx, this.camera, this.logMap);
             body.drawName(offCtx, this.camera, this.logMap);
+
+            body.drawTrajectory(offCtx, this.camera, this.logMap);
         }
 
         this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
@@ -360,6 +363,7 @@ class Game {
 
         this.focusMoonIndex = 0;
         this.bodiesMap.ship.switchParent(this.focusBody);
+        this.isFollowShip = false;
     }
 
     cycleSolSysReverse() {
@@ -370,6 +374,7 @@ class Game {
 
         this.focusMoonIndex = 0;
         this.bodiesMap.ship.switchParent(this.focusBody);
+        this.isFollowShip = false;
     }
 
     cycleMoon() {
@@ -382,6 +387,7 @@ class Game {
         this.focus = this.focusBody;
 
         this.bodiesMap.ship.switchParent(this.focusBody);
+        this.isFollowShip = false;
     }
 
     cycleMoonReverse() {
@@ -394,6 +400,7 @@ class Game {
         this.focus = this.focusBody;
 
         this.bodiesMap.ship.switchParent(this.focusBody);
+        this.isFollowShip = false;
     }
 
     calcShipDir() {
