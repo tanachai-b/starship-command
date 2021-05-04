@@ -240,8 +240,9 @@ class Game {
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
             let body = this.bodies[i];
-            body.drawBody(offCtx, this.camera);
-            body.drawTrail(offCtx, this.camera);
+            body.drawBody(offCtx, this.camera, this.logMap);
+            body.drawName(offCtx, this.camera, this.logMap);
+            body.drawTrail(offCtx, this.camera, this.logMap);
         }
 
         this.ctx.fillStyle = "rgba(0, 0, 0, 1)";

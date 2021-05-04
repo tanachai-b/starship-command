@@ -160,7 +160,7 @@ class Body {
 
     }
 
-    drawBody(ctx, camera) {
+    drawBody(ctx, camera, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -178,7 +178,26 @@ class Body {
         ctx.fill();
     }
 
-    drawTrail(ctx, camera) {
+    drawName(ctx, camera, logMap) {
+
+        let zoom = 2 ** (camera.zoom / 4);
+
+        let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
+        let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
+        let nr = Math.max(this.radius / zoom, 2);
+
+        let bodyName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
+
+        // ctx.fillStyle = "#000000";
+        // ctx.fillRect(nx + nr + 4, ny, ctx.measureText(bodyName).width, 10);
+
+        // ctx.fillStyle = this.color;
+        ctx.font = "10px sans-serif";
+        ctx.textBaseline = "top";
+        ctx.fillText(bodyName, nx + nr + 4, ny);
+    }
+
+    drawTrail(ctx, camera, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
