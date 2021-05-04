@@ -160,6 +160,28 @@ class Body {
 
     }
 
+    drawTrail(ctx, camera, logMap) {
+
+        let zoom = 2 ** (camera.zoom / 4);
+
+        if (this.trailLine[0] != null) {
+            ctx.beginPath();
+            for (let i = 0; i < this.trailLine.length; i++) {
+
+                let nx = (this.trailLine[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+                let ny = (this.trailLine[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+                if (i === 0) {
+                    ctx.moveTo(nx, ny);
+                } else {
+                    ctx.lineTo(nx, ny);
+                }
+            }
+            ctx.strokeStyle = this.color;
+            ctx.stroke();
+        }
+    }
+
     drawBody(ctx, camera, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
@@ -186,36 +208,30 @@ class Body {
         let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
         let nr = Math.max(this.radius / zoom, 2);
 
+
+
+        if(this.parent!==null){
+        let dx = this.x - this.parent.x;
+        let dy = this.y - this.parent.y;
+
+        let dist = Math.hypot(dx, dy) / zoom;
+
+        if (dist < 20) { return; }
+
+
+
+        }
+
+
+
         let bodyName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
 
         // ctx.fillStyle = "#000000";
         // ctx.fillRect(nx + nr + 4, ny, ctx.measureText(bodyName).width, 10);
 
-        // ctx.fillStyle = this.color;
+        ctx.fillStyle = this.color;
         ctx.font = "10px sans-serif";
         ctx.textBaseline = "top";
         ctx.fillText(bodyName, nx + nr + 4, ny);
-    }
-
-    drawTrail(ctx, camera, logMap) {
-
-        let zoom = 2 ** (camera.zoom / 4);
-
-        if (this.trailLine[0] != null) {
-            ctx.beginPath();
-            for (let i = 0; i < this.trailLine.length; i++) {
-
-                let nx = (this.trailLine[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-                let ny = (this.trailLine[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
-
-                if (i === 0) {
-                    ctx.moveTo(nx, ny);
-                } else {
-                    ctx.lineTo(nx, ny);
-                }
-            }
-            ctx.strokeStyle = this.color;
-            ctx.stroke();
-        }
     }
 }
