@@ -43,14 +43,20 @@ class Game {
         this.gravMap = {};
         let gravList = ['sun<-mercury', 'sun<-venus', 'sun<-moon', 'sun<-earth', 'sun<-mars', 'earth<-moon', 'sun<-jupiter', 'sun<-saturn', 'moon<-earth', 'sun<-uranus', 'sun<-neptune'];
         for (let grav of gravList) { this.gravMap[grav] = 1; }
+
+        this.pressedKeys = {};
     }
 
     initiate() {
 
         this.c.addEventListener("wheel", this.wheel.bind(this), false);
         document.body.addEventListener("keydown", this.keydown.bind(this), false);
+        document.body.addEventListener("keyup", this.keyup.bind(this), false);
 
-        // // ========================
+        this.buildGameMap();
+    }
+
+    buildGameMap() {
 
         let sun = new Body("sun", "#FFF200", 696340, 1.409, null, 0, 0);
         this.bodies.push(sun); this.bodiesMap.sun = sun;
@@ -164,12 +170,14 @@ class Game {
 
             if (!this.isPause) {
                 for (let i = 0; i < this.calcMulti; i++) { this.moveBodies(); }
+                this.moveShip();
             }
             this.calcTrajectory();
 
             this.moveCamera();
             this.drawBodies();
             this.drawUI();
+
             this.log();
 
             // if (this.isPause) { return; }
@@ -212,6 +220,51 @@ class Game {
 
     calcTrajectory() {
         for (let body of this.bodies) { body.calcTrajectory(this.logMap); }
+    }
+
+    moveShip() {
+
+        let thrust = 10;
+
+        let ship = this.bodiesMap.ship;
+        let parentDirection = this.calcShipDirection(ship);
+
+        if (this.pressedKeys.W) { this.accelerate(ship, parentDirection, thrust); }
+        if (this.pressedKeys.S) { this.decelerate(ship, parentDirection, thrust); }
+        if (this.pressedKeys.A) { this.moveLeft(ship, parentDirection, thrust); }
+        if (this.pressedKeys.D) { this.moveRight(ship, parentDirection, thrust); }
+    }
+
+    calcShipDirection(ship) {
+
+        let parent = ship.parent;
+
+        let dvx = ship.vx - parent.vx;
+        let dvy = ship.vy - parent.vy;
+
+        let dist = Math.hypot(dvx, dvy);
+
+        return { x: dvx / dist, y: dvy / dist }
+    }
+
+    accelerate(ship, parentDirection, thrust) {
+        ship.vx += parentDirection.x * thrust;
+        ship.vy += parentDirection.y * thrust;
+    }
+
+    decelerate(ship, parentDirection, thrust) {
+        ship.vx += parentDirection.x * -thrust;
+        ship.vy += parentDirection.y * -thrust;
+    }
+
+    moveLeft(ship, parentDirection, thrust) {
+        ship.vx += parentDirection.y * thrust;
+        ship.vy += -parentDirection.x * thrust;
+    }
+
+    moveRight(ship, parentDirection, thrust) {
+        ship.vx += -parentDirection.y * thrust;
+        ship.vy += parentDirection.x * thrust;
     }
 
     moveCamera() {
@@ -277,6 +330,8 @@ class Game {
         texts.push("Zoom Level: " + this.camera.zoom);
         texts.push("");
         texts.push("Trajectory: " + this.focusBody.name.charAt(0).toUpperCase() + this.focusBody.name.slice(1));
+        texts.push("");
+        texts.push(this.isPause ? "PAUSE" : "");
 
         this.ctx.fillStyle = "rgba(0,0,0,0.5)";
         this.ctx.fillRect(0, 0, 200, texts.length * 16 + 12);
@@ -334,10 +389,22 @@ class Game {
             case "0_KeyX": event.preventDefault(); this.cycleMoon(); break;
             case "2_KeyX": event.preventDefault(); this.cycleMoonReverse(); break;
 
-            case "0_KeyW": event.preventDefault(); this.accelerate(); break;
-            case "0_KeyS": event.preventDefault(); this.decelerate(); break;
-            case "0_KeyA": event.preventDefault(); this.moveLeft(); break;
-            case "0_KeyD": event.preventDefault(); this.moveRight(); break;
+            case "0_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
+            case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
+            case "0_KeyA": event.preventDefault(); this.pressedKeys.A = 1; break;
+            case "0_KeyD": event.preventDefault(); this.pressedKeys.D = 1; break;
+        }
+    }
+
+    keyup(event) {
+
+        let mod = event.ctrlKey * 4 + event.shiftKey * 2 + event.altKey * 1;
+        switch (mod + "_" + event.code) {
+
+            case "0_KeyW": event.preventDefault(); this.pressedKeys.W = 0; break;
+            case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 0; break;
+            case "0_KeyA": event.preventDefault(); this.pressedKeys.A = 0; break;
+            case "0_KeyD": event.preventDefault(); this.pressedKeys.D = 0; break;
         }
     }
 
@@ -403,49 +470,5 @@ class Game {
 
         this.bodiesMap.ship.switchParent(this.focusBody);
         this.isFollowShip = false;
-    }
-
-    calcShipDir() {
-        let ship = this.bodiesMap.ship;
-        let parent = ship.parent;
-
-        let dvx = ship.vx - parent.vx;
-        let dvy = ship.vy - parent.vy;
-
-        let a = Math.hypot(dvx, dvy);
-
-        return [dvx / a, dvy / a];
-    }
-
-    accelerate() {
-        let direction = this.calcShipDir();
-
-        let ship = this.bodiesMap.ship;
-        ship.vx += direction[0] * 100;
-        ship.vy += direction[1] * 100;
-    }
-
-    decelerate() {
-        let direction = this.calcShipDir();
-
-        let ship = this.bodiesMap.ship;
-        ship.vx += direction[0] * -100;
-        ship.vy += direction[1] * -100;
-    }
-
-    moveRight() {
-        let direction = this.calcShipDir();
-
-        let ship = this.bodiesMap.ship;
-        ship.vx += -direction[1] * 100;
-        ship.vy += direction[0] * 100;
-    }
-
-    moveLeft() {
-        let direction = this.calcShipDir();
-
-        let ship = this.bodiesMap.ship;
-        ship.vx += direction[1] * 100;
-        ship.vy += -direction[0] * 100;
     }
 }
