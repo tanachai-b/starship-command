@@ -304,7 +304,7 @@ class Body {
         ctx.stroke();
     }
 
-    drawBody(ctx, camera, logMap) {
+    drawBody(ctx, camera, logMap, focus) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -320,6 +320,12 @@ class Body {
 
         ctx.fillStyle = this.color;
         ctx.fill();
+
+        if (focus.name === this.name) {
+            ctx.strokeStyle = this.color;
+            let size = 16;
+            ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
+        }
     }
 
     drawName(ctx, camera, logMap) {
@@ -345,8 +351,8 @@ class Body {
         // ctx.fillRect(nx + nr + 4, ny, ctx.measureText(bodyName).width, 10);
 
         ctx.fillStyle = this.color;
-        ctx.font = "10px sans-serif";
+        ctx.font = "13px Syne Mono";
         ctx.textBaseline = "middle";
-        ctx.fillText(bodyName, nx + nr + 4, ny);
+        ctx.fillText(bodyName, nx + nr + 8, ny);
     }
 }
