@@ -20,9 +20,9 @@ class Game {
 
         this.isPause = false;
         this.calcMulti = 1;
-        this.precision = 1;
+        this.precision = 10000;
 
-        this.camera = new Camera(40);
+        this.camera = new Camera(17);
         this.isFollowShip = false;
 
         this.camSolSys = [];
@@ -52,12 +52,12 @@ class Game {
         this.c.addEventListener("wheel", this.wheel.bind(this), false);
         document.body.addEventListener("keydown", this.keydown.bind(this), false);
 
-        // ========================
+        // // ========================
 
         let sun = new Body("sun", "#FFF200", 696340, null, 0, 0);
         this.bodies.push(sun); this.bodiesMap.sun = sun;
 
-        // ========================
+        // // ========================
 
         let mercury = new Body("mercury", "#B0B0B0", 2439.64, sun, 57909175, -90);
         this.bodies.push(mercury); this.bodiesMap.mercury = mercury;
@@ -98,40 +98,40 @@ class Game {
         moon.setVelCirc(sun);
         moon.setVelCirc(earth);
 
-        // let phobos = new Body("phobos", "#B5B0A3", 11.1, mars, 9377, 45);
-        // this.bodies.push(phobos); this.bodiesMap.phobos = phobos;
-        // phobos.setVelCirc(sun);
-        // phobos.setVelCirc(mars);
+        let phobos = new Body("phobos", "#B5B0A3", 11.1, mars, 9377, 45);
+        this.bodies.push(phobos); this.bodiesMap.phobos = phobos;
+        phobos.setVelCirc(sun);
+        phobos.setVelCirc(mars);
 
-        // let deimos = new Body("deimos", "#B5B0A3", 6.3, mars, 23460, -135);
-        // this.bodies.push(deimos); this.bodiesMap.deimos = deimos;
-        // deimos.setVelCirc(sun);
-        // deimos.setVelCirc(mars);
+        let deimos = new Body("deimos", "#B5B0A3", 6.3, mars, 23460, -135);
+        this.bodies.push(deimos); this.bodiesMap.deimos = deimos;
+        deimos.setVelCirc(sun);
+        deimos.setVelCirc(mars);
 
-        // let io = new Body("io", "#B5B0A3", 1815, jupiter, 421600, 15);
-        // this.bodies.push(io); this.bodiesMap.io = io;
-        // io.setVelCirc(sun);
-        // io.setVelCirc(jupiter);
+        let io = new Body("io", "#B5B0A3", 1815, jupiter, 421600, 15);
+        this.bodies.push(io); this.bodiesMap.io = io;
+        io.setVelCirc(sun);
+        io.setVelCirc(jupiter);
 
-        // let europa = new Body("europa", "#B5B0A3", 1569, jupiter, 670900, 105);
-        // this.bodies.push(europa); this.bodiesMap.europa = europa;
-        // europa.setVelCirc(sun);
-        // europa.setVelCirc(jupiter);
+        let europa = new Body("europa", "#B5B0A3", 1569, jupiter, 670900, 105);
+        this.bodies.push(europa); this.bodiesMap.europa = europa;
+        europa.setVelCirc(sun);
+        europa.setVelCirc(jupiter);
 
-        // let ganymede = new Body("ganymede", "#B5B0A3", 2634.1, jupiter, 1070400, 80);
-        // this.bodies.push(ganymede); this.bodiesMap.ganymede = ganymede;
-        // ganymede.setVelCirc(sun);
-        // ganymede.setVelCirc(jupiter);
+        let ganymede = new Body("ganymede", "#B5B0A3", 2634.1, jupiter, 1070400, 80);
+        this.bodies.push(ganymede); this.bodiesMap.ganymede = ganymede;
+        ganymede.setVelCirc(sun);
+        ganymede.setVelCirc(jupiter);
 
-        // let callisto = new Body("callisto", "#B5B0A3", 2410.3, jupiter, 1882700, -160);
-        // this.bodies.push(callisto); this.bodiesMap.callisto = callisto;
-        // callisto.setVelCirc(sun);
-        // callisto.setVelCirc(jupiter);
+        let callisto = new Body("callisto", "#B5B0A3", 2410.3, jupiter, 1882700, -160);
+        this.bodies.push(callisto); this.bodiesMap.callisto = callisto;
+        callisto.setVelCirc(sun);
+        callisto.setVelCirc(jupiter);
 
-        // let titan = new Body("titan", "#B5B0A3", 2576, saturn, 1221870, -80);
-        // this.bodies.push(titan); this.bodiesMap.titan = titan;
-        // titan.setVelCirc(sun);
-        // titan.setVelCirc(saturn);
+        let titan = new Body("titan", "#B5B0A3", 2576, saturn, 1221870, -80);
+        this.bodies.push(titan); this.bodiesMap.titan = titan;
+        titan.setVelCirc(sun);
+        titan.setVelCirc(saturn);
 
         // ========================
 
@@ -150,12 +150,12 @@ class Game {
 
         // ========================
 
-        // let ship = new Body("ship", "#00FFA3", 0.01, earth, 6371 + 100 + 384400 / 2, 0);
-        // this.bodies.push(ship); this.bodiesMap.ship = ship;
-        // ship.setVelCirc(sun);
-        // ship.setVelCirc(earth);
+        let ship = new Body("ship", "#00FFA3", 0.01, earth, 6378.10 + 100, -30);
+        this.bodies.push(ship); this.bodiesMap.ship = ship;
+        ship.setVelCirc(sun);
+        ship.setVelCirc(earth);
 
-        // this.camShips.push(ship);
+        this.camShips.push(ship);
     }
 
     async gameLoop() {
@@ -234,6 +234,7 @@ class Game {
     }
 
     drawBodies() {
+
         let offScreenCanvas = document.createElement("canvas");
         offScreenCanvas.width = this.c.width;
         offScreenCanvas.height = this.c.height;
@@ -241,16 +242,20 @@ class Game {
         let offCtx = offScreenCanvas.getContext("2d");
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
-            let body = this.bodies[i];
-            body.drawTrail(offCtx, this.camera, this.logMap);
-            body.drawBody(offCtx, this.camera, this.logMap);
-            body.drawName(offCtx, this.camera, this.logMap);
-
-            body.drawTrajectory(offCtx, this.camera, this.logMap);
+            this.bodies[i].drawTrail(offCtx, this.camera, this.logMap);
+        }
+        for (let i = this.bodies.length - 1; i >= 0; i--) {
+            this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap);
+        }
+        for (let i = this.bodies.length - 1; i >= 0; i--) {
+            this.bodies[i].drawBody(offCtx, this.camera, this.logMap);
+        }
+        for (let i = this.bodies.length - 1; i >= 0; i--) {
+            this.bodies[i].drawName(offCtx, this.camera, this.logMap);
         }
 
         this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
-        this.ctx.fillRect(0, 0, offCtx.canvas.width, offCtx.canvas.height);
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
         this.ctx.filter = 'blur(4px)';
         this.ctx.drawImage(offScreenCanvas, 0, 0);
@@ -405,10 +410,10 @@ class Game {
 
     calcShipDir() {
         let ship = this.bodiesMap.ship;
-        let focus = this.focusBody;
+        let parent = ship.parent;
 
-        let dvx = ship.vx - focus.vx;
-        let dvy = ship.vy - focus.vy;
+        let dvx = ship.vx - parent.vx;
+        let dvy = ship.vy - parent.vy;
 
         let a = Math.hypot(dvx, dvy);
 

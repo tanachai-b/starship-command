@@ -20,7 +20,9 @@ class Body {
 
         this.trail = [];
         this.trajectory = [];
-        this.trajPrecision = 1;
+
+        this.thrustvx = 0;
+        this.thrustvy = 0;
     }
 
     setVelCirc(body) {
@@ -38,14 +40,10 @@ class Body {
 
     calcGrav(bodies, precision, badPrecision, gravMap, logMap) {
 
-        // if(this.parent === null) {return;}
-
         this.ax = 0;
         this.ay = 0;
 
         for (let body of bodies) {
-
-            // if(body !== this.parent) { continue;}
 
             if (this === body) { continue; }
 
@@ -58,15 +56,12 @@ class Body {
             let dist2 = dx ** 2 + dy ** 2;
             let dist = dist2 ** (1 / 2);
 
-            let target_mass = body.radius ** 3;
-            let this_mass = this.radius ** 3;
+            let grav = body.radius ** 3 / dist2;
 
-            let grav = target_mass * this_mass / dist2;
+            let ax = grav * dx / dist;
+            let ay = grav * dy / dist;
 
-            let ax = grav / this_mass * dx / dist / precision;
-            let ay = grav / this_mass * dy / dist / precision;
-
-            if (Math.hypot(ax, ay) / dist > (1 / 60) && precision < 10000) {
+            if (Math.hypot(ax, ay) / precision / dist > (1 / 60) && precision < 10000) {
                 badPrecision.badPrecision = true;
                 break;
 
@@ -86,8 +81,8 @@ class Body {
     move(precision, isBadprecision) {
 
         // if (!isBadprecision) {
-        this.vx += this.ax;
-        this.vy += this.ay;
+        this.vx += this.ax / precision;
+        this.vy += this.ay / precision;
 
         this.x += this.vx / precision;
         this.y += this.vy / precision;
@@ -119,7 +114,6 @@ class Body {
         }
 
         this.parent = newParent;
-        this.trajPrecision = 1;
     }
 
     addTrail(logMap) {
@@ -170,8 +164,8 @@ class Body {
         let tax = 0;
         let tay = 0;
 
-        let tvx = this.vx - this.parent.vx;
-        let tvy = this.vy - this.parent.vy;
+        let tvx = this.vx - this.parent.vx + this.thrustvx;
+        let tvy = this.vy - this.parent.vy + this.thrustvy;
 
         let tx = this.x - this.parent.x;
         let ty = this.y - this.parent.y;
@@ -181,45 +175,46 @@ class Body {
 
         this.trajectory = [{ x: tx, y: ty }];
 
-        for (let time = 0; time < 360; time++) {
-
-            tax = 0;
-            tay = 0;
+        for (let time = 0; time < 360 + 180; time++) {
 
             let dx = 0 - tx;
             let dy = 0 - ty;
 
             let dist = Math.hypot(dx, dy);
-            let grav = this.parent.radius ** 3 / dist ** 2 * this.trajPrecision;
+            let grav = this.parent.radius ** 3 / dist ** 2;
 
-            tax += grav * dx / dist;
-            tay += grav * dy / dist;
+            tax = grav * dx / dist;
+            tay = grav * dy / dist;
 
-            tvx += tax;
-            tvy += tay;
+            let trajPrecision = dist / 60 / Math.hypot(tvx, tvy)
 
-            tx += tvx * this.trajPrecision;
-            ty += tvy * this.trajPrecision;
+            tvx += tax * trajPrecision;
+            tvy += tay * trajPrecision;
+
+            tx += tvx * trajPrecision;
+            ty += tvy * trajPrecision;
 
             this.trajectory.push({ x: tx, y: ty });
 
-            // check trajectory precision, too much, too less
-            let tv = Math.hypot(tvx, tvy) * this.trajPrecision;
-            if (tv > dist) { this.trajectory.pop(); break; }
+            // // check trajectory precision, too much, too less
+            // let tv = Math.hypot(tvx, tvy) * this.trajPrecision;
+            // // if (tv > dist) { this.trajectory.pop(); }
 
-            if (tv / dist < (1 / 60)) {
-                this.trajPrecision *= 10 ** (1 / 3);
+            // if (tv / dist < (1 / 60)) {
+            //     this.trajPrecision *= 10 ** (1 / 3);
 
-            } else if (tv / dist > (2 / 60)) {
-                this.trajPrecision /= 10 ** (1 / 3);
-            }
+            // } else if (tv / dist > (2 / 60)) {
+            //     this.trajPrecision /= 10 ** (1 / 3);
+            // }
 
-            this.trajPrecision = Math.max(this.trajPrecision, 0.0001);
-            this.trajPrecision = Math.min(this.trajPrecision, 10000);
+            // this.trajPrecision = Math.max(this.trajPrecision, 0.01);
+            // this.trajPrecision = Math.min(this.trajPrecision, 10000);
+
+            // this.trajPrecision *= 8 ** (1 / 360)
 
             // completed loop, break
             let dt = Math.hypot(tx - tx0, ty - ty0);
-            if (dt < dist / 60 * 2 && time > 180) { break; }
+            if (dt < dist / 60 * 5 && time > 180) { break; }
 
             // if (time >= 3) {
             //     let x1 = this.trajectory[0].x;
@@ -237,7 +232,6 @@ class Body {
             //     }
             // }
         }
-
     }
 
     drawTrail(ctx, camera, logMap) {
@@ -251,6 +245,29 @@ class Body {
 
             let nx = (this.trail[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
             let ny = (this.trail[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            if (i === 0) {
+                ctx.moveTo(nx, ny);
+            } else {
+                ctx.lineTo(nx, ny);
+            }
+        }
+        // ctx.strokeStyle = this.color;
+        ctx.strokeStyle = "red";
+        ctx.stroke();
+    }
+
+    drawTrajectory(ctx, camera, logMap) {
+
+        if (this.trajectory.lenght == 0) { return; }
+
+        let zoom = 2 ** (camera.zoom / 4);
+
+        ctx.beginPath();
+        for (let i = 0; i < this.trajectory.length; i++) {
+
+            let nx = (this.trajectory[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            let ny = (this.trajectory[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
 
             if (i === 0) {
                 ctx.moveTo(nx, ny);
@@ -306,27 +323,5 @@ class Body {
         ctx.font = "10px sans-serif";
         ctx.textBaseline = "middle";
         ctx.fillText(bodyName, nx + nr + 4, ny);
-    }
-
-    drawTrajectory(ctx, camera, logMap) {
-
-        if (this.trajectory.lenght == 0) { return; }
-
-        let zoom = 2 ** (camera.zoom / 4);
-
-        ctx.beginPath();
-        for (let i = 0; i < this.trajectory.length; i++) {
-
-            let nx = (this.trajectory[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            let ny = (this.trajectory[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
-
-            if (i === 0) {
-                ctx.moveTo(nx, ny);
-            } else {
-                ctx.lineTo(nx, ny);
-            }
-        }
-        ctx.strokeStyle = this.color;
-        ctx.stroke();
     }
 }
