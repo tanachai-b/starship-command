@@ -20,9 +20,9 @@ class Game {
 
         this.isPause = false;
         this.calcMulti = 1;
-        this.precision = 10000;
+        this.precision = 100;
 
-        this.camera = new Camera(17);
+        this.camera = new Camera(40);
         this.isFollowShip = false;
 
         this.camSolSys = [];
@@ -43,8 +43,6 @@ class Game {
         this.gravMap = {};
         let gravList = ['sun<-mercury', 'sun<-venus', 'sun<-moon', 'sun<-earth', 'sun<-mars', 'earth<-moon', 'sun<-jupiter', 'sun<-saturn', 'moon<-earth', 'sun<-uranus', 'sun<-neptune'];
         for (let grav of gravList) { this.gravMap[grav] = 1; }
-
-        this.gameLoopCount = 0;
     }
 
     initiate() {
@@ -150,7 +148,7 @@ class Game {
 
         // ========================
 
-        let ship = new Body("ship", "#00FFA3", 0.01, earth, 6378.10 + 100, -30);
+        let ship = new Body("ship", "#00FFA3", 0.01, earth, 6378.10 + 100000, -30);
         this.bodies.push(ship); this.bodiesMap.ship = ship;
         ship.setVelCirc(sun);
         ship.setVelCirc(earth);
@@ -164,17 +162,17 @@ class Game {
 
         while (true) {
 
-            // if (!this.isPause) {
-            for (let i = 0; i < this.calcMulti; i++) { this.moveBodies(); }
+            if (!this.isPause) {
+                for (let i = 0; i < this.calcMulti; i++) { this.moveBodies(); }
+            }
             this.calcTrajectory();
-            // }
 
             this.moveCamera();
             this.drawBodies();
             this.drawUI();
             this.log();
 
-            if (this.isPause) { return; }
+            // if (this.isPause) { return; }
             await timer(1);
         }
     }
@@ -267,12 +265,18 @@ class Game {
     drawUI() {
 
         let texts = [];
-        // texts.push("[F1] - [F4] : Simulation Precision");
+        texts.push("[F1] - [F4] : Simulation Precision");
         texts.push("[1] - [4] : Time Warp");
         texts.push("[Z], [Shift] + [Z] : Next, Previous Planet");
         texts.push("[X], [Shift] + [X] : Next, Previous Moon");
-        // texts.push("[C], [Shift] + [C] : Next, Previous Ship");
-        // texts.push("[F] : Toggle Focus on Ship");
+        texts.push("[C], [Shift] + [C] : Next, Previous Ship");
+        texts.push("[F] : Toggle Focus on Ship");
+        texts.push("");
+        texts.push("Calculation Multiplier: " + this.calcMulti);
+        texts.push("Simulation Precision: " + this.precision);
+        texts.push("Zoom Level: " + this.camera.zoom);
+        texts.push("");
+        texts.push("Trajectory: " + this.focusBody.name.charAt(0).toUpperCase() + this.focusBody.name.slice(1));
 
         this.ctx.fillStyle = "rgba(0,0,0,0.5)";
         this.ctx.fillRect(0, 0, 200, texts.length * 16 + 12);
@@ -289,15 +293,8 @@ class Game {
     }
 
     log() {
-        let logStr = "";
-        logStr += "focusBody: " + this.focusBody.name + "<br>";
-        logStr += "calcMulti: " + this.calcMulti + "<br>";
-        logStr += "precision: " + this.precision + "<br>";
-        logStr += "zoom: " + this.camera.zoom + "<br>";
 
-        logStr += "<br>";
-
-        logStr += "log items: " + Object.keys(this.logMap).length + "<br>";
+        let logStr = "log items: " + Object.keys(this.logMap).length + "<br>";
 
         for (let key in this.logMap) {
             logStr += key + ": " + this.logMap[key] + "<br>";
@@ -346,7 +343,7 @@ class Game {
 
     togglePause() {
         this.isPause = !this.isPause;
-        this.gameLoop();
+        // this.gameLoop();
     }
 
     toggleFollowShip() {

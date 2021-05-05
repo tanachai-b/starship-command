@@ -153,8 +153,6 @@ class Body {
         if (this.trail.length > 720) {
             this.trail.splice(0, this.trail.length - 720);
         }
-
-        // logMap[this.name] = this.trailLine.length;
     }
 
     calcTrajectory(logMap) {
