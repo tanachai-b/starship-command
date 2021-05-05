@@ -2,11 +2,14 @@
 
 class Body {
 
-    constructor(name, color = "#888888", radius, parent, distance, angle) {
+    constructor(name, color = "#888888", radius, density, parent, distance, angle) {
 
         this.name = name;
         this.color = color;
         this.radius = radius;
+
+        this.density = density;
+        this.mass = density * radius ** 3;
 
         this.parent = parent;
 
@@ -32,7 +35,7 @@ class Body {
         let dist2 = dx ** 2 + dy ** 2;
         let dist = dist2 ** (1 / 2);
 
-        let target_mass = body.radius ** 3;
+        let target_mass = body.mass
 
         this.vx += (target_mass / dist) ** 0.5 * dy / dist;
         this.vy += (target_mass / dist) ** 0.5 * -dx / dist;
@@ -56,7 +59,7 @@ class Body {
             let dist2 = dx ** 2 + dy ** 2;
             let dist = dist2 ** (1 / 2);
 
-            let grav = body.radius ** 3 / dist2;
+            let grav = body.mass / dist2;
 
             let ax = grav * dx / dist;
             let ay = grav * dy / dist;
@@ -179,7 +182,7 @@ class Body {
             let dy = 0 - ty;
 
             let dist = Math.hypot(dx, dy);
-            let grav = this.parent.radius ** 3 / dist ** 2;
+            let grav = this.parent.mass / dist ** 2;
 
             tax = grav * dx / dist;
             tay = grav * dy / dist;

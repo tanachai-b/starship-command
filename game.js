@@ -52,81 +52,81 @@ class Game {
 
         // // ========================
 
-        let sun = new Body("sun", "#FFF200", 696340, null, 0, 0);
+        let sun = new Body("sun", "#FFF200", 696340, 1.409, null, 0, 0);
         this.bodies.push(sun); this.bodiesMap.sun = sun;
 
         // // ========================
 
-        let mercury = new Body("mercury", "#B0B0B0", 2439.64, sun, 57909175, -90);
+        let mercury = new Body("mercury", "#B0B0B0", 2439.64, 5.43, sun, 57909175, -90);
         this.bodies.push(mercury); this.bodiesMap.mercury = mercury;
         mercury.setVelCirc(sun);
 
-        let venus = new Body("venus", "#FFECA0", 6051.59, sun, 108208930, 190);
+        let venus = new Body("venus", "#FFECA0", 6051.59, 5.24, sun, 108208930, 190);
         this.bodies.push(venus); this.bodiesMap.venus = venus;
         venus.setVelCirc(sun);
 
-        let earth = new Body("earth", "#006AFF", 6378.10, sun, 149597890, 10);
+        let earth = new Body("earth", "#006AFF", 6378.10, 5.52, sun, 149597890, 10);
         this.bodies.push(earth); this.bodiesMap.earth = earth;
         earth.setVelCirc(sun);
 
-        let mars = new Body("mars", "#C74E33", 3397.00, sun, 227936640, 80);
+        let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 80);
         this.bodies.push(mars); this.bodiesMap.mars = mars;
         mars.setVelCirc(sun);
 
-        let jupiter = new Body("jupiter", "#A6662B", 71492.68, sun, 778412010, -45);
+        let jupiter = new Body("jupiter", "#A6662B", 71492.68, 1.33, sun, 778412010, -45);
         this.bodies.push(jupiter); this.bodiesMap.jupiter = jupiter;
         jupiter.setVelCirc(sun);
 
-        let saturn = new Body("saturn", "#FFE4A6", 60267.14, sun, 1426725400, 200);
+        let saturn = new Body("saturn", "#FFE4A6", 60267.14, 0.7, sun, 1426725400, 200);
         this.bodies.push(saturn); this.bodiesMap.saturn = saturn;
         saturn.setVelCirc(sun);
 
-        let uranus = new Body("uranus", "#80FFE8", 25557.25, sun, 2870972200, 135);
+        let uranus = new Body("uranus", "#80FFE8", 25557.25, 1.3, sun, 2870972200, 135);
         this.bodies.push(uranus); this.bodiesMap.uranus = uranus;
         uranus.setVelCirc(sun);
 
-        let neptune = new Body("neptune", "#2B7CFF", 24766.36, sun, 4498252900, 30);
+        let neptune = new Body("neptune", "#2B7CFF", 24766.36, 1.76, sun, 4498252900, 30);
         this.bodies.push(neptune); this.bodiesMap.neptune = neptune;
         neptune.setVelCirc(sun);
 
         // ========================
 
-        let moon = new Body("moon", "#B5B0A3", 1737.1, earth, 384399, -135);
+        let moon = new Body("moon", "#B5B0A3", 1737.1, 3.3464, earth, 384399, -135);
         this.bodies.push(moon); this.bodiesMap.moon = moon;
         moon.setVelCirc(sun);
         moon.setVelCirc(earth);
 
-        let phobos = new Body("phobos", "#B5B0A3", 11.1, mars, 9377, 45);
+        let phobos = new Body("phobos", "#B5B0A3", 11.1, 1.876, mars, 9377, 45);
         this.bodies.push(phobos); this.bodiesMap.phobos = phobos;
         phobos.setVelCirc(sun);
         phobos.setVelCirc(mars);
 
-        let deimos = new Body("deimos", "#B5B0A3", 6.3, mars, 23460, -135);
+        let deimos = new Body("deimos", "#B5B0A3", 6.3, 1.471, mars, 23460, -135);
         this.bodies.push(deimos); this.bodiesMap.deimos = deimos;
         deimos.setVelCirc(sun);
         deimos.setVelCirc(mars);
 
-        let io = new Body("io", "#B5B0A3", 1815, jupiter, 421600, 15);
+        let io = new Body("io", "#B5B0A3", 1815, 3.528, jupiter, 421600, 15);
         this.bodies.push(io); this.bodiesMap.io = io;
         io.setVelCirc(sun);
         io.setVelCirc(jupiter);
 
-        let europa = new Body("europa", "#B5B0A3", 1569, jupiter, 670900, 105);
+        let europa = new Body("europa", "#B5B0A3", 1569, 3.01, jupiter, 670900, 105);
         this.bodies.push(europa); this.bodiesMap.europa = europa;
         europa.setVelCirc(sun);
         europa.setVelCirc(jupiter);
 
-        let ganymede = new Body("ganymede", "#B5B0A3", 2634.1, jupiter, 1070400, 80);
+        let ganymede = new Body("ganymede", "#B5B0A3", 2634.1, 1.936, jupiter, 1070400, 80);
         this.bodies.push(ganymede); this.bodiesMap.ganymede = ganymede;
         ganymede.setVelCirc(sun);
         ganymede.setVelCirc(jupiter);
 
-        let callisto = new Body("callisto", "#B5B0A3", 2410.3, jupiter, 1882700, -160);
+        let callisto = new Body("callisto", "#B5B0A3", 2410.3, 1.83, jupiter, 1882700, -160);
         this.bodies.push(callisto); this.bodiesMap.callisto = callisto;
         callisto.setVelCirc(sun);
         callisto.setVelCirc(jupiter);
 
-        let titan = new Body("titan", "#B5B0A3", 2576, saturn, 1221870, -80);
+        let titan = new Body("titan", "#B5B0A3", 2576, 1.88, saturn, 1221870, -80);
         this.bodies.push(titan); this.bodiesMap.titan = titan;
         titan.setVelCirc(sun);
         titan.setVelCirc(saturn);
@@ -148,7 +148,7 @@ class Game {
 
         // ========================
 
-        let ship = new Body("ship", "#00FFA3", 0.01, earth, 6378.10 + 100000, -30);
+        let ship = new Body("ship", "#00FFA3", 0.01, 0.5, earth, 6378.10 + 100000, -30);
         this.bodies.push(ship); this.bodiesMap.ship = ship;
         ship.setVelCirc(sun);
         ship.setVelCirc(earth);
