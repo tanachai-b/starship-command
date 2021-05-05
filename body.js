@@ -16,6 +16,9 @@ class Body {
         this.x = ((parent === null) ? 0 : parent.x) + distance * Math.cos(-angle / 180 * Math.PI);
         this.y = ((parent === null) ? 0 : parent.y) + distance * Math.sin(-angle / 180 * Math.PI);
 
+        this.lastx;
+        this.lasty;
+
         this.vx = 0;
         this.vy = 0;
         this.ax = 0;
@@ -26,6 +29,12 @@ class Body {
 
         this.thrustvx = 0;
         this.thrustvy = 0;
+
+        if (parent !== null) {
+            this.vx = parent.vx;
+            this.vy = parent.vy;
+            this.setVelCirc(parent);
+        }
     }
 
     setVelCirc(body) {
@@ -41,14 +50,20 @@ class Body {
         this.vy += (target_mass / dist) ** 0.5 * -dx / dist;
     }
 
-    calcGrav(bodies, precision, badPrecision, gravMap, logMap) {
+    calcGrav(bodies, precision, badPrecBodies, gravMap, logMap) {
 
         this.ax = 0;
         this.ay = 0;
 
-        for (let body of bodies) {
+        if (this.parent !== null && badPrecBodies[this.parent.name] === 1) {
+            badPrecBodies[this.name] = 1;
+            return;
+        }
 
+        for (let body of bodies) {
             if (this === body) { continue; }
+
+            if (badPrecBodies[body.name] === 1) { continue; }
 
             let gravName = body.name + "<-" + this.name;
             // if (this.name != "ship" && gravMap[gravName] === null) { continue; }
@@ -64,40 +79,49 @@ class Body {
             let ax = grav * dx / dist;
             let ay = grav * dy / dist;
 
-            if (Math.hypot(ax, ay) / precision / dist > (1 / 60) && precision < 10000) {
-                badPrecision.badPrecision = true;
-                break;
+            // check precision good / bad
+            let goodPrecision = dist / 60 / Math.hypot(this.vx - body.vx, this.vy - body.vy);
 
-                // //way2:
-                // this.ax -= this.vx - this.parent.vx;
-                // this.ay -= this.vy - this.parent.vy;
-                // continue;
+            if (precision > goodPrecision * 10 ** (1 / 3) && this.parent !== null && body === this.parent) {
+
+                // logMap[body.name + "<-" + this.name] = goodPrecision;
+
+                this.ax = 0;
+                this.ay = 0;
+
+                badPrecBodies[this.name] = 1;
+                break;
             }
 
             this.ax += ax;
             this.ay += ay;
-
-            // logMap[gravName] = Math.round(Math.hypot(ax * precision, ay * precision) * 1000000)
         }
     }
 
-    move(precision, isBadprecision) {
+    move(precision, badPrecBodies) {
 
-        // if (!isBadprecision) {
-        this.vx += this.ax / precision;
-        this.vy += this.ay / precision;
+        if (badPrecBodies[this.name] === 1) {
 
-        this.x += this.vx / precision;
-        this.y += this.vy / precision;
+            this.vx += this.parent.ax * precision;
+            this.vy += this.parent.ay * precision;
 
-        // } else {
+            this.lastx = this.x;
+            this.lasty = this.y;
 
-        //     this.vx += this.parent.ax;
-        //     this.vy+= this.parent.ay;
+            this.x += this.parent.x - this.parent.lastx;
+            this.y += this.parent.y - this.parent.lasty;
 
-        //     this.x += this.parent.vx / precision;
-        //     this.y += this.parent.vy / precision;
-        // }
+        } else {
+
+            this.vx += this.ax * precision;
+            this.vy += this.ay * precision;
+
+            this.lastx = this.x;
+            this.lasty = this.y;
+
+            this.x += this.vx * precision;
+            this.y += this.vy * precision;
+        }
     }
 
     switchParent(newParent) {
