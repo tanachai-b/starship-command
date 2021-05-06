@@ -22,7 +22,7 @@ class Game {
         this.speed = -12;
         this.calcMulti = 1;
 
-        this.zoom = -40;
+        this.zoom = 33;
         this.camera = new Camera();
         this.isFollowSelf = true;
         this.cameraMove = 128;
@@ -31,7 +31,7 @@ class Game {
         this.camMoons = {};
 
         this.camSolSysIndex = 3;
-        this.camMoonIndex = 2;
+        this.camMoonIndex = 0;
 
         this.focus;
         this.camPosition;
@@ -47,8 +47,6 @@ class Game {
         this.pressedKeys = {};
 
         this.badPrecBodies = {};
-
-        this.engine = "RCS";
     }
 
     initiate() {
@@ -149,7 +147,6 @@ class Game {
         let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 100.1, -30.001);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
-        starship.parent = station1;
     }
 
     async gameLoop() {
@@ -204,17 +201,25 @@ class Game {
 
     moveShip() {
 
-        let thrust = 10;
-
         let ship = this.controlShip;
         if (ship === undefined) { return; }
 
         let direction = this.calcShipDirection(ship);
 
-        if (this.pressedKeys.W) { this.accelerate(ship, direction, thrust); }
-        if (this.pressedKeys.S) { this.decelerate(ship, direction, thrust); }
-        if (this.pressedKeys.A) { this.moveLeft(ship, direction, thrust); }
-        if (this.pressedKeys.D) { this.moveRight(ship, direction, thrust); }
+        let power = 10;
+
+        if (!this.pressedKeys.Shift) {
+            if (this.pressedKeys.W) { this.accelerate(ship, direction, power); }
+            if (this.pressedKeys.S) { this.decelerate(ship, direction, power); }
+            if (this.pressedKeys.A) { this.moveLeft(ship, direction, power); }
+            if (this.pressedKeys.D) { this.moveRight(ship, direction, power); }
+
+        } else if (this.pressedKeys.Shift) {
+            if (this.pressedKeys.W) { this.accelerate(ship, direction, power / 10); }
+            if (this.pressedKeys.S) { this.decelerate(ship, direction, power / 10); }
+            if (this.pressedKeys.A) { this.moveLeft(ship, direction, power / 10); }
+            if (this.pressedKeys.D) { this.moveRight(ship, direction, power / 10); }
+        }
     }
 
     calcShipDirection(ship) {
@@ -258,6 +263,8 @@ class Game {
                 this.focus = this.camSolSys[this.camSolSysIndex];
             }
         }
+
+        this.controlShip.switchParent(this.focus);
 
         if (this.camPosition === undefined) {
             if (this.isFollowSelf) {
@@ -383,8 +390,6 @@ class Game {
         texts.push("");
         texts.push("Trajectory Relative To : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
         texts.push("");
-        texts.push("Engine: " + this.engine);
-        texts.push("");
         texts.push(this.isPause ? "[PAUSE]" : "");
 
         offCtx.textBaseline = "top";
@@ -427,7 +432,7 @@ class Game {
     }
 
     keydown(event) {
-        console.log(event)
+        // console.log(event)
         let mod = event.ctrlKey * 4 + event.shiftKey * 2 + event.altKey * 1;
         switch (mod + "_" + event.code) {
 
@@ -454,13 +459,21 @@ class Game {
             case "0_KeyA": event.preventDefault(); this.pressedKeys.A = 1; break;
             case "0_KeyD": event.preventDefault(); this.pressedKeys.D = 1; break;
 
+            case "2_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
+            case "2_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
+            case "2_KeyA": event.preventDefault(); this.pressedKeys.A = 1; break;
+            case "2_KeyD": event.preventDefault(); this.pressedKeys.D = 1; break;
+
+            case "2_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 1; break;
+
             case "0_KeyQ": event.preventDefault(); this.switchEngine(); break;
         }
+        // console.log(this.pressedKeys)
     }
 
     keyup(event) {
-
         let mod = event.ctrlKey * 4 + event.shiftKey * 2 + event.altKey * 1;
+        // console.log(mod + "_" + event.code)
         switch (mod + "_" + event.code) {
 
             case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 0; break;
@@ -470,7 +483,15 @@ class Game {
             case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 0; break;
             case "0_KeyA": event.preventDefault(); this.pressedKeys.A = 0; break;
             case "0_KeyD": event.preventDefault(); this.pressedKeys.D = 0; break;
+
+            case "2_KeyW": event.preventDefault(); this.pressedKeys.W = 0; break;
+            case "2_KeyS": event.preventDefault(); this.pressedKeys.S = 0; break;
+            case "2_KeyA": event.preventDefault(); this.pressedKeys.A = 0; break;
+            case "2_KeyD": event.preventDefault(); this.pressedKeys.D = 0; break;
+
+            case "0_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 0; break;
         }
+        // console.log(this.pressedKeys)
     }
 
     togglePause() {
@@ -490,12 +511,14 @@ class Game {
         this.camSolSysIndex += direction;
         this.camSolSysIndex = (this.camSolSysIndex + this.camSolSys.length) % this.camSolSys.length;
         this.focus = this.camSolSys[this.camSolSysIndex];
+
+        this.controlShip.switchParent(this.focus);
+        this.isFollowSelf = false;
+
         this.camPosition = this.focus;
         this.cameraMove = 0;
 
         this.camMoonIndex = 0;
-        this.controlShip.switchParent(this.focus);
-        this.isFollowSelf = false;
     }
 
     cycleMoon(direction) {
@@ -506,11 +529,12 @@ class Game {
         this.camMoonIndex += direction;
         this.camMoonIndex = (this.camMoonIndex + moons.length) % moons.length;
         this.focus = moons[this.camMoonIndex];
-        this.camPosition = this.focus;
-        this.cameraMove = 0;
 
         this.controlShip.switchParent(this.focus);
         this.isFollowSelf = false;
+
+        this.camPosition = this.focus;
+        this.cameraMove = 0;
     }
 
     toggleFollowSelf() {
@@ -528,13 +552,5 @@ class Game {
 
     takeControl() {
 
-    }
-
-    switchEngine() {
-        if (this.engine === "RCS") {
-            this.engine = "Main"
-        } else {
-            this.engine = "RCS";
-        }
     }
 }
