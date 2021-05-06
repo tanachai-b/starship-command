@@ -27,8 +27,10 @@ class Body {
         this.trail = [];
         this.trajectory = [];
 
-        this.thrustvx = 0;
-        this.thrustvy = 0;
+        this.plan = [];
+        this.planTarget = [];
+        this.planClosest;
+        this.targetClosest;
 
         if (parent !== null) {
             this.vx = parent.vx;
@@ -190,8 +192,8 @@ class Body {
         let tax = 0;
         let tay = 0;
 
-        let tvx = this.vx - this.parent.vx + this.thrustvx;
-        let tvy = this.vy - this.parent.vy + this.thrustvy;
+        let tvx = this.vx - this.parent.vx;
+        let tvy = this.vy - this.parent.vy;
 
         let tx = this.x - this.parent.x;
         let ty = this.y - this.parent.y;
@@ -222,41 +224,177 @@ class Body {
 
             this.trajectory.push({ x: tx, y: ty });
 
-            // // check trajectory precision, too much, too less
-            // let tv = Math.hypot(tvx, tvy) * this.trajPrecision;
-            // // if (tv > dist) { this.trajectory.pop(); }
-
-            // if (tv / dist < (1 / 60)) {
-            //     this.trajPrecision *= 10 ** (1 / 3);
-
-            // } else if (tv / dist > (2 / 60)) {
-            //     this.trajPrecision /= 10 ** (1 / 3);
-            // }
-
-            // this.trajPrecision = Math.max(this.trajPrecision, 0.01);
-            // this.trajPrecision = Math.min(this.trajPrecision, 10000);
-
-            // this.trajPrecision *= 8 ** (1 / 360)
-
             // completed loop, break
             let dt = Math.hypot(tx - tx0, ty - ty0);
             if (dt < dist / 60 * 5 && time > 180) { break; }
+        }
+    }
 
-            // if (time >= 3) {
-            //     let x1 = this.trajectory[0].x;
-            //     let y1 = this.trajectory[0].y;
-            //     let x2 = this.trajectory[Math.round(this.trajectory.length / 2)].x - x1;
-            //     let y2 = this.trajectory[Math.round(this.trajectory.length / 2)].y - y1;
-            //     let x3 = tx - x1;
-            //     let y3 = ty - y1;
-            //     let sign1 = Math.sign(x1 * y2 - x2 * y1);
-            //     let sign2 = Math.sign(x1 * y3 - x3 * y1);
+    calcPlan(prograde, radialIn, target, logMap) {
 
-            //     if (sign1 === sign2) {
-            //         logMap[this.name + " " + time] = Math.round((x1 * y2 - x2 * y1) / 1000000) + " " + Math.round((x1 * y3 - x3 * y1) / 1000000);
-            //         break;
-            //     }
-            // }
+        if (this.parent === null
+            || target === undefined
+            || (prograde === 0 && radialIn === 0)
+        ) {
+            this.plan = [];
+            this.planTarget = [];
+            this.planClosest = undefined;
+            this.targetClosest = undefined;
+            return;
+        }
+
+        if (target.name === this.parent.name) {
+            this.plan = [];
+            this.planTarget = [];
+            this.planClosest = undefined;
+            this.targetClosest = undefined;
+            this.calcPlanAlone(prograde, radialIn, logMap);
+            return;
+        }
+
+        // ship compared to parent
+        let px = this.x - this.parent.x;
+        let py = this.y - this.parent.y;
+
+        this.plan = [{ x: px, y: py }];
+
+        let pvx = this.vx - this.parent.vx;
+        let pvy = this.vy - this.parent.vy;
+
+        // add planned velocity (prograde, radialIn)
+        let dist = Math.hypot(pvx, pvy);
+        let direction = { x: pvx / dist, y: pvy / dist };
+
+        pvx += direction.x * prograde;
+        pvy += direction.y * prograde;
+
+        pvx += direction.y * radialIn;
+        pvy += -direction.x * radialIn;
+
+        // target compared to parent
+        let tx = target.x - this.parent.x;
+        let ty = target.y - this.parent.y;
+
+        this.planTarget = [{ x: tx, y: ty }];
+
+        let tvx = target.vx - this.parent.vx;
+        let tvy = target.vy - this.parent.vy;
+
+        // prep find closest points
+        let closestDist;
+
+        for (let time = 0; time < 360 + 180; time++) {
+
+            // parent <- ship
+            let dist = Math.hypot(-px, -py);
+            let grav = this.parent.mass / dist ** 2;
+
+            let pax = grav * -px / dist;
+            let pay = grav * -py / dist;
+
+            // parent <- target
+            let dist2 = Math.hypot(-tx, -ty);
+            let grav2 = this.parent.mass / dist2 ** 2;
+
+            let tax = grav2 * -tx / dist2;
+            let tay = grav2 * -ty / dist2;
+
+            // ship -> target
+            let dx = tx - px;
+            let dy = ty - py;
+            let dist3 = Math.hypot(tx - px, ty - py);
+
+            let grav3 = target.mass / dist3 ** 2;
+
+            pax += grav3 * dx / dist3;
+            pax += grav3 * dy / dist3;
+
+            // ship <- target
+            let grav4 = this.mass / dist3 ** 2;
+
+            pax -= grav4 * dx / dist3;
+            pax -= grav4 * dy / dist3;
+
+            // find closest approach
+            if (closestDist === undefined) {
+                closestDist = dist3;
+            } else if (dist3 < closestDist) {
+                closestDist = dist3;
+                this.planClosest = { x: px, y: py };
+                this.targetClosest = { x: tx, y: ty };
+            }
+
+            // move ship
+            let planPrecision = dist / 60 / Math.hypot(pvx, pvy);
+
+            pvx += pax * planPrecision;
+            pvy += pay * planPrecision;
+
+            px += pvx * planPrecision;
+            py += pvy * planPrecision;
+
+            this.plan.push({ x: px, y: py });
+
+            // move target
+            tvx += tax * planPrecision;
+            tvy += tay * planPrecision;
+
+            tx += tvx * planPrecision;
+            ty += tvy * planPrecision;
+
+            this.planTarget.push({ x: tx, y: ty });
+
+            // completed loop, break
+            let dt = Math.hypot(px - this.plan[0].x, py - this.plan[0].y);
+            if (dt < dist / 60 * 5 && time > 180) { break; }
+        }
+    }
+
+
+    calcPlanAlone(prograde, radialIn, target, logMap) {
+
+        // ship compared to parent
+        let px = this.x - this.parent.x;
+        let py = this.y - this.parent.y;
+
+        this.plan = [{ x: px, y: py }];
+
+        let pvx = this.vx - this.parent.vx;
+        let pvy = this.vy - this.parent.vy;
+
+        // add planned velocity (prograde, radialIn)
+        let dist = Math.hypot(pvx, pvy);
+        let direction = { x: pvx / dist, y: pvy / dist };
+
+        pvx += direction.x * prograde;
+        pvy += direction.y * prograde;
+
+        pvx += direction.y * radialIn;
+        pvy += -direction.x * radialIn;
+
+        for (let time = 0; time < 360 + 180; time++) {
+
+            // parent <- ship
+            let dist = Math.hypot(-px, -py);
+            let grav = this.parent.mass / dist ** 2;
+
+            let pax = grav * -px / dist;
+            let pay = grav * -py / dist;
+
+            // move ship
+            let planPrecision = dist / 60 / Math.hypot(pvx, pvy);
+
+            pvx += pax * planPrecision;
+            pvy += pay * planPrecision;
+
+            px += pvx * planPrecision;
+            py += pvy * planPrecision;
+
+            this.plan.push({ x: px, y: py });
+
+            // completed loop, break
+            let dt = Math.hypot(px - this.plan[0].x, py - this.plan[0].y);
+            if (dt < dist / 60 * 5 && time > 180) { break; }
         }
     }
 
@@ -285,7 +423,7 @@ class Body {
 
     drawTrajectory(ctx, camera, logMap) {
 
-        if (this.trajectory.lenght == 0) { return; }
+        if (this.trajectory.length == 0) { return; }
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -305,7 +443,76 @@ class Body {
         ctx.stroke();
     }
 
-    drawBody(ctx, camera, logMap, focus) {
+    drawPlan(ctx, camera, logMap) {
+
+        if (this.plan.length == 0) { return; }
+
+        let zoom = 2 ** (camera.zoom / 4);
+
+        ctx.beginPath();
+        for (let i = 0; i < this.plan.length; i++) {
+
+            let nx = (this.plan[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            let ny = (this.plan[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            if (i === 0) {
+                ctx.moveTo(nx, ny);
+            } else {
+                ctx.lineTo(nx, ny);
+            }
+        }
+        ctx.strokeStyle = "#FF307C";
+        ctx.stroke();
+
+
+        if (this.planClosest != undefined) {
+
+            let nx = (this.planClosest.x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            let ny = (this.planClosest.y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            ctx.beginPath();
+            ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+
+            ctx.strokeStyle = "#FF307C";
+            ctx.stroke();
+        }
+    }
+
+    drawPlanTarget(ctx, camera, logMap) {
+
+        if (this.planTarget.length == 0) { return; }
+
+        let zoom = 2 ** (camera.zoom / 4);
+
+        ctx.beginPath();
+        for (let i = 0; i < this.planTarget.length; i++) {
+
+            let nx = (this.planTarget[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            let ny = (this.planTarget[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            if (i === 0) {
+                ctx.moveTo(nx, ny);
+            } else {
+                ctx.lineTo(nx, ny);
+            }
+        }
+        ctx.strokeStyle = "#FFEE00";
+        ctx.stroke();
+
+        if (this.targetClosest != undefined) {
+
+            let nx = (this.targetClosest.x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            let ny = (this.targetClosest.y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            ctx.beginPath();
+            ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+
+            ctx.strokeStyle = "#FFEE00";
+            ctx.stroke();
+        }
+    }
+
+    drawBody(ctx, camera, focus, target, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -323,8 +530,26 @@ class Body {
         ctx.fill();
 
         if (focus.name === this.name) {
-            ctx.strokeStyle = this.color;
+            ctx.strokeStyle = "#FF307C";
             let size = 16;
+            ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
+        }
+
+        if (target.name === this.name) {
+
+            // let size = 10;
+
+            // ctx.beginPath();
+            // ctx.moveTo(nx, -size + ny);
+            // ctx.lineTo(size + nx, ny);
+            // ctx.lineTo(nx, size + ny);
+            // ctx.lineTo(-size + nx, ny);
+            // ctx.lineTo(nx, -size + ny);
+
+            // ctx.stroke();
+
+            ctx.strokeStyle = "#FFEE00";
+            let size = 12;
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
         }
     }
