@@ -27,7 +27,7 @@ class Game {
 
         this.zoom = 18;
         this.camera = new Camera();
-        this.isFollowSelf = true;
+        this.isFollowSelf = false;
 
         this.camSolSys = [];
         this.camMoons = {};
@@ -49,7 +49,7 @@ class Game {
 
         this.mode = "Pilot";
         this.engine = "Thruster";
-        this.fuel = 20000;
+        this.fuel = 50000;
 
         this.enableBlurEffect = true;
 
@@ -84,6 +84,9 @@ class Game {
         let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 60);
         this.bodies.push(mars); this.bodiesMap.mars = mars;
 
+        let ceres = new Body("ceres", "#B0B0B0", 473, 2.16, sun, 413700000, 170);
+        this.bodies.push(ceres); this.bodiesMap.ceres = ceres;
+
         let jupiter = new Body("jupiter", "#A6662B", 71492.68, 1.33, sun, 778412010, -45);
         this.bodies.push(jupiter); this.bodiesMap.jupiter = jupiter;
 
@@ -95,6 +98,9 @@ class Game {
 
         let neptune = new Body("neptune", "#2B7CFF", 24766.36, 1.76, sun, 4498252900, 30);
         this.bodies.push(neptune); this.bodiesMap.neptune = neptune;
+
+        let pluto = new Body("pluto", "#B0B0B0", 1187, 1.87, sun, 5906380000, -100);
+        this.bodies.push(pluto); this.bodiesMap.pluto = pluto;
 
         // ========================
 
@@ -121,6 +127,12 @@ class Game {
 
         let titan = new Body("titan", "#B5B0A3", 2576, 1.88, saturn, 1221870, -80);
         this.bodies.push(titan); this.bodiesMap.titan = titan;
+
+        let triton = new Body("triton", "#B0B0B0", 1353.4, 2.061, neptune, 354759, -170);
+        this.bodies.push(triton); this.bodiesMap.triton = triton;
+
+        let charon = new Body("charon", "#B0B0B0", 603.5, 1.65, pluto, 17536, -100);
+        this.bodies.push(charon); this.bodiesMap.charon = charon;
 
         // ========================
 
@@ -361,7 +373,7 @@ class Game {
         if (this.pressedKeys.K) { this.zoom += 1 / 4; }
 
         this.zoom = Math.max(this.zoom, -64);
-        this.zoom = Math.min(this.zoom, 94);
+        this.zoom = Math.min(this.zoom, 96);
 
         this.camera.zoom += (this.zoom - this.camera.zoom) / 8;
     }
