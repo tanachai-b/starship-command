@@ -81,6 +81,7 @@ class Body {
 
             // check precision good / bad
             let goodPrecision = dist / 60 / Math.hypot(this.vx - body.vx, this.vy - body.vy);
+            goodPrecision = Math.max(goodPrecision, 10 ** (-12 / 3));
 
             if (precision > goodPrecision * 10 ** (1 / 3) && this.parent !== null && body === this.parent) {
 
@@ -211,7 +212,7 @@ class Body {
             tax = grav * dx / dist;
             tay = grav * dy / dist;
 
-            let trajPrecision = dist / 60 / Math.hypot(tvx, tvy)
+            let trajPrecision = dist / 60 / Math.hypot(tvx, tvy);
 
             tvx += tax * trajPrecision;
             tvy += tay * trajPrecision;
