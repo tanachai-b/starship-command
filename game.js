@@ -25,7 +25,7 @@ class Game {
         this.isPause = false;
         this.speed = -12;
 
-        this.zoom = -46;
+        this.zoom = 18;
         this.camera = new Camera();
         this.isFollowSelf = true;
 
@@ -34,7 +34,7 @@ class Game {
 
         this.camSolSysIndex = 3;
         this.camMoonIndex = 0;
-        this.camTargetIndex = 3;
+        this.camTargetIndex = 0;
 
         this.focus;
         this.camPosition;
@@ -48,11 +48,12 @@ class Game {
         this.badPrecBodies = {};
 
         this.mode = "Pilot";
-        this.engine = "RCS";
-
-        this.logMap = {};
+        this.engine = "Thruster";
+        this.fuel = 20000;
 
         this.enableBlurEffect = true;
+
+        this.logMap = {};
     }
 
     initiate() {
@@ -138,19 +139,19 @@ class Game {
 
         // ========================
 
-        let station1 = new Body("station1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 100, -30);
-        this.bodies.push(station1); this.bodiesMap.station1 = station1;
-        this.camMoons.earth.push(station1);
+        // let station1 = new Body("station1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 100, -30);
+        // this.bodies.push(station1); this.bodiesMap.station1 = station1;
+        // this.camMoons.earth.push(station1);
 
-        let station2 = new Body("station2", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
-        this.bodies.push(station2); this.bodiesMap.station2 = station2;
-        this.camMoons.earth.push(station2);
+        // let station2 = new Body("station2", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
+        // this.bodies.push(station2); this.bodiesMap.station2 = station2;
+        // this.camMoons.earth.push(station2);
 
-        let station3 = new Body("station3", "#349FC9", 0.02, 0.5, earth, 6378.10 + 100000, 190);
-        this.bodies.push(station3); this.bodiesMap.station3 = station3;
-        this.camMoons.earth.push(station3);
+        // let station3 = new Body("station3", "#349FC9", 0.02, 0.5, earth, 6378.10 + 100000, 190);
+        // this.bodies.push(station3); this.bodiesMap.station3 = station3;
+        // this.camMoons.earth.push(station3);
 
-        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 100.05, -30.0005);
+        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 1000, 95);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
     }
@@ -229,21 +230,24 @@ class Game {
 
     rcs() {
         if (this.controlShip === undefined) { return; }
+        if (this.fuel === 0) { return; }
 
         let power = 0.1;
 
         if (!this.pressedKeys.Shift) {
-            if (this.pressedKeys.W) { this.controlShip.vy -= power; }
-            if (this.pressedKeys.S) { this.controlShip.vy += power; }
-            if (this.pressedKeys.A) { this.controlShip.vx -= power; }
-            if (this.pressedKeys.D) { this.controlShip.vx += power; }
+            if (this.pressedKeys.W) { this.controlShip.vy -= power; this.fuel -= power }
+            if (this.pressedKeys.S) { this.controlShip.vy += power; this.fuel -= power }
+            if (this.pressedKeys.A) { this.controlShip.vx -= power; this.fuel -= power }
+            if (this.pressedKeys.D) { this.controlShip.vx += power; this.fuel -= power }
 
         } else if (this.pressedKeys.Shift) {
-            if (this.pressedKeys.W) { this.controlShip.vy -= power / 10; }
-            if (this.pressedKeys.S) { this.controlShip.vy += power / 10; }
-            if (this.pressedKeys.A) { this.controlShip.vx -= power / 10; }
-            if (this.pressedKeys.D) { this.controlShip.vx += power / 10; }
+            if (this.pressedKeys.W) { this.controlShip.vy -= power / 10; this.fuel -= power / 10 }
+            if (this.pressedKeys.S) { this.controlShip.vy += power / 10; this.fuel -= power / 10 }
+            if (this.pressedKeys.A) { this.controlShip.vx -= power / 10; this.fuel -= power / 10 }
+            if (this.pressedKeys.D) { this.controlShip.vx += power / 10; this.fuel -= power / 10 }
         }
+
+        this.fuel = Math.max(this.fuel, 0);
     }
 
     thruster() {
@@ -265,20 +269,26 @@ class Game {
         }
 
         if (this.mode === "Pilot") {
-            let parent = this.controlShip.parent;
 
-            let dvx = this.controlShip.vx - parent.vx;
-            let dvy = this.controlShip.vy - parent.vy;
+            if (this.fuel > 0) {
+                let parent = this.controlShip.parent;
 
-            let dist = Math.hypot(dvx, dvy);
+                let dvx = this.controlShip.vx - parent.vx;
+                let dvy = this.controlShip.vy - parent.vy;
 
-            let direction = { x: dvx / dist, y: dvy / dist };
+                let dist = Math.hypot(dvx, dvy);
 
-            this.controlShip.vx += direction.x * this.progradeV;
-            this.controlShip.vy += direction.y * this.progradeV;
+                let direction = { x: dvx / dist, y: dvy / dist };
 
-            this.controlShip.vx += direction.y * this.radialInV;
-            this.controlShip.vy += -direction.x * this.radialInV;
+                this.controlShip.vx += direction.x * this.progradeV;
+                this.controlShip.vy += direction.y * this.progradeV;
+
+                this.controlShip.vx += direction.y * this.radialInV;
+                this.controlShip.vy += -direction.x * this.radialInV;
+
+                this.fuel -= Math.abs(this.progradeV) + Math.abs(this.radialInV);
+                this.fuel = Math.max(this.fuel, 0);
+            }
 
             this.progradeV = 0;
             this.radialInV = 0;
@@ -466,9 +476,9 @@ class Game {
         texts.push("Find Closest Approach To : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
         texts.push("");
         texts.push("Engine : " + this.engine);
+        texts.push("Fuel   : " + Math.round(this.fuel));
         texts.push("");
         texts.push(this.isPause ? "[PAUSE]" : "");
-        texts.push("");
         texts.push("");
         texts.push("");
         texts.push("Zoom             : " + this.zoom);

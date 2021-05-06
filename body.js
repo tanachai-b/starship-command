@@ -227,11 +227,11 @@ class Body {
         }
     }
 
-    calcPlan(prograde, radialIn, target, logMap) {
+    calcPlan(progradeV, radialInV, target, logMap) {
 
         if (this.parent === null
             || target === undefined
-            || (prograde === 0 && radialIn === 0)
+            || (progradeV === 0 && radialInV === 0)
         ) {
             this.plan = [];
             this.planTarget = [];
@@ -245,7 +245,7 @@ class Body {
             this.planTarget = [];
             this.planClosest = undefined;
             this.targetClosest = undefined;
-            this.calcPlanAlone(prograde, radialIn, logMap);
+            this.calcPlanAlone(progradeV, radialInV, logMap);
             return;
         }
 
@@ -258,15 +258,15 @@ class Body {
         let pvx = this.vx - this.parent.vx;
         let pvy = this.vy - this.parent.vy;
 
-        // add planned velocity (prograde, radialIn)
+        // add planned velocity (progradeV, radialInV)
         let dist = Math.hypot(pvx, pvy);
         let direction = { x: pvx / dist, y: pvy / dist };
 
-        pvx += direction.x * prograde;
-        pvy += direction.y * prograde;
+        pvx += direction.x * progradeV;
+        pvy += direction.y * progradeV;
 
-        pvx += direction.y * radialIn;
-        pvy += -direction.x * radialIn;
+        pvx += direction.y * radialInV;
+        pvy += -direction.x * radialInV;
 
         // target compared to parent
         let tx = target.x - this.parent.x;
@@ -348,7 +348,7 @@ class Body {
     }
 
 
-    calcPlanAlone(prograde, radialIn, target, logMap) {
+    calcPlanAlone(progradeV, radialInV, target, logMap) {
 
         // ship compared to parent
         let px = this.x - this.parent.x;
@@ -359,15 +359,15 @@ class Body {
         let pvx = this.vx - this.parent.vx;
         let pvy = this.vy - this.parent.vy;
 
-        // add planned velocity (prograde, radialIn)
+        // add planned velocity (progradeV, radialInV)
         let dist = Math.hypot(pvx, pvy);
         let direction = { x: pvx / dist, y: pvy / dist };
 
-        pvx += direction.x * prograde;
-        pvy += direction.y * prograde;
+        pvx += direction.x * progradeV;
+        pvy += direction.y * progradeV;
 
-        pvx += direction.y * radialIn;
-        pvy += -direction.x * radialIn;
+        pvx += direction.y * radialInV;
+        pvy += -direction.x * radialInV;
 
         for (let time = 0; time < 360 + 180; time++) {
 
