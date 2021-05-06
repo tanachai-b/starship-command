@@ -529,13 +529,13 @@ class Body {
         ctx.fillStyle = this.color;
         ctx.fill();
 
-        if (focus.name === this.name) {
+        if (focus) {
             ctx.strokeStyle = "#FF307C";
             let size = 16;
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
         }
 
-        if (target.name === this.name) {
+        if (target) {
 
             // let size = 10;
 

@@ -22,7 +22,7 @@ class Game {
         this.speed = -12;
         this.calcMulti = 1;
 
-        this.zoom = 22;
+        this.zoom = -46;
         this.camera = new Camera();
         this.isFollowSelf = true;
         this.cameraMove = 128;
@@ -154,7 +154,7 @@ class Game {
         this.bodies.push(station3); this.bodiesMap.station3 = station3;
         this.camMoons.earth.push(station3);
 
-        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 100.1, -30.001);
+        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 100.05, -30.0005);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
     }
@@ -383,7 +383,11 @@ class Game {
             this.bodies[i].drawPlanTarget(offCtx, this.camera, this.logMap);
         }
         for (let i = this.bodies.length - 1; i >= 0; i--) {
-            this.bodies[i].drawBody(offCtx, this.camera, this.focus, this.target, this.logMap);
+
+            let focus = this.bodies[i].name === this.focus.name;
+            let target = (this.mode === "Planning") && (this.bodies[i].name === this.target.name);
+
+            this.bodies[i].drawBody(offCtx, this.camera, focus, target, this.logMap);
         }
         for (let i = this.bodies.length - 1; i >= 0; i--) {
             this.bodies[i].drawName(offCtx, this.camera, this.logMap);
@@ -450,14 +454,16 @@ class Game {
         texts.push("[H], [;] : Next, Previous Planet");
         texts.push("[N]      : Toggle Focus on Ship");
         texts.push("");
-        texts.push("[W], [S] : Prograde, Retrograde Thrust");
-        texts.push("[A], [D] : Radial-In, Radial-Out Thrust");
+        texts.push("[R]      : Toggle Thruster/RCS");
+        texts.push("[W], [S] : Prograde, Retrograde (Thruster)");
+        texts.push("[A], [D] : Radial-In, Radial-Out (Thruster)");
+        texts.push("[W], [S] : Up, Down (RCS)");
+        texts.push("[A], [D] : Left, Right (RCS)");
         texts.push("");
         texts.push("[E]      : Toggle Pilot/Planning Mode");
         texts.push("[U], [O] : Next, Previous Target");
         texts.push("[Q]      : Execute Plan");
         texts.push("");
-        texts.push("[R]      : Toggle Thruster/RCS");
         texts.push("");
         texts.push("Mode : " + this.mode);
         texts.push("Trajectory Relative To   : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
@@ -466,10 +472,6 @@ class Game {
         texts.push("Engine : " + this.engine);
         texts.push("");
         texts.push(this.isPause ? "[PAUSE]" : "");
-        texts.push("");
-        texts.push("");
-        texts.push("");
-        texts.push("");
         texts.push("");
         texts.push("");
         texts.push("");
