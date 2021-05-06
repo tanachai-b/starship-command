@@ -51,6 +51,8 @@ class Game {
         this.engine = "RCS";
 
         this.logMap = {};
+
+        this.enableBlurEffect = true;
     }
 
     initiate() {
@@ -386,8 +388,10 @@ class Game {
         this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
-        this.ctx.filter = 'blur(8px)';
-        this.ctx.drawImage(offScreenCanvas, 0, 0);
+        if (this.enableBlurEffect) {
+            this.ctx.filter = 'blur(8px)';
+            this.ctx.drawImage(offScreenCanvas, 0, 0);
+        }
 
         this.ctx.filter = "none";
         this.ctx.drawImage(offScreenCanvas, 0, 0);
@@ -405,8 +409,10 @@ class Game {
         this.addSideText(offCtx);
         this.addModeBorder(offCtx);
 
-        this.ctx.filter = 'blur(8px)';
-        this.ctx.drawImage(offScreenCanvas, 0, 0);
+        if (this.enableBlurEffect) {
+            this.ctx.filter = 'blur(8px)';
+            this.ctx.drawImage(offScreenCanvas, 0, 0);
+        }
 
         this.ctx.filter = "none";
         this.ctx.drawImage(offScreenCanvas, 0, 0);
@@ -465,9 +471,9 @@ class Game {
         texts.push("");
         texts.push("");
         texts.push("");
-        texts.push("");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed);
+        texts.push("[F12] : Toggle Blur Effect");
 
         offCtx.textBaseline = "top";
         offCtx.fillStyle = "#00FFA3";
@@ -577,6 +583,8 @@ class Game {
             case "0_KeyQ": event.preventDefault(); this.executePlan(); break;
 
             case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
+
+            case "0_F12": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
         }
         // console.log(this.pressedKeys)
     }
