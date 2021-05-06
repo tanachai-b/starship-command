@@ -55,6 +55,8 @@ class Game {
         this.radialInV = 0;
 
         this.mode = "Pilot";
+
+        this.engine = "RCS";
     }
 
     initiate() {
@@ -212,8 +214,45 @@ class Game {
         this.controlShip.calcPlan(this.progradeV, this.radialInV, this.target, this.logMap);
     }
 
-    moveShip() {
+    toggleEngine() {
 
+        if (this.engine === "RCS") {
+            this.engine = "Thruster";
+
+        } else if (this.engine === "Thruster") {
+            this.engine = "RCS";
+
+            this.progradeV = 0;
+            this.radialInV = 0;
+            this.mode = "Pilot";
+        }
+    }
+
+    moveShip() {
+        if (this.engine === "RCS") { this.rcs(); }
+        if (this.engine === "Thruster") { this.thruster(); }
+    }
+
+    rcs() {
+        if (this.controlShip === undefined) { return; }
+
+        let power = 0.1;
+
+        if (!this.pressedKeys.Shift) {
+            if (this.pressedKeys.W) { this.controlShip.vy -= power; }
+            if (this.pressedKeys.S) { this.controlShip.vy += power; }
+            if (this.pressedKeys.A) { this.controlShip.vx -= power; }
+            if (this.pressedKeys.D) { this.controlShip.vx += power; }
+
+        } else if (this.pressedKeys.Shift) {
+            if (this.pressedKeys.W) { this.controlShip.vy -= power / 10; }
+            if (this.pressedKeys.S) { this.controlShip.vy += power / 10; }
+            if (this.pressedKeys.A) { this.controlShip.vx -= power / 10; }
+            if (this.pressedKeys.D) { this.controlShip.vx += power / 10; }
+        }
+    }
+
+    thruster() {
         if (this.controlShip === undefined) { return; }
 
         let power = 10;
@@ -253,8 +292,10 @@ class Game {
     }
 
     toggleMode() {
+
         if (this.mode === "Pilot") {
             this.mode = "Planning";
+            this.engine = "Thruster";
 
         } else if (this.mode === "Planning") {
             this.progradeV = 0;
@@ -405,25 +446,26 @@ class Game {
         texts.push("[Space]  : Toggle Pause Time");
         texts.push("");
         texts.push("[I], [K] : Zoom In, Zoom Out");
-        texts.push("[H], [;] : Next, Previous Planet");
         texts.push("[J], [L] : Next, Previous Moon/Object");
-        texts.push("");
-        texts.push("[U], [O] : Next, Previous Target");
+        texts.push("[H], [;] : Next, Previous Planet");
         texts.push("[N]      : Toggle Focus on Ship");
         texts.push("");
-        texts.push("[E]      : Toggle Pilot, Planning Mode");
-        texts.push("[Q]      : Execute Plan");
         texts.push("[W], [S] : Prograde, Retrograde Thrust");
         texts.push("[A], [D] : Radial-In, Radial-Out Thrust");
         texts.push("");
+        texts.push("[E]      : Toggle Pilot/Planning Mode");
+        texts.push("[U], [O] : Next, Previous Target");
+        texts.push("[Q]      : Execute Plan");
+        texts.push("");
+        texts.push("[R]      : Toggle Thruster/RCS");
+        texts.push("");
+        texts.push("Mode : " + this.mode);
         texts.push("Trajectory Relative To   : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
         texts.push("Find Closest Approach To : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
         texts.push("");
-        texts.push("Mode : " + this.mode);
+        texts.push("Engine : " + this.engine);
         texts.push("");
         texts.push(this.isPause ? "[PAUSE]" : "");
-        texts.push("");
-        texts.push("");
         texts.push("");
         texts.push("");
         texts.push("");
@@ -471,6 +513,17 @@ class Game {
             offCtx.fillText("Planning", this.c.width / 2, 16);
         }
 
+        if (this.engine === "RCS") {
+            offCtx.strokeStyle = "#4275ff";
+            offCtx.lineWidth = 5;
+            offCtx.strokeRect(0, 0, this.c.width, this.c.height);
+
+            offCtx.textAlign = "center";
+            offCtx.textBaseline = "top";
+            offCtx.font = "32px Syne Mono";
+            offCtx.fillStyle = "#4275ff";;
+            offCtx.fillText("RCS", this.c.width / 2, 16);
+        }
     }
 
     log() {
@@ -530,6 +583,8 @@ class Game {
 
             case "0_KeyE": event.preventDefault(); this.toggleMode(); break;
             case "0_KeyQ": event.preventDefault(); this.executePlan(); break;
+
+            case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
         }
         // console.log(this.pressedKeys)
     }
