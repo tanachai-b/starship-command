@@ -52,7 +52,7 @@ class Body {
         this.vy += (target_mass / dist) ** 0.5 * -dx / dist;
     }
 
-    calcGrav(bodies, precision, badPrecBodies, gravMap, logMap) {
+    calcGrav(bodies, precision, badPrecBodies, logMap) {
 
         this.ax = 0;
         this.ay = 0;
@@ -66,9 +66,6 @@ class Body {
             if (this === body) { continue; }
 
             if (badPrecBodies[body.name] === 1) { continue; }
-
-            let gravName = body.name + "<-" + this.name;
-            // if (this.name != "ship" && gravMap[gravName] === null) { continue; }
 
             let dx = body.x - this.x;
             let dy = body.y - this.y;

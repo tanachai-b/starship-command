@@ -2,9 +2,13 @@
 
 class Camera {
     constructor(x, y, zoom) {
+
         this.x = x;
         this.y = y;
         this.zoom = zoom;
+
+        this.vx = 0;
+        this.vy = 0;
     }
 }
 
@@ -20,12 +24,10 @@ class Game {
 
         this.isPause = false;
         this.speed = -12;
-        this.calcMulti = 1;
 
         this.zoom = -46;
         this.camera = new Camera();
         this.isFollowSelf = true;
-        this.cameraMove = 128;
 
         this.camSolSys = [];
         this.camMoons = {};
@@ -36,27 +38,19 @@ class Game {
 
         this.focus;
         this.camPosition;
-
         this.target;
 
         this.controlShip;
-
-        this.logMap = {};
-
-        this.gravMap = {};
-        let gravList = ['sun<-mercury', 'sun<-venus', 'sun<-moon', 'sun<-earth', 'sun<-mars', 'earth<-moon', 'sun<-jupiter', 'sun<-saturn', 'moon<-earth', 'sun<-uranus', 'sun<-neptune'];
-        for (let grav of gravList) { this.gravMap[grav] = 1; }
-
-        this.pressedKeys = {};
-
-        this.badPrecBodies = {};
-
         this.progradeV = 0;
         this.radialInV = 0;
 
-        this.mode = "Pilot";
+        this.pressedKeys = {};
+        this.badPrecBodies = {};
 
+        this.mode = "Pilot";
         this.engine = "RCS";
+
+        this.logMap = {};
     }
 
     initiate() {
@@ -166,9 +160,10 @@ class Game {
         while (true) {
 
             if (!this.isPause) {
-                for (let i = 0; i < this.calcMulti; i++) { this.moveBodies(); }
+                this.moveBodies();
                 this.moveShip();
             }
+
             this.calcTrajectory();
             this.calcPlan();
 
@@ -176,10 +171,7 @@ class Game {
             this.drawBodies();
             this.drawUI();
 
-            if (!this.isPause) {
-                this.log();
-            }
-
+            if (!this.isPause) { this.log(); }
             await timer(1);
         }
     }
@@ -191,12 +183,12 @@ class Game {
         this.badPrecBodies = {};
 
         for (let body of this.bodies) {
-            body.calcGrav(this.bodies, precision, this.badPrecBodies, this.gravMap, this.logMap);
+            body.calcGrav(this.bodies, precision, this.badPrecBodies, this.logMap);
         }
 
         if (Object.keys(this.badPrecBodies).length > 0) {
             for (let body of this.bodies) {
-                body.calcGrav(this.bodies, precision, this.badPrecBodies, this.gravMap, this.logMap);
+                body.calcGrav(this.bodies, precision, this.badPrecBodies, this.logMap);
             }
         }
 
@@ -312,6 +304,9 @@ class Game {
 
     moveCamera() {
 
+        let precision = 10 ** (this.speed / 3);
+
+        // initalize focus and target
         if (this.focus === undefined) {
             if (this.camMoonIndex != 0) {
                 this.focus = this.camMoons[this.camSolSys[this.camSolSysIndex].name][this.camMoonIndex];
@@ -339,24 +334,19 @@ class Game {
             this.camera.x = this.camPosition.x;
             this.camera.y = this.camPosition.y;
 
-            // camera movement done
-        } else if (this.cameraMove >= 128) {
-            this.camera.x = this.camPosition.x;
-            this.camera.y = this.camPosition.y;
-
-            // camera movement start
         } else {
-            this.camera.x += (this.camPosition.x - this.camera.x) * this.cameraMove / 128;
-            this.camera.y += (this.camPosition.y - this.camera.y) * this.cameraMove / 128;
-            this.cameraMove++;
+            this.camera.x += this.camPosition.vx * precision;
+            this.camera.y += this.camPosition.vy * precision;
+            this.camera.x += (this.camPosition.x - this.camera.x) / 8;
+            this.camera.y += (this.camPosition.y - this.camera.y) / 8;
         }
 
         // initialize camera zoom level
         if (this.camera.zoom === undefined) { this.camera.zoom = this.zoom; }
 
         // handle camera zoom
-        if (this.pressedKeys.I) { this.zoom -= 1 / 8; }
-        if (this.pressedKeys.K) { this.zoom += 1 / 8; }
+        if (this.pressedKeys.I) { this.zoom -= 1 / 4; }
+        if (this.pressedKeys.K) { this.zoom += 1 / 4; }
 
         this.zoom = Math.max(this.zoom, -64);
         this.zoom = Math.min(this.zoom, 94);
@@ -637,7 +627,6 @@ class Game {
         this.isFollowSelf = false;
 
         this.camPosition = this.focus;
-        this.cameraMove = 0;
 
         this.camMoonIndex = 0;
         this.camTargetIndex = 0;
@@ -656,7 +645,6 @@ class Game {
         this.isFollowSelf = false;
 
         this.camPosition = this.focus;
-        this.cameraMove = 0;
     }
 
     cycleTarget(direction) {
@@ -683,10 +671,8 @@ class Game {
 
         if (this.isFollowSelf) {
             this.camPosition = this.controlShip;
-            this.cameraMove = 0;
         } else {
             this.camPosition = this.focus;
-            this.cameraMove = 0;
         }
     }
 
