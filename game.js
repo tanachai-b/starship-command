@@ -47,12 +47,13 @@ class Game {
         this.radialInV = 0;
         this.mode = "Pilot";
         this.engine = "Thruster";
-        this.fuel = 10000;
+        this.fuel = 8000;
+        this.maxFuel = 200000;
 
         this.enableBlurEffect = true;
 
         this.fuelStations = [];
-        this.stationsMap = {};
+        this.fuelStationsMap = {};
 
         this.logMap = {};
     }
@@ -71,7 +72,7 @@ class Game {
         let sun = new Body("sun", "#FFF200", 696340, 1.409, null, 0, 0);
         this.bodies.push(sun); this.bodiesMap.sun = sun;
 
-        // // ========================
+        // ========================
 
         let mercury = new Body("mercury", "#B0B0B0", 2439.64, 5.43, sun, 57909175, -90);
         this.bodies.push(mercury); this.bodiesMap.mercury = mercury;
@@ -159,12 +160,17 @@ class Game {
         let station1 = new Body("station1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
         this.bodies.push(station1); this.bodiesMap.station1 = station1;
         this.camMoons.earth.push(station1);
-        this.fuelStations.push(station1); this.stationsMap.station1 = { body: station1, fuel: 10000 };
+        this.fuelStations.push(station1); this.fuelStationsMap.station1 = { body: station1, fuel: 8000 };
 
-        let station2 = new Body("station2", "#349FC9", 0.02, 0.5, earth, 6378.10 + 100000, 190);
+        let station2 = new Body("station2", "#349FC9", 0.02, 0.5, moon, 1737.1 + 3000, 190);
         this.bodies.push(station2); this.bodiesMap.station2 = station2;
         this.camMoons.earth.push(station2);
-        this.fuelStations.push(station2); this.stationsMap.station2 = { body: station2, fuel: 10000 };
+        this.fuelStations.push(station2); this.fuelStationsMap.station2 = { body: station2, fuel: 18000 };
+
+        let station3 = new Body("station3", "#349FC9", 0.02, 0.5, mars,  40000, 75);
+        this.bodies.push(station3); this.bodiesMap.station3 = station3;
+        this.camMoons.mars.push(station3);
+        this.fuelStations.push(station3); this.fuelStationsMap.station3 = { body: station3, fuel: 18000 };
     }
 
     async gameLoop() {
@@ -176,6 +182,7 @@ class Game {
             if (!this.isPause) {
                 this.moveBodies();
                 this.moveShip();
+                this.refuel();
             }
 
             this.calcTrajectory();
@@ -210,15 +217,6 @@ class Game {
             body.move(precision, this.badPrecBodies);
             // body.addTrail(this.logMap);
         }
-    }
-
-    calcTrajectory() {
-        for (let body of this.bodies) { body.calcTrajectory(this.logMap); }
-    }
-
-    calcPlan() {
-        let isPlanning = this.mode === "Planning";
-        this.controlShip.calcPlan(isPlanning, this.progradeV, this.radialInV, this.target, this.logMap);
     }
 
     toggleEngine() {
@@ -307,6 +305,46 @@ class Game {
         }
     }
 
+    refuel() {
+
+        let refuelDistance = 0.04;
+        let exchangeRate = 10000;
+        let precision = 10 ** (this.speed / 3);
+
+        for (let fuelStation in this.fuelStationsMap) {
+
+            let station = this.fuelStationsMap[fuelStation]
+            let stationBody = station.body;
+
+            let ship = this.controlShip;
+
+            let dx = stationBody.x - ship.x;
+            let dy = stationBody.y - ship.y;
+
+            if (Math.abs(dx) > refuelDistance) { continue; }
+            if (Math.abs(dy) > refuelDistance) { continue; }
+
+            let dist = Math.hypot(dx, dy);
+
+            if (dist > refuelDistance) { continue; }
+
+            if (station.fuel > 0) {
+
+                this.fuel += exchangeRate * precision;
+                station.fuel -= exchangeRate * precision;
+
+                this.fuel = Math.min(this.fuel, this.maxFuel);
+                station.fuel = Math.max(station.fuel, 0);
+
+                break;
+            }
+        }
+    }
+
+    calcTrajectory() {
+        for (let body of this.bodies) { body.calcTrajectory(this.logMap); }
+    }
+
     toggleMode() {
 
         if (this.mode === "Pilot") {
@@ -324,6 +362,11 @@ class Game {
         if (this.progradeV !== 0 || this.radialInV !== 0) {
             this.mode = "Pilot";
         }
+    }
+
+    calcPlan() {
+        let isPlanning = this.mode === "Planning";
+        this.controlShip.calcPlan(isPlanning, this.progradeV, this.radialInV, this.target, this.logMap);
     }
 
     moveCamera() {
@@ -388,27 +431,25 @@ class Game {
 
         let offCtx = offScreenCanvas.getContext("2d");
 
-        for (let i = this.bodies.length - 1; i >= 0; i--) {
-            this.bodies[i].drawTrail(offCtx, this.camera, this.logMap);
-        }
-        for (let i = this.bodies.length - 1; i >= 0; i--) {
-            this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap);
-        }
+        for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrail(offCtx, this.camera, this.logMap); }
+        for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap); }
+
         for (let i = this.bodies.length - 1; i >= 0; i--) {
             this.bodies[i].drawPlan(offCtx, this.camera, this.logMap);
             this.bodies[i].drawPlanTarget(offCtx, this.camera, this.logMap);
         }
+
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
             let isFocus = this.bodies[i].name === this.focus.name;
             let isPlanning = this.mode === "Planning";
             let isTarget = this.bodies[i].name === this.target.name;
+            let isFuelStation = this.fuelStationsMap[this.bodies[i].name] !== undefined;
 
-            this.bodies[i].drawBody(offCtx, this.camera, isFocus, isPlanning,isTarget, this.stationsMap, this.logMap);
+            this.bodies[i].drawBody(offCtx, this.camera, isFocus, isPlanning, isTarget, isFuelStation, this.logMap);
         }
-        for (let i = this.bodies.length - 1; i >= 0; i--) {
-            this.bodies[i].drawName(offCtx, this.camera, this.stationsMap, this.logMap);
-        }
+
+        for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawName(offCtx, this.camera, this.fuelStationsMap, this.logMap); }
 
         this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -567,7 +608,7 @@ class Game {
     }
 
     keydown(event) {
-        console.log(event)
+        // console.log(event)
         let mod = event.ctrlKey * 4 + event.shiftKey * 2 + event.altKey * 1;
         switch (mod + "_" + event.code) {
 

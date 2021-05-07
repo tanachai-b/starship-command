@@ -510,7 +510,7 @@ class Body {
         }
     }
 
-    drawBody(ctx, camera, isFocus, isPlanning, isTarget, stationsMap, logMap) {
+    drawBody(ctx, camera, isFocus, isPlanning, isTarget, isfuelStations, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -540,9 +540,18 @@ class Body {
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
         }
 
-        // if (stationsMap[this.name] !== undefined) {
-        //     bodyName += " : " + stationsMap[this.name].fuel;
-        // }
+        if (isfuelStations) {
+
+            let refuelRadius = Math.max(0.04 / zoom, 4);
+
+            ctx.beginPath();
+            ctx.arc(nx, ny, refuelRadius, 0, 2 * Math.PI);
+
+            ctx.strokeStyle = this.color;
+            ctx.setLineDash([5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
     }
 
     drawName(ctx, camera, stationsMap, logMap) {
@@ -565,11 +574,8 @@ class Body {
         let bodyName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
 
         if (stationsMap[this.name] !== undefined) {
-            bodyName += " : " + stationsMap[this.name].fuel;
+            bodyName += " : " + Math.round(stationsMap[this.name].fuel);
         }
-
-        // ctx.fillStyle = "#000000";
-        // ctx.fillRect(nx + nr + 4, ny, ctx.measureText(bodyName).width, 10);
 
         ctx.fillStyle = this.color;
         ctx.font = "13px Syne Mono";
