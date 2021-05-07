@@ -19,15 +19,14 @@ class Game {
         this.c = document.getElementById("canvas");
         this.ctx = this.c.getContext("2d");
 
-        this.bodies = [];
-        this.bodiesMap = {};
-
         this.isPause = false;
         this.speed = -12;
-
         this.zoom = 18;
-        this.camera = new Camera();
         this.isFollowSelf = false;
+        this.camera = new Camera();
+
+        this.bodies = [];
+        this.bodiesMap = {};
 
         this.camSolSys = [];
         this.camMoons = {};
@@ -40,18 +39,20 @@ class Game {
         this.camPosition;
         this.target;
 
+        this.badPrecBodies = {};
+
+        this.pressedKeys = {};
         this.controlShip;
         this.progradeV = 0;
         this.radialInV = 0;
-
-        this.pressedKeys = {};
-        this.badPrecBodies = {};
-
         this.mode = "Pilot";
         this.engine = "Thruster";
-        this.fuel = 50000;
+        this.fuel = 10000;
 
         this.enableBlurEffect = true;
+
+        this.fuelStations = [];
+        this.stationsMap = {};
 
         this.logMap = {};
     }
@@ -151,21 +152,19 @@ class Game {
 
         // ========================
 
-        // let station1 = new Body("station1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 100, -30);
-        // this.bodies.push(station1); this.bodiesMap.station1 = station1;
-        // this.camMoons.earth.push(station1);
-
-        // let station2 = new Body("station2", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
-        // this.bodies.push(station2); this.bodiesMap.station2 = station2;
-        // this.camMoons.earth.push(station2);
-
-        // let station3 = new Body("station3", "#349FC9", 0.02, 0.5, earth, 6378.10 + 100000, 190);
-        // this.bodies.push(station3); this.bodiesMap.station3 = station3;
-        // this.camMoons.earth.push(station3);
-
         let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 1000, 95);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
+
+        let station1 = new Body("station1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
+        this.bodies.push(station1); this.bodiesMap.station1 = station1;
+        this.camMoons.earth.push(station1);
+        this.fuelStations.push(station1); this.stationsMap.station1 = { body: station1, fuel: 10000 };
+
+        let station2 = new Body("station2", "#349FC9", 0.02, 0.5, earth, 6378.10 + 100000, 190);
+        this.bodies.push(station2); this.bodiesMap.station2 = station2;
+        this.camMoons.earth.push(station2);
+        this.fuelStations.push(station2); this.stationsMap.station2 = { body: station2, fuel: 10000 };
     }
 
     async gameLoop() {
@@ -218,7 +217,8 @@ class Game {
     }
 
     calcPlan() {
-        this.controlShip.calcPlan(this.progradeV, this.radialInV, this.target, this.logMap);
+        let isPlanning = this.mode === "Planning";
+        this.controlShip.calcPlan(isPlanning, this.progradeV, this.radialInV, this.target, this.logMap);
     }
 
     toggleEngine() {
@@ -359,8 +359,10 @@ class Game {
             this.camera.y = this.camPosition.y;
 
         } else {
-            this.camera.x += this.camPosition.vx * precision;
-            this.camera.y += this.camPosition.vy * precision;
+            if (!this.isPause) {
+                this.camera.x += this.camPosition.vx * precision;
+                this.camera.y += this.camPosition.vy * precision;
+            }
             this.camera.x += (this.camPosition.x - this.camera.x) / 8;
             this.camera.y += (this.camPosition.y - this.camera.y) / 8;
         }
@@ -398,13 +400,14 @@ class Game {
         }
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
-            let focus = this.bodies[i].name === this.focus.name;
-            let target = (this.mode === "Planning") && (this.bodies[i].name === this.target.name);
+            let isFocus = this.bodies[i].name === this.focus.name;
+            let isPlanning = this.mode === "Planning";
+            let isTarget = this.bodies[i].name === this.target.name;
 
-            this.bodies[i].drawBody(offCtx, this.camera, focus, target, this.logMap);
+            this.bodies[i].drawBody(offCtx, this.camera, isFocus, isPlanning,isTarget, this.stationsMap, this.logMap);
         }
         for (let i = this.bodies.length - 1; i >= 0; i--) {
-            this.bodies[i].drawName(offCtx, this.camera, this.logMap);
+            this.bodies[i].drawName(offCtx, this.camera, this.stationsMap, this.logMap);
         }
 
         this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
@@ -495,7 +498,7 @@ class Game {
         texts.push("");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed);
-        texts.push("[F12] : Toggle Blur Effect");
+        texts.push("[Backspace] : Toggle Blur Effect");
 
         offCtx.textBaseline = "top";
         offCtx.fillStyle = "#00FFA3";
@@ -564,7 +567,7 @@ class Game {
     }
 
     keydown(event) {
-        // console.log(event)
+        console.log(event)
         let mod = event.ctrlKey * 4 + event.shiftKey * 2 + event.altKey * 1;
         switch (mod + "_" + event.code) {
 
@@ -606,7 +609,7 @@ class Game {
 
             case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
 
-            case "0_F12": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
+            case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
         }
         // console.log(this.pressedKeys)
     }

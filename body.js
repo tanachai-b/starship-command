@@ -227,11 +227,12 @@ class Body {
         }
     }
 
-    calcPlan(progradeV, radialInV, target, logMap) {
+    calcPlan(isPlanning, progradeV, radialInV, target, logMap) {
 
-        if (this.parent === null
+        if (
+            !isPlanning
+            || this.parent === null
             || target === undefined
-            || (progradeV === 0 && radialInV === 0)
         ) {
             this.plan = [];
             this.planTarget = [];
@@ -509,7 +510,7 @@ class Body {
         }
     }
 
-    drawBody(ctx, camera, focus, target, logMap) {
+    drawBody(ctx, camera, isFocus, isPlanning, isTarget, stationsMap, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -526,32 +527,25 @@ class Body {
         ctx.fillStyle = this.color;
         ctx.fill();
 
-        if (focus) {
-            ctx.strokeStyle = "#FF307C";
+        if (isFocus) {
+            ctx.strokeStyle = "#00FFA3";
+            if (isPlanning) { ctx.strokeStyle = "#FF307C"; }
             let size = 16;
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
         }
 
-        if (target) {
-
-            // let size = 10;
-
-            // ctx.beginPath();
-            // ctx.moveTo(nx, -size + ny);
-            // ctx.lineTo(size + nx, ny);
-            // ctx.lineTo(nx, size + ny);
-            // ctx.lineTo(-size + nx, ny);
-            // ctx.lineTo(nx, -size + ny);
-
-            // ctx.stroke();
-
+        if (isPlanning && isTarget) {
             ctx.strokeStyle = "#FFEE00";
             let size = 12;
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
         }
+
+        // if (stationsMap[this.name] !== undefined) {
+        //     bodyName += " : " + stationsMap[this.name].fuel;
+        // }
     }
 
-    drawName(ctx, camera, logMap) {
+    drawName(ctx, camera, stationsMap, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -569,6 +563,10 @@ class Body {
         }
 
         let bodyName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
+
+        if (stationsMap[this.name] !== undefined) {
+            bodyName += " : " + stationsMap[this.name].fuel;
+        }
 
         // ctx.fillStyle = "#000000";
         // ctx.fillRect(nx + nr + 4, ny, ctx.measureText(bodyName).width, 10);
