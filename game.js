@@ -24,7 +24,7 @@ class Game {
         this.isPause = false;
         this.speed = -12;
         this.zoom = 22;
-        this.isFollowSelf = false;
+        this.isFollowSelf = true;
         this.camera = new Camera();
 
         this.bodies = [];
@@ -306,8 +306,6 @@ class Game {
 
                 this.controlShip.vx += direction.y * this.radialInV;
                 this.controlShip.vy += -direction.x * this.radialInV;
-
-
             }
 
             this.progradeV = 0;
@@ -461,13 +459,18 @@ class Game {
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
+            let isFuelStation = this.fuelStationsMap[this.bodies[i].name] !== undefined;
+            this.bodies[i].drawBody(offCtx, this.camera, isFuelStation, this.logMap);
+        }
 
+        for (let i = this.bodies.length - 1; i >= 0; i--) {
+
+            let isShip = this.bodies[i].name === this.controlShip.name;
             let isFocus = this.bodies[i].name === this.focus.name;
             let isPlanning = this.mode === "Planning";
             let isTarget = this.bodies[i].name === this.target.name;
-            let isFuelStation = this.fuelStationsMap[this.bodies[i].name] !== undefined;
 
-            this.bodies[i].drawBody(offCtx, this.camera, isFocus, isPlanning, isTarget, isFuelStation, this.logMap);
+            this.bodies[i].drawMarker(offCtx, this.camera, isShip, isFocus, isPlanning, isTarget, this.logMap);
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawName(offCtx, this.camera, this.fuelStationsMap, this.logMap); }
@@ -574,12 +577,12 @@ class Game {
         texts.push("");
         texts.push("Fuel   : " + Math.round(this.fuel) + plannedFuelText);
         texts.push("Engine : " + this.engine);
-        texts.push("");
         texts.push("Mode : " + this.mode);
+        texts.push("");
         texts.push("Trajectory Relative To     : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
         texts.push("Find Closest Approach To   : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
-        texts.push("Distance to Target : " + Math.round(targDist) + planDistText);
-        texts.push("Relative Velocity : " + Math.round(relativeV));
+        texts.push("Distance to Target         : " + Math.round(targDist) + planDistText);
+        texts.push("Relative Velocity          : " + Math.round(relativeV));
         texts.push("");
         texts.push("");
         texts.push("Zoom             : " + this.zoom);
@@ -757,7 +760,7 @@ class Game {
         this.target = this.camSolSys[this.camSolSysIndex];
 
         this.controlShip.switchParent(this.focus);
-        this.isFollowSelf = false;
+        // this.isFollowSelf = false;
 
         this.camMoonIndex = 0;
         this.camTargetIndex = 0;
@@ -773,7 +776,7 @@ class Game {
         this.focus = moons[this.camMoonIndex];
 
         this.controlShip.switchParent(this.focus);
-        this.isFollowSelf = false;
+        // this.isFollowSelf = false;
     }
 
     cycleTarget(direction) {

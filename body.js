@@ -555,6 +555,34 @@ class Body {
         ctx.fillStyle = this.color;
         ctx.fill();
 
+        if (isfuelStations) {
+
+            let refuelRadius = Math.max(0.04 / zoom, 4);
+
+            ctx.beginPath();
+            ctx.arc(nx, ny, refuelRadius, 0, 2 * Math.PI);
+
+            ctx.strokeStyle = this.color;
+            ctx.setLineDash([5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    }
+
+    drawMarker(ctx, camera, isShip, isFocus, isPlanning, isTarget, logMap) {
+
+        if (!isShip && !isFocus && !isTarget) { return; }
+
+        let zoom = 2 ** (camera.zoom / 4);
+
+        // let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
+        // let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
+        let nr = Math.max(this.radius / zoom, 2);
+
+        let np = this.calcXY(ctx, camera, this.x, this.y);
+        let nx = np.x;
+        let ny = np.y;
+
         if (isFocus) {
             ctx.strokeStyle = "#00FFA3";
             if (isPlanning) { ctx.strokeStyle = "#FF307C"; }
@@ -568,17 +596,69 @@ class Body {
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
         }
 
-        if (isfuelStations) {
+        // triangle for out-of-screen markers
+        if (nx < 0
+            || nx > ctx.canvas.width
+            || ny < 0
+            || ny > ctx.canvas.height
+        ) {
+            let dx = nx - (ctx.canvas.width / 2);
+            let dy = ny - (ctx.canvas.height / 2);
 
-            let refuelRadius = Math.max(0.04 / zoom, 4);
+            let nnx = dx;
+            let nny = dy;
+
+            if (Math.abs(dy / dx) < ctx.canvas.height / ctx.canvas.width) {
+                nnx = Math.max(-ctx.canvas.width / 2 + 20, Math.min(ctx.canvas.width / 2 - 20, dx));
+                nny = dy / dx * nnx;
+            }
+
+            if (Math.abs(dy / dx) > ctx.canvas.height / ctx.canvas.width) {
+                nny = Math.max(-ctx.canvas.height / 2 + 20, Math.min(ctx.canvas.height / 2 - 20, dy));
+                nnx = dx / dy * nny
+            }
+
+            let triangle = [];
+            triangle.push({ x: 15, y: 0 });
+            triangle.push({ x: -8, y: 6 });
+            triangle.push({ x: -8, y: -6 });
+            triangle.push({ x: 15, y: 0 });
 
             ctx.beginPath();
-            ctx.arc(nx, ny, refuelRadius, 0, 2 * Math.PI);
+            for (let i = 0; i < triangle.length; i++) {
 
-            ctx.strokeStyle = this.color;
-            ctx.setLineDash([5]);
-            ctx.stroke();
-            ctx.setLineDash([]);
+                let point = triangle[i];
+
+                let x = point.x
+                let y = point.y
+
+                let dist = Math.hypot(nnx, nny);
+
+                let nx = x * (nnx / dist) - y * (nny / dist) + nnx + ctx.canvas.width / 2;
+                let ny = y * (nnx / dist) + x * (nny / dist) + nny + ctx.canvas.height / 2;
+
+                if (i === 0) {
+                    ctx.moveTo(nx, ny);
+                } else {
+                    ctx.lineTo(nx, ny);
+                }
+            }
+
+            if (isFocus) {
+                ctx.fillStyle = "#00FFA3";
+                if (isPlanning) { ctx.fillStyle = "#FF307C"; }
+                ctx.fill();
+            }
+            
+            if (isPlanning && isTarget) {
+                ctx.fillStyle = "#FFEE00";
+                ctx.fill();
+            }
+
+            if (isShip) {
+                ctx.fillStyle = "#00FFA3";
+                ctx.fill();
+            }
         }
     }
 
