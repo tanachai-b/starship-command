@@ -45,13 +45,17 @@ class Game {
 
         this.pressedKeys = {};
         this.controlShip;
-        this.progradeV = 0;
-        this.radialInV = 0;
+
         this.mode = "Pilot";
         this.engine = "Thruster";
         this.maxFuel = 999999;
         this.fuel = 20000;
         this.plannedFuel = 0;
+
+        this.heading;
+
+        this.progradeV = 0;
+        this.radialInV = 0;
 
         this.enableBlurEffect = true;
 
@@ -159,6 +163,9 @@ class Game {
         let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 1000, 95);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
+        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 10000, -30.0001);
+        // this.bodies.push(starship); this.bodiesMap.starship = starship;
+        // this.controlShip = starship;
 
         let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
@@ -222,6 +229,25 @@ class Game {
         }
     }
 
+    moveShip() {
+        this.rotateShip();
+        if (this.engine === "RCS") { this.rcs(); }
+        if (this.engine === "Thruster") { this.thruster(); }
+    }
+
+    rotateShip() {
+        if (this.controlShip === undefined) { return; }
+        if (this.fuel === 0) { return; }
+
+        let power = 0.1;
+        if (this.pressedKeys.Shift) { power /= 10; }
+
+        if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power; }
+        if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power; }
+
+        this.fuel = Math.max(this.fuel, 0);
+    }
+
     toggleEngine() {
 
         if (this.isPause) { return; }
@@ -238,52 +264,53 @@ class Game {
         }
     }
 
-    moveShip() {
-        if (this.engine === "RCS") { this.rcs(); }
-        if (this.engine === "Thruster") { this.thruster(); }
-    }
-
     rcs() {
         if (this.controlShip === undefined) { return; }
         if (this.fuel === 0) { return; }
 
         let power = 0.1;
+        if (this.pressedKeys.Shift) { power /= 10; }
 
-        if (!this.pressedKeys.Shift) {
-            if (this.pressedKeys.W) { this.controlShip.vy -= power; this.fuel -= power }
-            if (this.pressedKeys.S) { this.controlShip.vy += power; this.fuel -= power }
-            if (this.pressedKeys.A) { this.controlShip.vx -= power; this.fuel -= power }
-            if (this.pressedKeys.D) { this.controlShip.vx += power; this.fuel -= power }
-
-        } else if (this.pressedKeys.Shift) {
-            if (this.pressedKeys.W) { this.controlShip.vy -= power / 10; this.fuel -= power / 10 }
-            if (this.pressedKeys.S) { this.controlShip.vy += power / 10; this.fuel -= power / 10 }
-            if (this.pressedKeys.A) { this.controlShip.vx -= power / 10; this.fuel -= power / 10 }
-            if (this.pressedKeys.D) { this.controlShip.vx += power / 10; this.fuel -= power / 10 }
-        }
+        if (this.pressedKeys.W) { this.eachRcs(Math.atan2(-1, 0), power); this.fuel -= power; }
+        if (this.pressedKeys.S) { this.eachRcs(Math.atan2(1, 0), power); this.fuel -= power; }
+        if (this.pressedKeys.A) { this.eachRcs(Math.atan2(0, -1), power); this.fuel -= power; }
+        if (this.pressedKeys.D) { this.eachRcs(Math.atan2(0, 1), power); this.fuel -= power; }
 
         this.fuel = Math.max(this.fuel, 0);
+    }
+
+    eachRcs(direction, power) {
+        this.controlShip.vx += power * Math.cos(this.controlShip.r + direction);
+        this.controlShip.vy += power * Math.sin(this.controlShip.r + direction);
     }
 
     thruster() {
         if (this.controlShip === undefined) { return; }
 
         let power = 10;
+        if (this.pressedKeys.Shift) { power /= 10; }
 
-        if (!this.pressedKeys.Shift) {
-            if (this.pressedKeys.W) { this.progradeV += power; }
-            if (this.pressedKeys.S) { this.progradeV -= power; }
-            if (this.pressedKeys.A) { this.radialInV += power; }
-            if (this.pressedKeys.D) { this.radialInV -= power; }
+        // if (this.mode === "Planning") {
+        if (this.pressedKeys.W) { this.progradeV += power; }
+        if (this.pressedKeys.S) { this.progradeV -= power; }
+        if (this.pressedKeys.A) { this.radialInV += power; }
+        if (this.pressedKeys.D) { this.radialInV -= power; }
 
-        } else if (this.pressedKeys.Shift) {
-            if (this.pressedKeys.W) { this.progradeV += power / 10; }
-            if (this.pressedKeys.S) { this.progradeV -= power / 10; }
-            if (this.pressedKeys.A) { this.radialInV += power / 10; }
-            if (this.pressedKeys.D) { this.radialInV -= power / 10; }
+        this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
+        // }
+
+        if (this.pressedKeys.Z) {
+            this.controlShip.vx += power * Math.sin(this.controlShip.r);
+            this.controlShip.vy += -power * Math.cos(this.controlShip.r);
+            this.fuel -= power;
         }
+        if (this.pressedKeys.X) {
+            this.controlShip.vx += -power / 10 * Math.sin(this.controlShip.r);
+            this.controlShip.vy += power / 10 * Math.cos(this.controlShip.r);
+            this.fuel -= power / 10;
+        }
+        this.fuel = Math.max(this.fuel, 0);
 
-        this.plannedFuel = Math.abs(this.progradeV) + Math.abs(this.radialInV);
 
         if (this.mode === "Pilot") {
 
@@ -353,6 +380,11 @@ class Game {
         for (let body of this.bodies) { body.calcTrajectory(this.logMap); }
     }
 
+    calcPlan() {
+        let isPlanning = this.mode === "Planning";
+        this.controlShip.calcPlan(isPlanning, this.progradeV, this.radialInV, this.target, this.logMap);
+    }
+
     toggleMode() {
 
         if (this.isPause) { return; }
@@ -377,11 +409,6 @@ class Game {
 
         this.mode = "Pilot";
 
-    }
-
-    calcPlan() {
-        let isPlanning = this.mode === "Planning";
-        this.controlShip.calcPlan(isPlanning, this.progradeV, this.radialInV, this.target, this.logMap);
     }
 
     moveCamera() {
@@ -435,11 +462,8 @@ class Game {
 
         this.camera.zoom += (this.zoom - this.camera.zoom) / 8;
 
-        // // set camera rotation
-        // let dvx = this.controlShip.vx - this.focus.vx;
-        // let dvy = this.controlShip.vy - this.focus.vy;
-
-        // this.camera.r = -Math.atan2(dvy, dvx) - Math.PI / 2;
+        // set camera rotation
+        this.camera.r = -this.controlShip.r;
     }
 
     drawBodies() {
@@ -514,14 +538,14 @@ class Game {
         let cy = this.c.height / 2
 
         offCtx.beginPath();
-        offCtx.moveTo(cx + -16, cy + 0);
+        offCtx.moveTo(cx + -24, cy + 0);
         offCtx.lineTo(cx + -12, cy + 0);
         offCtx.moveTo(cx + 12, cy + 0);
-        offCtx.lineTo(cx + 16, cy + 0);
-        offCtx.moveTo(cx + 0, cy + -16);
+        offCtx.lineTo(cx + 24, cy + 0);
+        offCtx.moveTo(cx + 0, cy + -24);
         offCtx.lineTo(cx + 0, cy + -12);
         offCtx.moveTo(cx + 0, cy + 12);
-        offCtx.lineTo(cx + 0, cy + 16);
+        offCtx.lineTo(cx + 0, cy + 24);
 
         offCtx.strokeStyle = "#00FFA3";
         offCtx.stroke();
@@ -705,10 +729,22 @@ class Game {
             case "2_KeyA": event.preventDefault(); this.pressedKeys.A = 1; break;
             case "2_KeyD": event.preventDefault(); this.pressedKeys.D = 1; break;
 
+            case "0_KeyQ": event.preventDefault(); this.pressedKeys.Q = 1; break;
+            case "0_KeyE": event.preventDefault(); this.pressedKeys.E = 1; break;
+
+            case "2_KeyQ": event.preventDefault(); this.pressedKeys.Q = 1; break;
+            case "2_KeyE": event.preventDefault(); this.pressedKeys.E = 1; break;
+
+            case "0_KeyZ": event.preventDefault(); this.pressedKeys.Z = 1; break;
+            case "0_KeyX": event.preventDefault(); this.pressedKeys.X = 1; break;
+
+            case "2_KeyZ": event.preventDefault(); this.pressedKeys.Z = 1; break;
+            case "2_KeyX": event.preventDefault(); this.pressedKeys.X = 1; break;
+
             case "2_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 1; break;
 
-            case "0_KeyE": event.preventDefault(); this.toggleMode(); break;
-            case "0_KeyQ": event.preventDefault(); this.executePlan(); break;
+            case "0_KeyF": event.preventDefault(); this.toggleMode(); break;
+            case "0_KeyC": event.preventDefault(); this.executePlan(); break;
 
             case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
 
@@ -734,6 +770,18 @@ class Game {
             case "2_KeyS": event.preventDefault(); this.pressedKeys.S = 0; break;
             case "2_KeyA": event.preventDefault(); this.pressedKeys.A = 0; break;
             case "2_KeyD": event.preventDefault(); this.pressedKeys.D = 0; break;
+
+            case "0_KeyQ": event.preventDefault(); this.pressedKeys.Q = 0; break;
+            case "0_KeyE": event.preventDefault(); this.pressedKeys.E = 0; break;
+
+            case "2_KeyQ": event.preventDefault(); this.pressedKeys.Q = 0; break;
+            case "2_KeyE": event.preventDefault(); this.pressedKeys.E = 0; break;
+
+            case "0_KeyZ": event.preventDefault(); this.pressedKeys.Z = 0; break;
+            case "0_KeyX": event.preventDefault(); this.pressedKeys.X = 0; break;
+
+            case "2_KeyZ": event.preventDefault(); this.pressedKeys.Z = 0; break;
+            case "2_KeyX": event.preventDefault(); this.pressedKeys.X = 0; break;
 
             case "0_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 0; break;
         }

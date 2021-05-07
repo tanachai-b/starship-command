@@ -21,6 +21,7 @@ class Body {
 
         this.vx = 0;
         this.vy = 0;
+
         this.ax = 0;
         this.ay = 0;
 
@@ -36,6 +37,13 @@ class Body {
             this.vx = parent.vx;
             this.vy = parent.vy;
             this.setVelCirc(parent);
+        }
+
+        this.r = 0;
+        this.vr = 0;
+
+        if (parent !== null) {
+            this.r = Math.atan2(parent.vy - this.vy, parent.vx - this.vx) - Math.PI / 2;
         }
     }
 
@@ -121,6 +129,8 @@ class Body {
 
             this.x += this.vx * precision;
             this.y += this.vy * precision;
+
+            this.r += this.vr * precision;
         }
     }
 
@@ -534,7 +544,7 @@ class Body {
         }
     }
 
-    drawBody(ctx, camera, isFocus, isPlanning, isTarget, isfuelStations, logMap) {
+    drawBody(ctx, camera, isfuelStations, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -649,7 +659,7 @@ class Body {
                 if (isPlanning) { ctx.fillStyle = "#FF307C"; }
                 ctx.fill();
             }
-            
+
             if (isPlanning && isTarget) {
                 ctx.fillStyle = "#FFEE00";
                 ctx.fill();
