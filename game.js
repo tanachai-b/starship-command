@@ -33,7 +33,7 @@ class Game {
 
         this.camSolSysIndex = 3;
         this.camMoonIndex = 0;
-        this.camTargetIndex = 0;
+        this.camTargetIndex = 2;
 
         this.focus;
         this.camPosition;
@@ -48,7 +48,7 @@ class Game {
         this.mode = "Pilot";
         this.engine = "Thruster";
         this.maxFuel = 999999;
-        this.fuel = 10000;
+        this.fuel = 20000;
         this.plannedFuel = 0;
 
         this.enableBlurEffect = true;
@@ -222,6 +222,8 @@ class Game {
 
     toggleEngine() {
 
+        if (this.isPause) { return; }
+
         if (this.engine === "RCS") {
             this.engine = "Thruster";
 
@@ -353,6 +355,8 @@ class Game {
 
     toggleMode() {
 
+        if (this.isPause) { return; }
+
         if (this.mode === "Pilot") {
             this.mode = "Planning";
             this.engine = "Thruster";
@@ -365,6 +369,8 @@ class Game {
     }
 
     executePlan() {
+
+        if (this.isPause) { return; }
 
         if (this.progradeV === 0 && this.radialInV === 0) { return; }
         if (this.plannedFuel > this.fuel) { return; }
@@ -514,10 +520,30 @@ class Game {
 
     addSideText(offCtx) {
 
+        // fuel usange (planned)
         let plannedFuelText = ""
         if (this.mode === "Planning") {
             plannedFuelText = " (-" + Math.round(this.plannedFuel) + ")";
         }
+
+        // distance to target
+        let tdx = this.target.x - this.controlShip.x;
+        let tdy = this.target.y - this.controlShip.y;
+        let targDist = Math.hypot(tdx, tdy);
+
+        // distance to target (planned)
+        let planDistText = ""
+        if (this.controlShip.targetClosest !== undefined && this.controlShip.planClosest !== undefined) {
+            let pdx = this.controlShip.targetClosest.x - this.controlShip.planClosest.x;
+            let pdy = this.controlShip.targetClosest.y - this.controlShip.planClosest.y;
+            planDistText = " (" + Math.round(Math.hypot(pdx, pdy)) + ")";
+        }
+
+        // relative velocy
+        let dvx = this.target.vx - this.controlShip.vx;
+        let dvy = this.target.vy - this.controlShip.vy;
+        let relativeV = Math.hypot(dvx, dvy);
+
         let texts = [];
         texts.push("V0.1");
         texts.push("");
@@ -544,14 +570,14 @@ class Game {
         texts.push("Engine : " + this.engine);
         texts.push("");
         texts.push("Mode : " + this.mode);
-        texts.push("Trajectory Relative To   : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
-        texts.push("Find Closest Approach To : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
-        texts.push("");
-        texts.push(this.isPause ? "[PAUSE]" : "");
+        texts.push("Trajectory Relative To     : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
+        texts.push("Find Closest Approach To   : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
+        texts.push("Distance to Target : " + Math.round(targDist) + planDistText);
+        texts.push("Relative Velocity : " + Math.round(relativeV));
         texts.push("");
         texts.push("");
         texts.push("Zoom             : " + this.zoom);
-        texts.push("Simulation Speed : " + this.speed);
+        texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));
         texts.push("[Backspace] : Toggle Blur Effect");
 
         offCtx.textBaseline = "top";
@@ -578,7 +604,20 @@ class Game {
 
     addModeBorder(offCtx) {
 
-        if (this.mode === "Planning") {
+        if (this.isPause) {
+
+            offCtx.strokeStyle = "#FFE100";
+            offCtx.lineWidth = 5;
+            offCtx.strokeRect(0, 0, this.c.width, this.c.height);
+
+            offCtx.textAlign = "center";
+            offCtx.textBaseline = "top";
+            offCtx.font = "32px Syne Mono";
+            offCtx.fillStyle = "#FFE100";;
+            offCtx.fillText("Paused", this.c.width / 2, 16);
+
+        } else if (this.mode === "Planning") {
+
             offCtx.strokeStyle = "#FF307C";
             offCtx.lineWidth = 5;
             offCtx.strokeRect(0, 0, this.c.width, this.c.height);
@@ -588,9 +627,9 @@ class Game {
             offCtx.font = "32px Syne Mono";
             offCtx.fillStyle = "#FF307C";;
             offCtx.fillText("Planning", this.c.width / 2, 16);
-        }
 
-        if (this.engine === "RCS") {
+        } else if (this.engine === "RCS") {
+
             offCtx.strokeStyle = "#4275ff";
             offCtx.lineWidth = 5;
             offCtx.strokeRect(0, 0, this.c.width, this.c.height);
