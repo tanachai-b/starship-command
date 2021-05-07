@@ -21,7 +21,7 @@ class Game {
 
         this.isPause = false;
         this.speed = -12;
-        this.zoom = 18;
+        this.zoom = 22;
         this.isFollowSelf = false;
         this.camera = new Camera();
 
@@ -47,8 +47,9 @@ class Game {
         this.radialInV = 0;
         this.mode = "Pilot";
         this.engine = "Thruster";
-        this.fuel = 8000;
-        this.maxFuel = 200000;
+        this.maxFuel = 999999;
+        this.fuel = 10000;
+        this.plannedFuel = 0;
 
         this.enableBlurEffect = true;
 
@@ -157,20 +158,20 @@ class Game {
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
 
-        let station1 = new Body("station1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
-        this.bodies.push(station1); this.bodiesMap.station1 = station1;
-        this.camMoons.earth.push(station1);
-        this.fuelStations.push(station1); this.fuelStationsMap.station1 = { body: station1, fuel: 8000 };
+        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
+        this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
+        this.camMoons.earth.push(fuelStation1);
+        this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 10000 };
 
-        let station2 = new Body("station2", "#349FC9", 0.02, 0.5, moon, 1737.1 + 3000, 190);
-        this.bodies.push(station2); this.bodiesMap.station2 = station2;
-        this.camMoons.earth.push(station2);
-        this.fuelStations.push(station2); this.fuelStationsMap.station2 = { body: station2, fuel: 18000 };
+        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 1737.1 + 100000, 190);
+        this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
+        this.camMoons.earth.push(fuelStation2);
+        this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
 
-        let station3 = new Body("station3", "#349FC9", 0.02, 0.5, mars,  40000, 75);
-        this.bodies.push(station3); this.bodiesMap.station3 = station3;
-        this.camMoons.mars.push(station3);
-        this.fuelStations.push(station3); this.fuelStationsMap.station3 = { body: station3, fuel: 18000 };
+        let fuelStation3 = new Body("fuelStation3", "#349FC9", 0.02, 0.5, mars, 40000, 75);
+        this.bodies.push(fuelStation3); this.bodiesMap.fuelStation3 = fuelStation3;
+        this.camMoons.mars.push(fuelStation3);
+        this.fuelStations.push(fuelStation3); this.fuelStationsMap.fuelStation3 = { body: fuelStation3, fuel: 20000 };
     }
 
     async gameLoop() {
@@ -278,9 +279,15 @@ class Game {
             if (this.pressedKeys.D) { this.radialInV -= power / 10; }
         }
 
+        this.plannedFuel = Math.abs(this.progradeV) + Math.abs(this.radialInV);
+
         if (this.mode === "Pilot") {
 
-            if (this.fuel > 0) {
+            if (this.fuel > this.plannedFuel) {
+
+                this.fuel -= this.plannedFuel
+                this.fuel = Math.max(this.fuel, 0);
+
                 let parent = this.controlShip.parent;
 
                 let dvx = this.controlShip.vx - parent.vx;
@@ -296,8 +303,7 @@ class Game {
                 this.controlShip.vx += direction.y * this.radialInV;
                 this.controlShip.vy += -direction.x * this.radialInV;
 
-                this.fuel -= Math.abs(this.progradeV) + Math.abs(this.radialInV);
-                this.fuel = Math.max(this.fuel, 0);
+
             }
 
             this.progradeV = 0;
@@ -359,9 +365,12 @@ class Game {
     }
 
     executePlan() {
-        if (this.progradeV !== 0 || this.radialInV !== 0) {
-            this.mode = "Pilot";
-        }
+
+        if (this.progradeV === 0 && this.radialInV === 0) { return; }
+        if (this.plannedFuel > this.fuel) { return; }
+
+        this.mode = "Pilot";
+
     }
 
     calcPlan() {
@@ -505,6 +514,10 @@ class Game {
 
     addSideText(offCtx) {
 
+        let plannedFuelText = ""
+        if (this.mode === "Planning") {
+            plannedFuelText = " (-" + Math.round(this.plannedFuel) + ")";
+        }
         let texts = [];
         texts.push("V0.1");
         texts.push("");
@@ -527,12 +540,12 @@ class Game {
         texts.push("[Q]      : Execute Plan");
         texts.push("");
         texts.push("");
+        texts.push("Fuel   : " + Math.round(this.fuel) + plannedFuelText);
+        texts.push("Engine : " + this.engine);
+        texts.push("");
         texts.push("Mode : " + this.mode);
         texts.push("Trajectory Relative To   : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
         texts.push("Find Closest Approach To : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
-        texts.push("");
-        texts.push("Engine : " + this.engine);
-        texts.push("Fuel   : " + Math.round(this.fuel));
         texts.push("");
         texts.push(this.isPause ? "[PAUSE]" : "");
         texts.push("");
