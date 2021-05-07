@@ -405,8 +405,12 @@ class Body {
         ctx.beginPath();
         for (let i = 0; i < this.trail.length; i++) {
 
-            let nx = (this.trail[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            let ny = (this.trail[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+            // let nx = (this.trail[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            // let ny = (this.trail[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            let np = this.calcXY(ctx, camera, this.trail[i].x + this.parent.x, this.trail[i].y + this.parent.y);
+            let nx = np.x;
+            let ny = np.y;
 
             if (i === 0) {
                 ctx.moveTo(nx, ny);
@@ -428,8 +432,12 @@ class Body {
         ctx.beginPath();
         for (let i = 0; i < this.trajectory.length; i++) {
 
-            let nx = (this.trajectory[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            let ny = (this.trajectory[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+            // let nx = (this.trajectory[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            // let ny = (this.trajectory[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            let np = this.calcXY(ctx, camera, this.trajectory[i].x + this.parent.x, this.trajectory[i].y + this.parent.y);
+            let nx = np.x;
+            let ny = np.y;
 
             if (i === 0) {
                 ctx.moveTo(nx, ny);
@@ -450,8 +458,12 @@ class Body {
         ctx.beginPath();
         for (let i = 0; i < this.plan.length; i++) {
 
-            let nx = (this.plan[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            let ny = (this.plan[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+            // let nx = (this.plan[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            // let ny = (this.plan[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            let np = this.calcXY(ctx, camera, this.plan[i].x + this.parent.x, this.plan[i].y + this.parent.y);
+            let nx = np.x;
+            let ny = np.y;
 
             if (i === 0) {
                 ctx.moveTo(nx, ny);
@@ -465,8 +477,12 @@ class Body {
 
         if (this.planClosest != undefined) {
 
-            let nx = (this.planClosest.x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            let ny = (this.planClosest.y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+            // let nx = (this.planClosest.x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            // let ny = (this.planClosest.y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            let np = this.calcXY(ctx, camera, this.planClosest.x + this.parent.x, this.planClosest.y + this.parent.y);
+            let nx = np.x;
+            let ny = np.y;
 
             ctx.beginPath();
             ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
@@ -485,8 +501,12 @@ class Body {
         ctx.beginPath();
         for (let i = 0; i < this.planTarget.length; i++) {
 
-            let nx = (this.planTarget[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            let ny = (this.planTarget[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+            // let nx = (this.planTarget[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            // let ny = (this.planTarget[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            let np = this.calcXY(ctx, camera, this.planTarget[i].x + this.parent.x, this.planTarget[i].y + this.parent.y);
+            let nx = np.x;
+            let ny = np.y;
 
             if (i === 0) {
                 ctx.moveTo(nx, ny);
@@ -499,8 +519,12 @@ class Body {
 
         if (this.targetClosest != undefined) {
 
-            let nx = (this.targetClosest.x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            let ny = (this.targetClosest.y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+            // let nx = (this.targetClosest.x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+            // let ny = (this.targetClosest.y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+            let np = this.calcXY(ctx, camera, this.targetClosest.x + this.parent.x, this.targetClosest.y + this.parent.y);
+            let nx = np.x;
+            let ny = np.y;
 
             ctx.beginPath();
             ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
@@ -514,9 +538,13 @@ class Body {
 
         let zoom = 2 ** (camera.zoom / 4);
 
-        let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
-        let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
+        // let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
+        // let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
         let nr = Math.max(this.radius / zoom, 2);
+
+        let np = this.calcXY(ctx, camera, this.x, this.y);
+        let nx = np.x;
+        let ny = np.y;
 
         ctx.beginPath();
         ctx.arc(nx, ny, nr, 0, 2 * Math.PI);
@@ -558,9 +586,14 @@ class Body {
 
         let zoom = 2 ** (camera.zoom / 4);
 
-        let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
-        let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
+        // let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
+        // let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
         let nr = Math.max(this.radius / zoom, 2);
+
+        let np = this.calcXY(ctx, camera, this.x, this.y);
+        let nx = np.x;
+        let ny = np.y;
+
 
         if (this.parent !== null) {
             let dx = this.x - this.parent.x;
@@ -581,5 +614,18 @@ class Body {
         ctx.font = "13px Syne Mono";
         ctx.textBaseline = "middle";
         ctx.fillText(bodyName, nx + nr + 8, ny);
+    }
+
+    calcXY(ctx, camera, x, y) {
+
+        let zoom = 2 ** (camera.zoom / 4);
+
+        let nx = (x - camera.x) / zoom
+        let ny = (y - camera.y) / zoom
+
+        let nnx = nx * Math.cos(camera.r) - ny * Math.sin(camera.r) + ctx.canvas.width / 2;
+        let nny = ny * Math.cos(camera.r) + nx * Math.sin(camera.r) + ctx.canvas.height / 2;
+
+        return { x: nnx, y: nny };
     }
 }

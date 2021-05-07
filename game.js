@@ -5,6 +5,8 @@ class Camera {
 
         this.x = x;
         this.y = y;
+        this.r = 0;
+
         this.zoom = zoom;
 
         this.vx = 0;
@@ -403,12 +405,10 @@ class Game {
 
         this.controlShip.switchParent(this.focus);
 
-        if (this.camPosition === undefined) {
-            if (this.isFollowSelf) {
-                this.camPosition = this.controlShip;
-            } else {
-                this.camPosition = this.focus;
-            }
+        if (this.isFollowSelf) {
+            this.camPosition = this.controlShip;
+        } else {
+            this.camPosition = this.focus;
         }
 
         // initialize camera position
@@ -436,6 +436,12 @@ class Game {
         this.zoom = Math.min(this.zoom, 96);
 
         this.camera.zoom += (this.zoom - this.camera.zoom) / 8;
+
+        // // set camera rotation
+        // let dvx = this.controlShip.vx - this.focus.vx;
+        // let dvy = this.controlShip.vy - this.focus.vy;
+
+        // this.camera.r = -Math.atan2(dvy, dvx) - Math.PI / 2;
     }
 
     drawBodies() {
@@ -657,6 +663,7 @@ class Game {
     wheel(event) {
         // event.preventDefault();
         // this.zoom += Math.sign(event.deltaY);
+        // this.camera.r -= Math.sign(event.deltaY) / 180 * Math.PI;
     }
 
     keydown(event) {
@@ -752,8 +759,6 @@ class Game {
         this.controlShip.switchParent(this.focus);
         this.isFollowSelf = false;
 
-        this.camPosition = this.focus;
-
         this.camMoonIndex = 0;
         this.camTargetIndex = 0;
     }
@@ -769,8 +774,6 @@ class Game {
 
         this.controlShip.switchParent(this.focus);
         this.isFollowSelf = false;
-
-        this.camPosition = this.focus;
     }
 
     cycleTarget(direction) {
