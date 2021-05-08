@@ -559,11 +559,11 @@ class Body {
         ctx.beginPath();
         ctx.arc(nx, ny, nr, 0, 2 * Math.PI);
 
-        // ctx.strokeStyle = this.color;
-        // ctx.stroke();
+        ctx.strokeStyle = this.color;
+        ctx.stroke();
 
-        ctx.fillStyle = this.color;
-        ctx.fill();
+        // ctx.fillStyle = this.color;
+        // ctx.fill();
 
         if (isfuelStations) {
 

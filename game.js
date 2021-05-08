@@ -53,6 +53,8 @@ class Game {
         this.plannedFuel = 0;
 
         this.heading;
+        this.halfway;
+        this.rotDir;
 
         this.progradeV = 0;
         this.radialInV = 0;
@@ -236,16 +238,84 @@ class Game {
     }
 
     rotateShip() {
-        if (this.controlShip === undefined) { return; }
-        if (this.fuel === 0) { return; }
 
-        let power = 0.1;
-        if (this.pressedKeys.Shift) { power /= 10; }
+        if (this.pressedKeys.Q || this.pressedKeys.E) {
 
-        if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power; }
-        if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power; }
+            this.heading = undefined;
 
-        this.fuel = Math.max(this.fuel, 0);
+            if (this.controlShip === undefined) { return; }
+            if (this.fuel === 0) { return; }
+
+            let power = 0.1;
+            if (this.pressedKeys.Shift) { power /= 10; }
+
+            if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power; }
+            if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power; }
+
+            this.fuel = Math.max(this.fuel, 0);
+
+        }
+
+        else {
+
+            let goal = 0;
+
+            if (this.heading === "prograde") {
+                goal = -Math.PI / 2;
+            } else if (this.heading === "retrograde") {
+                goal = +Math.PI / 2;
+            } else if (this.heading === "radial-out") {
+                goal = -Math.PI;
+            } else if (this.heading === "radial-in") {
+                goal = 0;
+            } else {
+                return;
+            }
+
+            let parent = this.controlShip.parent;
+
+            let dvx = this.controlShip.vx - parent.vx;
+            let dvy = this.controlShip.vy - parent.vy;
+            let prog = Math.atan2(dvy, dvx);
+
+            let dir = this.controlShip.r + goal;
+
+            let dist = (prog - dir + 5 * Math.PI) % (2 * Math.PI) - Math.PI;
+
+            // this.logMap["prog"] = (prog + 5 * Math.PI) % (2 * Math.PI) - Math.PI;
+            // this.logMap["dir"] = (dir + 5 * Math.PI) % (2 * Math.PI) - Math.PI;
+            // this.logMap["dist"] = dist;
+
+            let power = 0.1;
+            let precision = 10 ** (this.speed / 3);
+
+            if (dist < 0) {
+
+                if (Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2 > dist) {
+                    this.controlShip.vr -= power;
+                    this.fuel-=power;
+                    // this.logMap["move"] = "plus";
+                } else {
+                    this.controlShip.vr += power;
+                    this.fuel-=power;
+                    // this.logMap["move"] = "minus";
+                }
+            } else {
+                if (Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2 < dist) {
+                    this.controlShip.vr += power;
+                    this.fuel-=power;
+                    // this.logMap["move"] = "plus";
+                } else {
+                    this.controlShip.vr -= power;
+                    this.fuel-=power;
+                    // this.logMap["move"] = "minus";
+                }
+            }
+
+            this.fuel = Math.max(this.fuel, 0);
+
+            // this.logMap["triangle"] = Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2;
+        }
     }
 
     toggleEngine() {
@@ -290,14 +360,20 @@ class Game {
         let power = 10;
         if (this.pressedKeys.Shift) { power /= 10; }
 
-        // if (this.mode === "Planning") {
-        if (this.pressedKeys.W) { this.progradeV += power; }
-        if (this.pressedKeys.S) { this.progradeV -= power; }
-        if (this.pressedKeys.A) { this.radialInV += power; }
-        if (this.pressedKeys.D) { this.radialInV -= power; }
+        if (this.mode === "Planning") {
+            if (this.pressedKeys.W) { this.progradeV += power; }
+            if (this.pressedKeys.S) { this.progradeV -= power; }
+            if (this.pressedKeys.A) { this.radialInV += power; }
+            if (this.pressedKeys.D) { this.radialInV -= power; }
 
-        this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
-        // }
+            this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
+
+        } else {
+            if (this.pressedKeys.W) { this.heading = "prograde"; }
+            if (this.pressedKeys.S) { this.heading = "retrograde"; }
+            if (this.pressedKeys.A) { this.heading = "radial-in"; }
+            if (this.pressedKeys.D) { this.heading = "radial-out"; }
+        }
 
         if (this.pressedKeys.Z) {
             this.controlShip.vx += power * Math.sin(this.controlShip.r);
