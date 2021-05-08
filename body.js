@@ -461,32 +461,34 @@ class Body {
         ctx.stroke();
     }
 
-    drawPlan(ctx, camera, logMap) {
+    drawPlan(ctx, camera, isHavePlan, logMap) {
 
         if (this.plan.length == 0) { return; }
 
         let zoom = 2 ** (camera.zoom / 4);
 
-        ctx.beginPath();
-        for (let i = 0; i < this.plan.length; i++) {
+        if (isHavePlan) {
+            ctx.beginPath();
+            for (let i = 0; i < this.plan.length; i++) {
 
-            // let nx = (this.plan[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            // let ny = (this.plan[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+                // let nx = (this.plan[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+                // let ny = (this.plan[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
 
-            let np = this.calcXY(ctx, camera, this.plan[i].x + this.parent.x, this.plan[i].y + this.parent.y);
-            let nx = np.x;
-            let ny = np.y;
+                let np = this.calcXY(ctx, camera, this.plan[i].x + this.parent.x, this.plan[i].y + this.parent.y);
+                let nx = np.x;
+                let ny = np.y;
 
-            if (i === 0) {
-                ctx.moveTo(nx, ny);
-            } else {
-                ctx.lineTo(nx, ny);
+                if (i === 0) {
+                    ctx.moveTo(nx, ny);
+                } else {
+                    ctx.lineTo(nx, ny);
+                }
             }
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#FF307C";
+            ctx.stroke();
+            ctx.lineWidth = 1;
         }
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#FF307C";
-        ctx.stroke();
-        ctx.lineWidth = 1;
 
         if (this.planClosest != undefined) {
 
@@ -500,14 +502,19 @@ class Body {
             ctx.beginPath();
             ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
-            ctx.strokeStyle = "#FF307C";
-            ctx.lineWidth = 2;
+            if (isHavePlan) {
+                ctx.strokeStyle = "#FF307C";
+                ctx.lineWidth = 2;
+            } else {
+                ctx.strokeStyle = this.color
+                ctx.lineWidth = 1;
+            }
             ctx.stroke();
             ctx.lineWidth = 1;
         }
     }
 
-    drawPlanTarget(ctx, camera, logMap) {
+    drawPlanTarget(ctx, camera, isHavePlan, logMap) {
 
         if (this.planTarget.length == 0) { return; }
 
@@ -529,7 +536,12 @@ class Body {
                 ctx.lineTo(nx, ny);
             }
         }
-        ctx.lineWidth = 2;
+
+        if (isHavePlan) {
+            ctx.lineWidth = 2;
+        } else {
+            ctx.lineWidth = 1;
+        }
         ctx.strokeStyle = "#FFEE00";
         ctx.stroke();
         ctx.lineWidth = 1;
@@ -546,8 +558,12 @@ class Body {
             ctx.beginPath();
             ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
+            if (isHavePlan) {
+                ctx.lineWidth = 2;
+            } else {
+                ctx.lineWidth = 1;
+            }
             ctx.strokeStyle = "#FFEE00";
-            ctx.lineWidth = 2;
             ctx.stroke();
             ctx.lineWidth = 1;
         }
@@ -629,7 +645,7 @@ class Body {
         }
     }
 
-    drawMarker(ctx, camera, isShip, isFocus, isPlanning, isTarget, logMap) {
+    drawMarker(ctx, camera, isShip, isFocus, isPlanning, isTarget, isHavePlan, logMap) {
 
         if (!isShip && !isFocus && !isTarget) { return; }
 
@@ -645,10 +661,11 @@ class Body {
 
         if (isFocus) {
             ctx.strokeStyle = "#00FFA3";
-            if (isPlanning) { ctx.strokeStyle = "#FF307C"; }
+            ctx.lineWidth = 1;
+            if (isPlanning) { ctx.strokeStyle = "#FF307C"; ctx.lineWidth = 2; }
+
             let size = 16;
 
-            ctx.lineWidth = 2;
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
             ctx.lineWidth = 1;
         }
@@ -657,7 +674,7 @@ class Body {
             ctx.strokeStyle = "#FFEE00";
             let size = 12;
 
-            ctx.lineWidth = 2;
+            if (isHavePlan) { ctx.lineWidth = 2; } else { ctx.lineWidth = 1; }
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
             ctx.lineWidth = 1;
         }

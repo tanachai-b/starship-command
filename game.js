@@ -49,7 +49,7 @@ class Game {
         this.controlShip;
 
         this.mode = "Pilot";
-        this.engine = "RCS";
+        this.engine = "Thruster";
         this.maxFuel = 999999;
         this.fuel = 10000;
 
@@ -202,7 +202,7 @@ class Game {
 
             this.moveCamera();
             this.drawBodies();
-            this.drawUI();
+            this.drawHUD();
 
             if (!this.isPause) { this.log(); }
             await timer(1);
@@ -420,19 +420,21 @@ class Game {
                     vy1 = -power / 10 * Math.cos(this.controlShip.r);
                 }
 
-                // minus current thrust from planned route / planned fuel
-                let dx = this.controlShip.vx - this.controlShip.parent.vx;
-                let dy = this.controlShip.vy - this.controlShip.parent.vy;
-                let dist = Math.hypot(dx, dy);
-                let prograde = { cos: dx / dist, sin: dy / dist };
+                if (this.progradeV !== 0 || this.radialInV !== 0) {
+                    // minus current thrust from planned route / planned fuel
+                    let dx = this.controlShip.vx - this.controlShip.parent.vx;
+                    let dy = this.controlShip.vy - this.controlShip.parent.vy;
+                    let dist = Math.hypot(dx, dy);
+                    let prograde = { cos: dx / dist, sin: dy / dist };
 
-                let nvx = vx1 * prograde.cos - vy1 * prograde.sin;
-                let nvy = vy1 * prograde.cos + vx1 * prograde.sin;
+                    let nvx = vx1 * prograde.cos - vy1 * prograde.sin;
+                    let nvy = vy1 * prograde.cos + vx1 * prograde.sin;
 
-                this.progradeV -= nvx;
-                this.radialInV -= nvy;
+                    this.progradeV -= nvx;
+                    this.radialInV -= nvy;
 
-                this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
+                    this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
+                }
 
                 if (this.pressedKeys.Z) {
                     this.controlShip.vx += vx1;
@@ -638,8 +640,9 @@ class Game {
         for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap); }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
-            this.bodies[i].drawPlan(offCtx, this.camera, this.logMap);
-            this.bodies[i].drawPlanTarget(offCtx, this.camera, this.logMap);
+            let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
+            this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, this.logMap);
+            this.bodies[i].drawPlanTarget(offCtx, this.camera, isHavePlan, this.logMap);
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
@@ -656,8 +659,9 @@ class Game {
             let isFocus = this.bodies[i].name === this.focus.name;
             let isPlanning = this.mode === "Planning";
             let isTarget = this.bodies[i].name === this.target.name;
+            let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
 
-            this.bodies[i].drawMarker(offCtx, this.camera, isShip, isFocus, isPlanning, isTarget, this.logMap);
+            this.bodies[i].drawMarker(offCtx, this.camera, isShip, isFocus, isPlanning, isTarget, isHavePlan, this.logMap);
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
@@ -677,7 +681,7 @@ class Game {
         this.ctx.drawImage(offScreenCanvas, 0, 0);
     }
 
-    drawUI() {
+    drawHUD() {
 
         let offScreenCanvas = document.createElement("canvas");
         offScreenCanvas.width = this.c.width;
@@ -716,7 +720,7 @@ class Game {
         offCtx.lineWidth = 2;
         offCtx.strokeStyle = "#00FFA3";
         if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
-        if (this.engine === "RCS") { offCtx.strokeStyle = "#4275ff"; }
+        if (this.engine === "RCS") { offCtx.strokeStyle = "#006EFF"; }
         offCtx.stroke();
 
         if (this.heading !== "Manual") {
@@ -738,7 +742,7 @@ class Game {
         offCtx.lineWidth = 1;
         offCtx.strokeStyle = "#00FFA3";
         if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
-        if (this.engine === "RCS") { offCtx.strokeStyle = "#4275ff"; }
+        if (this.engine === "RCS") { offCtx.strokeStyle = "#006EFF"; }
         offCtx.stroke();
     }
 
@@ -771,38 +775,44 @@ class Game {
         let texts = [];
         texts.push("V0.1");
         texts.push("");
-        texts.push("[,], [.] : Slowdown, Speedup Time");
-        texts.push("[Space]  : Toggle Pause Time");
+        texts.push("[Backspace]  : Toggle Blur Effect");
+        texts.push("[Space]      : Pause Simulator");
+        texts.push("[,][.]       : Slowdown, Speedup Time");
         texts.push("");
-        texts.push("[I], [K] : Zoom In, Zoom Out");
-        texts.push("[J], [L] : Next, Previous Moon/Object");
-        texts.push("[H], [;] : Next, Previous Planet");
-        texts.push("[N]      : Toggle Focus on Ship");
+        texts.push("[I][K]       : Zoom In, Zoom Out");
+        texts.push("[J][L]       : Cycle Moons/Objects");
+        texts.push("[H][;]       : Cycle Planets");
+        texts.push("[U][O]       : Cycle Targets");
+        texts.push("[N]          : Toggle Focus on Ship");
         texts.push("");
-        texts.push("[R]      : Toggle Thruster/RCS");
-        texts.push("[W], [S], [A], [D] : RCS");
-        texts.push("[W], [S], [A], [D], [C] : Auto Heading");
-        texts.push("[Z], [X] : Forward, Backward (Thruster)");
+        texts.push("[E][Q]       : Manual Heading Controls");
+        texts.push("[W][S][A][D] : Auto Heading Controls (Main)");
+        texts.push("[C]          : Toggle Hold/Manual Heading");
+        texts.push("[Z][X]       : Main Thruster Controls (Main)");
         texts.push("");
-        texts.push("[F]      : Toggle Pilot/Planning Mode");
-        texts.push("[U], [O] : Next, Previous Target");
-        texts.push("[V]      : Clear Plan");
+        texts.push("[R]          : Toggle RCS Thruster Mode");
+        texts.push("[W][S][A][D] : Direction Controls (RCS)");
+        texts.push("");
+        texts.push("[F]          : Toggle Trajectory Planning");
+        texts.push("[W][S][A][D] : Plan Direction Controls (Plan Mode)");
+        texts.push("[V]          : Discard Plan");
+        texts.push("");
+        // texts.push("Trajectory Relative To     : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
+        // texts.push("Find Closest Approach To   : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
+        texts.push("Distance to Target : " + Math.round(targDist) + planDistText);
+        texts.push("Relative Velocity  : " + Math.round(relativeV));
         texts.push("");
         texts.push("Fuel   : " + Math.round(this.fuel) + plannedFuelText);
-        texts.push("Engine : " + this.engine);
-        texts.push("Mode : " + this.mode);
         texts.push("");
-        texts.push("Trajectory Relative To     : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
-        texts.push("Find Closest Approach To   : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
-        texts.push("Distance to Target         : " + Math.round(targDist) + planDistText);
-        texts.push("Relative Velocity          : " + Math.round(relativeV));
+        // texts.push("Heading : " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1));
+        // texts.push("Engine : " + this.engine);
+        // texts.push("Mode : " + this.mode);
         texts.push("");
-        texts.push("Heading : " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1));
         texts.push("");
         texts.push("");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));
-        texts.push("[Backspace] : Toggle Blur Effect");
+
 
         offCtx.textBaseline = "top";
         offCtx.fillStyle = "#00FFA3";
@@ -850,19 +860,53 @@ class Game {
             offCtx.textBaseline = "top";
             offCtx.font = "32px Syne Mono";
             offCtx.fillStyle = "#FF307C";;
-            offCtx.fillText("Planning", this.c.width / 2, 16);
+            offCtx.fillText("Trajectory Planning", this.c.width / 2, 16);
+
+            offCtx.font = "24px Syne Mono";
+            offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
+
+            offCtx.textAlign = "center";
+            offCtx.textBaseline = "bottom";
+            offCtx.font = "24px Syne Mono";
+            offCtx.fillStyle = "#FFE100";;
+            offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, this.c.height - 32);
 
         } else if (this.engine === "RCS") {
 
-            offCtx.strokeStyle = "#4275ff";
+            offCtx.strokeStyle = "#006EFF";
             offCtx.lineWidth = 5;
             offCtx.strokeRect(0, 0, this.c.width, this.c.height);
 
             offCtx.textAlign = "center";
             offCtx.textBaseline = "top";
             offCtx.font = "32px Syne Mono";
-            offCtx.fillStyle = "#4275ff";;
-            offCtx.fillText("RCS", this.c.width / 2, 16);
+            offCtx.fillStyle = "#006EFF";;
+            offCtx.fillText("RCS Mode", this.c.width / 2, 16);
+
+            offCtx.font = "24px Syne Mono";
+            offCtx.fillText("Orbiting: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
+
+            offCtx.textAlign = "center";
+            offCtx.textBaseline = "bottom";
+            offCtx.font = "24px Syne Mono";
+            offCtx.fillStyle = "#FFE100";;
+            offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, this.c.height - 32);
+
+        } else {
+            offCtx.textAlign = "center";
+            offCtx.textBaseline = "top";
+            offCtx.font = "32px Syne Mono";
+            offCtx.fillStyle = "#00FFA3";
+            offCtx.fillText("Orbiting " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 16);
+
+            offCtx.font = "24px Syne Mono";
+            offCtx.fillText("Heading: " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1), this.c.width / 2, 64);
+
+            offCtx.textAlign = "center";
+            offCtx.textBaseline = "bottom";
+            offCtx.font = "24px Syne Mono";
+            offCtx.fillStyle = "#FFE100";;
+            offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, this.c.height - 32);
         }
     }
 
