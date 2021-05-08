@@ -240,8 +240,7 @@ class Body {
     calcPlan(isPlanning, progradeV, radialInV, target, logMap) {
 
         if (
-            !isPlanning
-            || this.parent === null
+            this.parent === null
             || target === undefined
         ) {
             this.plan = [];
@@ -481,9 +480,10 @@ class Body {
                 ctx.lineTo(nx, ny);
             }
         }
+        ctx.lineWidth = 2;
         ctx.strokeStyle = "#FF307C";
         ctx.stroke();
-
+        ctx.lineWidth = 1;
 
         if (this.planClosest != undefined) {
 
@@ -498,7 +498,9 @@ class Body {
             ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
             ctx.strokeStyle = "#FF307C";
+            ctx.lineWidth = 2;
             ctx.stroke();
+            ctx.lineWidth = 1;
         }
     }
 
@@ -524,8 +526,10 @@ class Body {
                 ctx.lineTo(nx, ny);
             }
         }
+        ctx.lineWidth = 2;
         ctx.strokeStyle = "#FFEE00";
         ctx.stroke();
+        ctx.lineWidth = 1;
 
         if (this.targetClosest != undefined) {
 
@@ -540,11 +544,13 @@ class Body {
             ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
             ctx.strokeStyle = "#FFEE00";
+            ctx.lineWidth = 2;
             ctx.stroke();
+            ctx.lineWidth = 1;
         }
     }
 
-    drawBody(ctx, camera, isfuelStations, logMap) {
+    drawBody(ctx, camera, isShip, isfuelStations, logMap) {
 
         let zoom = 2 ** (camera.zoom / 4);
 
@@ -559,11 +565,13 @@ class Body {
         ctx.beginPath();
         ctx.arc(nx, ny, nr, 0, 2 * Math.PI);
 
-        ctx.strokeStyle = this.color;
-        ctx.stroke();
+        // ctx.strokeStyle = this.color;
+        // ctx.stroke();
 
-        // ctx.fillStyle = this.color;
-        // ctx.fill();
+        if (!isShip) {
+            ctx.fillStyle = this.color;
+            ctx.fill();
+        }
 
         if (isfuelStations) {
 
@@ -576,6 +584,45 @@ class Body {
             ctx.setLineDash([5]);
             ctx.stroke();
             ctx.setLineDash([]);
+        }
+
+        if (isShip) {
+
+            let triangle = [];
+            triangle.push({ x: 11, y: 0 });
+            triangle.push({ x: 9, y: 2 });
+            triangle.push({ x: 3, y: 3 });
+            triangle.push({ x: -2, y: 8 });
+            triangle.push({ x: -5, y: 7 });
+            triangle.push({ x: -6, y: 3 });
+            triangle.push({ x: -7, y: 2.5 });
+
+            triangle.push({ x: -7, y: 0 });
+
+            triangle.push({ x: -7, y: -2.5 });
+            triangle.push({ x: -6, y: -3 });
+            triangle.push({ x: -5, y: -7 });
+            triangle.push({ x: -2, y: -8 });
+            triangle.push({ x: 3, y: -3 });
+            triangle.push({ x: 9, y: -2 });
+            triangle.push({ x: 11, y: 0 });
+
+            ctx.beginPath();
+            for (let i = 0; i < triangle.length; i++) {
+
+                let point = triangle[i];
+                let np1 = this.calcXY(ctx, new Camera(0, 0, this.r - Math.PI / 2, 42), point.x, point.y);
+                let np = this.calcXY(ctx, camera, np1.x + this.x - ctx.canvas.width / 2, np1.y + this.y - ctx.canvas.height / 2);
+
+                if (i === 0) {
+                    ctx.moveTo(np.x, np.y);
+                } else {
+                    ctx.lineTo(np.x, np.y);
+                }
+            }
+
+            ctx.fillStyle = "#dedede";
+            ctx.fill();
         }
     }
 
@@ -597,13 +644,52 @@ class Body {
             ctx.strokeStyle = "#00FFA3";
             if (isPlanning) { ctx.strokeStyle = "#FF307C"; }
             let size = 16;
+
+            ctx.lineWidth = 2;
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
+            ctx.lineWidth = 1;
         }
 
-        if (isPlanning && isTarget) {
+        if (isTarget) {
             ctx.strokeStyle = "#FFEE00";
             let size = 12;
+
+            ctx.lineWidth = 2;
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
+            ctx.lineWidth = 1;
+        }
+
+        if (isShip) {
+
+            let triangle = [];
+            triangle.push({ x: 12, y: 0 });
+            triangle.push({ x: -8, y: 6 });
+            triangle.push({ x: -8, y: -6 });
+            triangle.push({ x: 12, y: 0 });
+
+            let np = this.calcXY(ctx, camera, this.x, this.y);
+
+            ctx.beginPath();
+            for (let i = 0; i < triangle.length; i++) {
+
+                let point = triangle[i];
+
+                let np1 = this.calcXY(ctx, new Camera(0, 0, this.r - Math.PI / 2 + camera.r, 0), point.x, point.y);
+
+                let x = np.x + np1.x - ctx.canvas.width / 2;
+                let y = np.y + np1.y - ctx.canvas.height / 2;
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+
+                // ctx.strokeStyle = this.color;
+                // ctx.stroke();
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
         }
 
         // triangle for out-of-screen markers
@@ -660,7 +746,7 @@ class Body {
                 ctx.fill();
             }
 
-            if (isPlanning && isTarget) {
+            if (isTarget) {
                 ctx.fillStyle = "#FFEE00";
                 ctx.fill();
             }
@@ -672,7 +758,9 @@ class Body {
         }
     }
 
-    drawName(ctx, camera, stationsMap, logMap) {
+    drawName(ctx, camera, isShip, isFollowSelf, stationsMap, logMap) {
+
+        if (isShip && isFollowSelf) { return; }
 
         let zoom = 2 ** (camera.zoom / 4);
 

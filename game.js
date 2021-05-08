@@ -1,12 +1,11 @@
 "use strict";
 
 class Camera {
-    constructor(x, y, zoom) {
+    constructor(x, y, r, zoom) {
 
         this.x = x;
         this.y = y;
-        this.r = 0;
-
+        this.r = r;
         this.zoom = zoom;
 
         this.vx = 0;
@@ -23,7 +22,7 @@ class Game {
 
         this.isPause = false;
         this.speed = -12;
-        this.zoom = 22;
+        this.zoom = -48;
         this.isFollowSelf = true;
         this.camera = new Camera();
 
@@ -47,17 +46,15 @@ class Game {
         this.controlShip;
 
         this.mode = "Pilot";
-        this.engine = "Thruster";
+        this.engine = "RCS";
         this.maxFuel = 999999;
-        this.fuel = 20000;
-        this.plannedFuel = 0;
+        this.fuel = 10000;
 
-        this.heading;
-        this.halfway;
-        this.rotDir;
+        this.heading = "Manual";
 
         this.progradeV = 0;
         this.radialInV = 0;
+        this.plannedFuel = 0;
 
         this.enableBlurEffect = true;
 
@@ -162,12 +159,12 @@ class Game {
 
         // ========================
 
-        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 1000, 95);
-        this.bodies.push(starship); this.bodiesMap.starship = starship;
-        this.controlShip = starship;
-        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 10000, -30.0001);
+        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 1000, 95);
         // this.bodies.push(starship); this.bodiesMap.starship = starship;
         // this.controlShip = starship;
+        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 10000.03, -30.00015);
+        this.bodies.push(starship); this.bodiesMap.starship = starship;
+        this.controlShip = starship;
 
         let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
@@ -237,26 +234,48 @@ class Game {
         if (this.engine === "Thruster") { this.thruster(); }
     }
 
+    toggleHoldHeading() {
+
+        if (this.heading === "Hold") {
+            this.heading = "Manual";
+        } else {
+            this.heading = "Hold"
+        }
+    }
+
     rotateShip() {
+
+        if (this.controlShip === undefined) { return; }
+        if (this.fuel === 0) { return; }
+
+        let power = 1;
 
         if (this.pressedKeys.Q || this.pressedKeys.E) {
 
-            this.heading = undefined;
+            this.heading = "Manual";
 
-            if (this.controlShip === undefined) { return; }
-            if (this.fuel === 0) { return; }
-
-            let power = 0.1;
             if (this.pressedKeys.Shift) { power /= 10; }
 
-            if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power; }
-            if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power; }
+            if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power / 10; }
+            if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power / 10; }
 
             this.fuel = Math.max(this.fuel, 0);
 
-        }
+        } else if (this.heading === "Hold") {
 
-        else {
+            if (this.pressedKeys.Shift) { power /= 10; }
+
+            if (this.controlShip.vr < 0) {
+                this.controlShip.vr += power;
+                this.fuel -= power / 10;
+            } else {
+                this.controlShip.vr -= power;
+                this.fuel -= power / 10;
+            }
+
+            this.fuel = Math.max(this.fuel, 0);
+
+        } else {
 
             let goal = 0;
 
@@ -286,28 +305,27 @@ class Game {
             // this.logMap["dir"] = (dir + 5 * Math.PI) % (2 * Math.PI) - Math.PI;
             // this.logMap["dist"] = dist;
 
-            let power = 0.1;
             let precision = 10 ** (this.speed / 3);
 
             if (dist < 0) {
 
                 if (Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2 > dist) {
                     this.controlShip.vr -= power;
-                    this.fuel-=power;
+                    this.fuel -= power / 10;
                     // this.logMap["move"] = "plus";
                 } else {
                     this.controlShip.vr += power;
-                    this.fuel-=power;
+                    this.fuel -= power / 10;
                     // this.logMap["move"] = "minus";
                 }
             } else {
                 if (Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2 < dist) {
                     this.controlShip.vr += power;
-                    this.fuel-=power;
+                    this.fuel -= power / 10;
                     // this.logMap["move"] = "plus";
                 } else {
                     this.controlShip.vr -= power;
-                    this.fuel-=power;
+                    this.fuel -= power / 10;
                     // this.logMap["move"] = "minus";
                 }
             }
@@ -328,9 +346,17 @@ class Game {
         } else if (this.engine === "Thruster") {
             this.engine = "RCS";
 
-            this.progradeV = 0;
-            this.radialInV = 0;
+            // this.progradeV = 0;
+            // this.radialInV = 0;
+            // this.plannedFuel = 0;
+
             this.mode = "Pilot";
+
+            if (this.heading !== "Manual") {
+                this.heading = "Hold";
+            } else {
+                this.heading = "Manual";
+            }
         }
     }
 
@@ -373,47 +399,50 @@ class Game {
             if (this.pressedKeys.S) { this.heading = "retrograde"; }
             if (this.pressedKeys.A) { this.heading = "radial-in"; }
             if (this.pressedKeys.D) { this.heading = "radial-out"; }
+
+            if (this.pressedKeys.Z) {
+                this.controlShip.vx += power * Math.sin(this.controlShip.r);
+                this.controlShip.vy += -power * Math.cos(this.controlShip.r);
+                this.fuel -= power;
+            }
+            if (this.pressedKeys.X) {
+                this.controlShip.vx += -power / 10 * Math.sin(this.controlShip.r);
+                this.controlShip.vy += power / 10 * Math.cos(this.controlShip.r);
+                this.fuel -= power / 10;
+            }
         }
 
-        if (this.pressedKeys.Z) {
-            this.controlShip.vx += power * Math.sin(this.controlShip.r);
-            this.controlShip.vy += -power * Math.cos(this.controlShip.r);
-            this.fuel -= power;
-        }
-        if (this.pressedKeys.X) {
-            this.controlShip.vx += -power / 10 * Math.sin(this.controlShip.r);
-            this.controlShip.vy += power / 10 * Math.cos(this.controlShip.r);
-            this.fuel -= power / 10;
-        }
         this.fuel = Math.max(this.fuel, 0);
 
 
-        if (this.mode === "Pilot") {
+        // if (this.mode === "Pilot") {
 
-            if (this.fuel > this.plannedFuel) {
+        //     if (this.fuel > this.plannedFuel) {
 
-                this.fuel -= this.plannedFuel
-                this.fuel = Math.max(this.fuel, 0);
+        //         this.fuel -= this.plannedFuel
+        //         this.fuel = Math.max(this.fuel, 0);
 
-                let parent = this.controlShip.parent;
+        //         this.plannedFuel = 0;
 
-                let dvx = this.controlShip.vx - parent.vx;
-                let dvy = this.controlShip.vy - parent.vy;
+        //         let parent = this.controlShip.parent;
 
-                let dist = Math.hypot(dvx, dvy);
+        //         let dvx = this.controlShip.vx - parent.vx;
+        //         let dvy = this.controlShip.vy - parent.vy;
 
-                let direction = { x: dvx / dist, y: dvy / dist };
+        //         let dist = Math.hypot(dvx, dvy);
 
-                this.controlShip.vx += direction.x * this.progradeV;
-                this.controlShip.vy += direction.y * this.progradeV;
+        //         let direction = { x: dvx / dist, y: dvy / dist };
 
-                this.controlShip.vx += direction.y * this.radialInV;
-                this.controlShip.vy += -direction.x * this.radialInV;
-            }
+        //         this.controlShip.vx += direction.x * this.progradeV;
+        //         this.controlShip.vy += direction.y * this.progradeV;
 
-            this.progradeV = 0;
-            this.radialInV = 0;
-        }
+        //         this.controlShip.vx += direction.y * this.radialInV;
+        //         this.controlShip.vy += -direction.x * this.radialInV;
+        //     }
+
+        //     this.progradeV = 0;
+        //     this.radialInV = 0;
+        // }
     }
 
     refuel() {
@@ -470,21 +499,32 @@ class Game {
             this.engine = "Thruster";
 
         } else if (this.mode === "Planning") {
-            this.progradeV = 0;
-            this.radialInV = 0;
+            // this.progradeV = 0;
+            // this.radialInV = 0;
+            // this.plannedFuel = 0;
             this.mode = "Pilot";
         }
     }
 
-    executePlan() {
+    // executePlan() {
+
+    //     if (this.isPause) { return; }
+
+    //     if (this.progradeV === 0 && this.radialInV === 0) { return; }
+    //     if (this.plannedFuel > this.fuel) { return; }
+
+    //     this.mode = "Pilot";
+    // }
+
+    clearPlan() {
 
         if (this.isPause) { return; }
 
-        if (this.progradeV === 0 && this.radialInV === 0) { return; }
-        if (this.plannedFuel > this.fuel) { return; }
+        this.progradeV = 0;
+        this.radialInV = 0;
+        this.plannedFuel = 0;
 
         this.mode = "Pilot";
-
     }
 
     moveCamera() {
@@ -540,6 +580,7 @@ class Game {
 
         // set camera rotation
         this.camera.r = -this.controlShip.r;
+        this.camera.r = 0;
     }
 
     drawBodies() {
@@ -559,8 +600,11 @@ class Game {
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
+
+            let isShip = this.bodies[i].name === this.controlShip.name;
             let isFuelStation = this.fuelStationsMap[this.bodies[i].name] !== undefined;
-            this.bodies[i].drawBody(offCtx, this.camera, isFuelStation, this.logMap);
+
+            this.bodies[i].drawBody(offCtx, this.camera, isShip, isFuelStation, this.logMap);
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
@@ -573,7 +617,10 @@ class Game {
             this.bodies[i].drawMarker(offCtx, this.camera, isShip, isFocus, isPlanning, isTarget, this.logMap);
         }
 
-        for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawName(offCtx, this.camera, this.fuelStationsMap, this.logMap); }
+        for (let i = this.bodies.length - 1; i >= 0; i--) {
+            let isShip = this.bodies[i].name === this.controlShip.name;
+            this.bodies[i].drawName(offCtx, this.camera, isShip, this.isFollowSelf, this.fuelStationsMap, this.logMap);
+        }
 
         this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -614,24 +661,46 @@ class Game {
         let cy = this.c.height / 2
 
         offCtx.beginPath();
-        offCtx.moveTo(cx + -24, cy + 0);
-        offCtx.lineTo(cx + -12, cy + 0);
-        offCtx.moveTo(cx + 12, cy + 0);
-        offCtx.lineTo(cx + 24, cy + 0);
-        offCtx.moveTo(cx + 0, cy + -24);
-        offCtx.lineTo(cx + 0, cy + -12);
-        offCtx.moveTo(cx + 0, cy + 12);
-        offCtx.lineTo(cx + 0, cy + 24);
+        offCtx.moveTo(cx + -64, cy + 0);
+        offCtx.lineTo(cx + -32, cy + 0);
+        offCtx.moveTo(cx + 32, cy + 0);
+        offCtx.lineTo(cx + 64, cy + 0);
+        offCtx.moveTo(cx + 0, cy + -64);
+        offCtx.lineTo(cx + 0, cy + -32);
+        offCtx.moveTo(cx + 0, cy + 32);
+        offCtx.lineTo(cx + 0, cy + 64);
 
+        offCtx.lineWidth = 2;
         offCtx.strokeStyle = "#00FFA3";
+        if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
         offCtx.stroke();
+
+        if (this.heading !== "Manual") {
+            offCtx.beginPath();
+            offCtx.moveTo(cx + 24, cy + 48);
+            offCtx.lineTo(cx + 48, cy + 48);
+            offCtx.lineTo(cx + 48, cy + 24);
+            offCtx.moveTo(cx - 24, cy + 48);
+            offCtx.lineTo(cx - 48, cy + 48);
+            offCtx.lineTo(cx - 48, cy + 24);
+            offCtx.moveTo(cx - 24, cy - 48);
+            offCtx.lineTo(cx - 48, cy - 48);
+            offCtx.lineTo(cx - 48, cy - 24);
+            offCtx.moveTo(cx + 24, cy - 48);
+            offCtx.lineTo(cx + 48, cy - 48);
+            offCtx.lineTo(cx + 48, cy - 24);
+        }
+
+        offCtx.lineWidth = 1;
+        offCtx.strokeStyle = "#00FFA3";
+        if (this.mode !== "Planning") { offCtx.stroke(); }
     }
 
     addSideText(offCtx) {
 
         // fuel usange (planned)
         let plannedFuelText = ""
-        if (this.mode === "Planning") {
+        if (this.plannedFuel > 0) {
             plannedFuelText = " (-" + Math.round(this.plannedFuel) + ")";
         }
 
@@ -665,15 +734,13 @@ class Game {
         texts.push("[N]      : Toggle Focus on Ship");
         texts.push("");
         texts.push("[R]      : Toggle Thruster/RCS");
-        texts.push("[W], [S] : Prograde, Retrograde (Thruster)");
-        texts.push("[A], [D] : Radial-In, Radial-Out (Thruster)");
-        texts.push("[W], [S] : Up, Down (RCS)");
-        texts.push("[A], [D] : Left, Right (RCS)");
+        texts.push("[W], [S], [A], [D] : RCS");
+        texts.push("[W], [S], [A], [D], [C] : Auto Heading");
+        texts.push("[Z], [X] : Forward, Backward (Thruster)");
         texts.push("");
-        texts.push("[E]      : Toggle Pilot/Planning Mode");
+        texts.push("[F]      : Toggle Pilot/Planning Mode");
         texts.push("[U], [O] : Next, Previous Target");
-        texts.push("[Q]      : Execute Plan");
-        texts.push("");
+        texts.push("[V]      : Clear Plan");
         texts.push("");
         texts.push("Fuel   : " + Math.round(this.fuel) + plannedFuelText);
         texts.push("Engine : " + this.engine);
@@ -683,6 +750,8 @@ class Game {
         texts.push("Find Closest Approach To   : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
         texts.push("Distance to Target         : " + Math.round(targDist) + planDistText);
         texts.push("Relative Velocity          : " + Math.round(relativeV));
+        texts.push("");
+        texts.push("Heading : " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1));
         texts.push("");
         texts.push("");
         texts.push("Zoom             : " + this.zoom);
@@ -820,9 +889,12 @@ class Game {
             case "2_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 1; break;
 
             case "0_KeyF": event.preventDefault(); this.toggleMode(); break;
-            case "0_KeyC": event.preventDefault(); this.executePlan(); break;
+            // case "0_KeyG": event.preventDefault(); this.executePlan(); break;
+            case "0_KeyV": event.preventDefault(); this.clearPlan(); break;
 
             case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
+
+            case "0_KeyC": event.preventDefault(); this.toggleHoldHeading(); break;
 
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
         }
