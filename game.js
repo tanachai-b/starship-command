@@ -10,6 +10,7 @@ class Camera {
 
         this.vx = 0;
         this.vy = 0;
+        this.vr = 0;
     }
 }
 
@@ -22,9 +23,12 @@ class Game {
 
         this.isPause = false;
         this.speed = -12;
-        this.zoom = -48;
+
+        this.zoom = -49;
         this.isFollowSelf = true;
         this.camera = new Camera();
+        this.camPosition;
+        this.camAngle = 0;
 
         this.bodies = [];
         this.bodiesMap = {};
@@ -37,7 +41,6 @@ class Game {
         this.camTargetIndex = 2;
 
         this.focus;
-        this.camPosition;
         this.target;
 
         this.badPrecBodies = {};
@@ -259,6 +262,7 @@ class Game {
             if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power / 10; }
             if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power / 10; }
 
+            // this.controlShip.vr = this.controlShip.vr  % (2 * Math.PI);
             this.fuel = Math.max(this.fuel, 0);
 
         } else if (this.heading === "Hold") {
@@ -273,6 +277,7 @@ class Game {
                 this.fuel -= power / 10;
             }
 
+            // this.controlShip.vr = this.controlShip.vr  % (2 * Math.PI);
             this.fuel = Math.max(this.fuel, 0);
 
         } else {
@@ -309,7 +314,7 @@ class Game {
 
             if (dist < 0) {
 
-                if (Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2 > dist) {
+                if (Math.sign(this.controlShip.vr) * this.controlShip.vr / power * this.controlShip.vr * precision / 2 > dist) {
                     this.controlShip.vr -= power;
                     this.fuel -= power / 10;
                     // this.logMap["move"] = "plus";
@@ -319,7 +324,7 @@ class Game {
                     // this.logMap["move"] = "minus";
                 }
             } else {
-                if (Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2 < dist) {
+                if (Math.sign(this.controlShip.vr) * this.controlShip.vr / power * this.controlShip.vr * precision / 2 < dist) {
                     this.controlShip.vr += power;
                     this.fuel -= power / 10;
                     // this.logMap["move"] = "plus";
@@ -330,6 +335,7 @@ class Game {
                 }
             }
 
+            // this.controlShip.vr = this.controlShip.vr  % (2 * Math.PI);
             this.fuel = Math.max(this.fuel, 0);
 
             // this.logMap["triangle"] = Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2;
@@ -400,19 +406,49 @@ class Game {
             if (this.pressedKeys.A) { this.heading = "radial-in"; }
             if (this.pressedKeys.D) { this.heading = "radial-out"; }
 
-            if (this.pressedKeys.Z) {
-                this.controlShip.vx += power * Math.sin(this.controlShip.r);
-                this.controlShip.vy += -power * Math.cos(this.controlShip.r);
-                this.fuel -= power;
+            if (this.pressedKeys.Z || this.pressedKeys.X) {
+
+                let vx1 = 0;
+                let vy1 = 0;
+
+                if (this.pressedKeys.Z) {
+                    vx1 = power * Math.sin(this.controlShip.r);
+                    vy1 = power * Math.cos(this.controlShip.r);
+                }
+                if (this.pressedKeys.X) {
+                    vx1 = -power / 10 * Math.sin(this.controlShip.r);
+                    vy1 = -power / 10 * Math.cos(this.controlShip.r);
+                }
+
+                // minus current thrust from planned route / planned fuel
+                let dx = this.controlShip.vx - this.controlShip.parent.vx;
+                let dy = this.controlShip.vy - this.controlShip.parent.vy;
+                let dist = Math.hypot(dx, dy);
+                let prograde = { cos: dx / dist, sin: dy / dist };
+
+                let nvx = vx1 * prograde.cos - vy1 * prograde.sin;
+                let nvy = vy1 * prograde.cos + vx1 * prograde.sin;
+
+                this.progradeV -= nvx;
+                this.radialInV -= nvy;
+
+                this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
+
+                if (this.pressedKeys.Z) {
+                    this.controlShip.vx += vx1;
+                    this.controlShip.vy += -vy1;
+                    this.fuel -= power;
+                }
+                if (this.pressedKeys.X) {
+                    this.controlShip.vx += vx1;
+                    this.controlShip.vy += -vy1;
+                    this.fuel -= power / 10;
+                }
             }
-            if (this.pressedKeys.X) {
-                this.controlShip.vx += -power / 10 * Math.sin(this.controlShip.r);
-                this.controlShip.vy += power / 10 * Math.cos(this.controlShip.r);
-                this.fuel -= power / 10;
-            }
+
+            this.fuel = Math.max(this.fuel, 0);
         }
 
-        this.fuel = Math.max(this.fuel, 0);
 
 
         // if (this.mode === "Pilot") {
@@ -448,7 +484,7 @@ class Game {
     refuel() {
 
         let refuelDistance = 0.04;
-        let exchangeRate = 10000;
+        let exchangeRate = 100000;
         let precision = 10 ** (this.speed / 3);
 
         for (let fuelStation in this.fuelStationsMap) {
@@ -579,8 +615,15 @@ class Game {
         this.camera.zoom += (this.zoom - this.camera.zoom) / 8;
 
         // set camera rotation
-        this.camera.r = -this.controlShip.r;
-        this.camera.r = 0;
+        if (this.camera.r === undefined) { this.camera.r = 0; }
+
+        if (this.engine === "RCS") {
+            this.camAngle = -this.controlShip.r
+        } else {
+            this.camAngle = 0;
+        }
+
+        this.camera.r += ((this.camAngle - this.camera.r + 5 * Math.PI) % (2 * Math.PI) - Math.PI) / 8;
     }
 
     drawBodies() {
@@ -673,6 +716,7 @@ class Game {
         offCtx.lineWidth = 2;
         offCtx.strokeStyle = "#00FFA3";
         if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
+        if (this.engine === "RCS") { offCtx.strokeStyle = "#4275ff"; }
         offCtx.stroke();
 
         if (this.heading !== "Manual") {
@@ -693,7 +737,9 @@ class Game {
 
         offCtx.lineWidth = 1;
         offCtx.strokeStyle = "#00FFA3";
-        if (this.mode !== "Planning") { offCtx.stroke(); }
+        if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
+        if (this.engine === "RCS") { offCtx.strokeStyle = "#4275ff"; }
+        offCtx.stroke();
     }
 
     addSideText(offCtx) {

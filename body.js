@@ -131,6 +131,9 @@ class Body {
             this.y += this.vy * precision;
 
             this.r += this.vr * precision;
+            this.r %= 2 * Math.PI;
+            this.r += 2 * Math.PI;
+            this.r %= 2 * Math.PI;
         }
     }
 
