@@ -335,7 +335,7 @@ class Body {
             let planPrecision = Math.min(
                 dist / Math.hypot(pvx, pvy) / 100,
                 dist2 / Math.hypot(tvx, tvy) / 100,
-                dist3 / Math.hypot(dvx, dvy) / 100
+                dist3 / Math.hypot(dvx, dvy) / 10
             )
 
             pvx += pax * planPrecision;
@@ -399,7 +399,7 @@ class Body {
             let pay = grav * -py / dist;
 
             // move ship
-            let planPrecision = dist / Math.hypot(pvx, pvy) / 100
+            let planPrecision = dist / Math.hypot(pvx, pvy) / 100;
 
             pvx += pax * planPrecision;
             pvy += pay * planPrecision;
@@ -494,7 +494,7 @@ class Body {
             ctx.strokeStyle = "#FF307C";
             ctx.lineWidth = 2;
         } else {
-            ctx.strokeStyle = this.color
+            ctx.strokeStyle = this.color;
             ctx.lineWidth = 1;
         }
         ctx.stroke();
@@ -594,10 +594,10 @@ class Body {
         ctx.beginPath();
         ctx.arc(nx, ny, nr, 0, 2 * Math.PI);
 
-        // ctx.strokeStyle = this.color;
-        // ctx.stroke();
-
         if (!isShip) {
+            // ctx.strokeStyle = this.color;
+            // ctx.stroke();
+
             ctx.fillStyle = this.color;
             ctx.fill();
         }
@@ -741,7 +741,7 @@ class Body {
 
             if (Math.abs(dy / dx) > ctx.canvas.height / ctx.canvas.width) {
                 nny = Math.max(-ctx.canvas.height / 2 + 20, Math.min(ctx.canvas.height / 2 - 20, dy));
-                nnx = dx / dy * nny
+                nnx = dx / dy * nny;
             }
 
             let triangle = [];
@@ -755,8 +755,8 @@ class Body {
 
                 let point = triangle[i];
 
-                let x = point.x
-                let y = point.y
+                let x = point.x;
+                let y = point.y;
 
                 let dist = Math.hypot(nnx, nny);
 
@@ -802,7 +802,6 @@ class Body {
         let nx = np.x;
         let ny = np.y;
 
-
         if (this.parent !== null) {
             let dx = this.x - this.parent.x;
             let dy = this.y - this.parent.y;
@@ -828,8 +827,8 @@ class Body {
 
         let zoom = 2 ** (camera.zoom / 4);
 
-        let nx = (x - camera.x) / zoom
-        let ny = (y - camera.y) / zoom
+        let nx = (x - camera.x) / zoom;
+        let ny = (y - camera.y) / zoom;
 
         let nnx = nx * Math.cos(camera.r) - ny * Math.sin(camera.r) + ctx.canvas.width / 2;
         let nny = ny * Math.cos(camera.r) + nx * Math.sin(camera.r) + ctx.canvas.height / 2;
