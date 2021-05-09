@@ -149,13 +149,14 @@ class Game {
 
         for (let body of this.bodies) {
 
-            if (body.name === "sun" || body.parent.name === "sun") {
+            if (body.name === "sun") {
                 this.camSolSys.push(body);
 
+            } else if (body.parent.name === "sun") {
+                this.camSolSys.push(body);
+                this.camMoons[body.name] = [body];
+
             } else {
-                if (this.camMoons[body.parent.name] === undefined) {
-                    this.camMoons[body.parent.name] = [body.parent];
-                }
                 this.camMoons[body.parent.name].push(body);
             }
         }
@@ -788,15 +789,16 @@ class Game {
         texts.push("");
         texts.push("[E][Q]       : Manual Heading Controls");
         texts.push("[W][S][A][D] : Auto Heading Controls (Main)");
-        texts.push("[C]          : Toggle Hold/Manual Heading");
+        texts.push("[F]          : Toggle Hold/Manual Heading");
+        texts.push("[G]          : Planned Thrust Heading");
         texts.push("[Z][X]       : Main Thruster Controls (Main)");
         texts.push("");
         texts.push("[R]          : Toggle RCS Thruster Mode");
         texts.push("[W][S][A][D] : Direction Controls (RCS)");
         texts.push("");
-        texts.push("[F]          : Toggle Trajectory Planning");
-        texts.push("[W][S][A][D] : Plan Direction Controls (Plan Mode)");
+        texts.push("[C]          : Toggle Trajectory Planning");
         texts.push("[V]          : Discard Plan");
+        texts.push("[W][S][A][D] : Plan Direction Controls (Plan Mode)");
         texts.push("");
         // texts.push("Trajectory Relative To     : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
         // texts.push("Find Closest Approach To   : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
@@ -979,13 +981,13 @@ class Game {
 
             case "2_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 1; break;
 
-            case "0_KeyF": event.preventDefault(); this.toggleMode(); break;
+            case "0_KeyC": event.preventDefault(); this.toggleMode(); break;
             // case "0_KeyG": event.preventDefault(); this.executePlan(); break;
             case "0_KeyV": event.preventDefault(); this.clearPlan(); break;
 
             case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
 
-            case "0_KeyC": event.preventDefault(); this.toggleHoldHeading(); break;
+            case "0_KeyF": event.preventDefault(); this.toggleHoldHeading(); break;
 
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
         }
