@@ -526,8 +526,7 @@ class Game {
     }
 
     calcPlan() {
-        let isPlanning = this.mode === "Planning";
-        this.controlShip.calcPlan(isPlanning, this.progradeV, this.radialInV, this.target, this.logMap);
+        this.controlShip.calcPlan(this.progradeV, this.radialInV, this.target, this.logMap);
     }
 
     toggleMode() {
