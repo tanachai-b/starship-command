@@ -69,6 +69,8 @@ class Game {
 
         this.lastFrameTime;
         this.frameRate;
+
+        this.background;
     }
 
     initiate() {
@@ -217,6 +219,7 @@ class Game {
             this.calcPlan();
 
             this.moveCamera();
+            this.drawBackground();
             this.drawBodies();
             this.drawHUD();
 
@@ -479,7 +482,7 @@ class Game {
 
         for (let fuelStation in this.fuelStationsMap) {
 
-            let station = this.fuelStationsMap[fuelStation]
+            let station = this.fuelStationsMap[fuelStation];
             let stationBody = station.body;
 
             let ship = this.controlShip;
@@ -597,13 +600,61 @@ class Game {
         // set camera rotation
         if (this.camera.r === undefined) { this.camera.r = 0; }
 
-        if (this.engine === "RCS") {
-            this.camAngle = -this.controlShip.r
-        } else {
-            this.camAngle = 0;
-        }
+        // if (this.engine === "RCS") {
+        this.camAngle = -this.controlShip.r;
+        // } else {
+        //     this.camAngle = 0;
+        // }
 
         this.camera.r += ((this.camAngle - this.camera.r + 5 * Math.PI) % (2 * Math.PI) - Math.PI) / 8;
+    }
+
+    drawBackground() {
+
+        let cw = this.c.width;
+        let ch = this.c.height;
+
+        let zoom = 1.01 ** (this.camera.zoom / 4) / 1;
+
+        if (this.background === undefined) {
+
+            this.background = document.createElement("canvas");
+            this.background.width = this.c.width * 3;
+            this.background.height = this.c.height * 3;
+
+            let offCtx = this.background.getContext("2d");
+
+            for (let i = 0; i < 1000; i++) {
+
+                let randCol = Math.trunc((Math.random() * 256)).toString(16).padStart(2, 0);
+                let randColCode = "#" + randCol + randCol + randCol;
+                this.logMap["col"] = randColCode;
+
+                offCtx.fillStyle = randColCode;
+                offCtx.fillRect(Math.random() * cw * 3, Math.random() * ch * 3, 1.5, 1.5);
+            }
+        }
+
+        this.ctx.clearRect(0, 0, cw, ch);
+
+        this.ctx.translate(cw / 2, ch / 2);
+        this.ctx.rotate(this.camera.r);
+        this.ctx.scale(1 / zoom, 1 / zoom);
+        this.ctx.translate(-cw / 2, -ch / 2);
+
+        this.ctx.translate(-this.camera.x / 10000000, -this.camera.y / 10000000);
+        this.ctx.translate(-cw, -ch);
+
+        this.ctx.filter = "none";
+        this.ctx.drawImage(this.background, 0, 0);
+
+        this.ctx.translate(cw, ch);
+        this.ctx.translate(this.camera.x / 10000000, this.camera.y / 10000000);
+
+        this.ctx.translate(cw / 2, ch / 2);
+        this.ctx.scale(zoom, zoom)
+        this.ctx.rotate(-this.camera.r);
+        this.ctx.translate(-cw / 2, -ch / 2);
     }
 
     drawBodies() {
@@ -649,9 +700,6 @@ class Game {
             let isShip = this.bodies[i].name === this.controlShip.name;
             this.bodies[i].drawName(offCtx, this.camera, isShip, this.isFollowSelf, this.fuelStationsMap, this.logMap);
         }
-
-        this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
         if (this.enableBlurEffect) {
             this.ctx.filter = 'blur(8px)';
@@ -864,7 +912,7 @@ class Game {
             offCtx.fillText("RCS Mode", this.c.width / 2, 16);
 
             offCtx.font = "24px Syne Mono";
-            offCtx.fillText("Orbiting: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
+            offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
 
             offCtx.textAlign = "center";
             offCtx.textBaseline = "bottom";
@@ -877,7 +925,7 @@ class Game {
             offCtx.textBaseline = "top";
             offCtx.font = "32px Syne Mono";
             offCtx.fillStyle = "#00FFA3";
-            offCtx.fillText("Orbiting " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 16);
+            offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 16);
 
             offCtx.font = "24px Syne Mono";
             offCtx.fillText("Heading: " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1), this.c.width / 2, 64);
@@ -924,7 +972,7 @@ class Game {
             case "0_KeyU": event.preventDefault(); this.cycleTarget(-1); break;
             case "0_KeyO": event.preventDefault(); this.cycleTarget(1); break;
 
-            case "0_KeyN": event.preventDefault(); this.toggleFollowSelf(); break;
+            // case "0_KeyN": event.preventDefault(); this.toggleFollowSelf(); break;
 
             case "0_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
             case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
