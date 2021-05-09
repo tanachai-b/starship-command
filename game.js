@@ -66,6 +66,9 @@ class Game {
         this.drawTrajectories = false;
 
         this.logMap = {};
+
+        this.lastFrameTime;
+        this.frameRate;
     }
 
     initiate() {
@@ -218,6 +221,11 @@ class Game {
             this.drawHUD();
 
             if (!this.isPause) { this.log(); }
+
+            if (this.lastFrameTime !== undefined) {
+                this.frameRate = (1000 / (Date.now() - this.lastFrameTime)).toFixed(2);
+            }
+            this.lastFrameTime = Date.now();
             await timer(1);
         }
     }
@@ -785,11 +793,9 @@ class Game {
         // texts.push("Engine : " + this.engine);
         // texts.push("Mode : " + this.mode);
         texts.push("");
-        texts.push("");
-        texts.push("");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));
-
+        texts.push("FPS              : " + this.frameRate);
 
         offCtx.textBaseline = "top";
         offCtx.fillStyle = "#00FFA3";
