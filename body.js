@@ -262,13 +262,12 @@ class Body {
 
         // add planned velocity (progradeV, radialInV)
         let dist = Math.hypot(pvx, pvy);
-        let direction = { x: pvx / dist, y: pvy / dist };
 
-        pvx += direction.x * progradeV;
-        pvy += direction.y * progradeV;
+        pvx += pvx / dist * progradeV;
+        pvy += pvy / dist * progradeV;
 
-        pvx += direction.y * radialInV;
-        pvy += -direction.x * radialInV;
+        pvx += pvy / dist * radialInV;
+        pvy += -pvx / dist * radialInV;
 
         // target compared to parent
         let tx = target.x - this.parent.x;
@@ -289,14 +288,14 @@ class Body {
         for (time = 0; time < 1000; time++) {
 
             // parent <- ship
-            let dist = Math.hypot(-px, -py);
+            let dist = Math.hypot(px, py);
             let grav = this.parent.mass / dist ** 2;
 
             let pax = grav * -px / dist;
             let pay = grav * -py / dist;
 
             // parent <- target
-            let dist2 = Math.hypot(-tx, -ty);
+            let dist2 = Math.hypot(tx, ty);
             let grav2 = this.parent.mass / dist2 ** 2;
 
             let tax = grav2 * -tx / dist2;
@@ -307,16 +306,19 @@ class Body {
             let dy = ty - py;
             let dist3 = Math.hypot(dx, dy);
 
+            let dvx = target.vx - this.vx;
+            let dvy = target.vy - this.vy;
+
             let grav3 = target.mass / dist3 ** 2;
 
             pax += grav3 * dx / dist3;
-            pax += grav3 * dy / dist3;
+            pay += grav3 * dy / dist3;
 
             // ship <- target
             let grav4 = this.mass / dist3 ** 2;
 
-            pax -= grav4 * dx / dist3;
-            pax -= grav4 * dy / dist3;
+            tax += grav4 * -dx / dist3;
+            tay += grav4 * -dy / dist3;
 
             // find closest approach
             if (closestDist === undefined) {
@@ -330,7 +332,11 @@ class Body {
             }
 
             // move ship
-            let planPrecision = Math.min(dist / Math.hypot(pvx, pvy) / 100, dist2 / Math.hypot(tvx, tvy) / 100)
+            let planPrecision = Math.min(
+                dist / Math.hypot(pvx, pvy) / 100,
+                dist2 / Math.hypot(tvx, tvy) / 100,
+                dist3 / Math.hypot(dvx, dvy) / 100
+            )
 
             pvx += pax * planPrecision;
             pvy += pay * planPrecision;
@@ -376,13 +382,12 @@ class Body {
 
         // add planned velocity (progradeV, radialInV)
         let dist = Math.hypot(pvx, pvy);
-        let direction = { x: pvx / dist, y: pvy / dist };
 
-        pvx += direction.x * progradeV;
-        pvy += direction.y * progradeV;
+        pvx += pvx / dist * progradeV;
+        pvy += pvy / dist * progradeV;
 
-        pvx += direction.y * radialInV;
-        pvy += -direction.x * radialInV;
+        pvx += pvy / dist * radialInV;
+        pvy += -pvx / dist * radialInV;
 
         for (let time = 0; time < 1000; time++) {
 
