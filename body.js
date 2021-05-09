@@ -12,6 +12,7 @@ class Body {
         this.mass = density * radius ** 3;
 
         this.parent = parent;
+        this.distance = distance;
 
         this.x = ((parent === null) ? 0 : parent.x) + distance * Math.cos(-angle / 180 * Math.PI);
         this.y = ((parent === null) ? 0 : parent.y) + distance * Math.sin(-angle / 180 * Math.PI);
@@ -33,16 +34,15 @@ class Body {
         this.planClosest;
         this.targetClosest;
 
-        if (parent !== null) {
-            this.vx = parent.vx;
-            this.vy = parent.vy;
-            this.setVelCirc(parent);
-        }
-
         this.r = 0;
         this.vr = 0;
 
         if (parent !== null) {
+
+            this.vx = parent.vx;
+            this.vy = parent.vy;
+            this.setVelCirc(parent);
+
             this.r = Math.atan2(parent.vy - this.vy, parent.vx - this.vx) - Math.PI / 2;
         }
     }

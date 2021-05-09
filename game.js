@@ -24,7 +24,7 @@ class Game {
         this.isPause = false;
         this.speed = -12;
 
-        this.zoom = -49;
+        this.zoom = 26;
         this.isFollowSelf = true;
         this.camera = new Camera();
         this.camPosition;
@@ -38,7 +38,7 @@ class Game {
 
         this.camSolSysIndex = 3;
         this.camMoonIndex = 0;
-        this.camTargetIndex = 2;
+        this.camTargetIndex = 1;
 
         this.focus;
         this.target;
@@ -147,9 +147,40 @@ class Game {
 
         // ========================
 
+        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000, 45);
+        this.bodies.push(starship); this.bodiesMap.starship = starship;
+        this.controlShip = starship;
+
+        // let dvx = starship.vx - earth.vx;
+        // let dvy = starship.vy - earth.vy;
+        // starship.vx = earth.vx + dvx * 1.35;
+        // starship.vy = earth.vy + dvy * 1.35;
+        // this.progradeV = Math.hypot(dvx/8, dvy/8);
+
+        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 10000.03, -30.00015);
+        // this.bodies.push(starship); this.bodiesMap.starship = starship;
+        // this.controlShip = starship;
+
+        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 30000, -30);
+        this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
+        this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 10000 };
+
+        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 100000, 190);
+        this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
+        this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
+
+        let fuelStation3 = new Body("fuelStation3", "#349FC9", 0.02, 0.5, mars, 40000, 75);
+        this.bodies.push(fuelStation3); this.bodiesMap.fuelStation3 = fuelStation3;
+        this.fuelStations.push(fuelStation3); this.fuelStationsMap.fuelStation3 = { body: fuelStation3, fuel: 20000 };
+
+        // ========================
+
         for (let body of this.bodies) {
 
-            if (body.name === "sun") {
+            if (body.name === "starship") {
+                continue;
+
+            } else if (body.name === "sun") {
                 this.camSolSys.push(body);
 
             } else if (body.parent.name === "sun") {
@@ -161,29 +192,10 @@ class Game {
             }
         }
 
-        // ========================
-
-        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 1000, 95);
-        // this.bodies.push(starship); this.bodiesMap.starship = starship;
-        // this.controlShip = starship;
-        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 10000.03, -30.00015);
-        this.bodies.push(starship); this.bodiesMap.starship = starship;
-        this.controlShip = starship;
-
-        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 6378.10 + 10000, -30);
-        this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
-        this.camMoons.earth.push(fuelStation1);
-        this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 10000 };
-
-        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 1737.1 + 100000, 190);
-        this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
-        this.camMoons.earth.push(fuelStation2);
-        this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
-
-        let fuelStation3 = new Body("fuelStation3", "#349FC9", 0.02, 0.5, mars, 40000, 75);
-        this.bodies.push(fuelStation3); this.bodiesMap.fuelStation3 = fuelStation3;
-        this.camMoons.mars.push(fuelStation3);
-        this.fuelStations.push(fuelStation3); this.fuelStationsMap.fuelStation3 = { body: fuelStation3, fuel: 20000 };
+        for (let planet in this.camMoons) {
+            this.camMoons[planet][0].distance = 0;
+            this.camMoons[planet].sort(function (a, b) { return a.distance - b.distance; })
+        }
     }
 
     async gameLoop() {
