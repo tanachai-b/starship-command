@@ -59,17 +59,17 @@ class Game {
         this.radialInV = 0;
         this.plannedFuel = 0;
 
-        this.enableBlurEffect = true;
-
         this.fuelStations = [];
         this.fuelStationsMap = {};
+
+        this.enableBlurEffect = true;
+        this.drawTrajectories = false;
 
         this.logMap = {};
     }
 
     initiate() {
 
-        this.c.addEventListener("wheel", this.wheel.bind(this), false);
         document.body.addEventListener("keydown", this.keydown.bind(this), false);
         document.body.addEventListener("keyup", this.keyup.bind(this), false);
 
@@ -452,37 +452,6 @@ class Game {
 
             this.fuel = Math.max(this.fuel, 0);
         }
-
-
-
-        // if (this.mode === "Pilot") {
-
-        //     if (this.fuel > this.plannedFuel) {
-
-        //         this.fuel -= this.plannedFuel
-        //         this.fuel = Math.max(this.fuel, 0);
-
-        //         this.plannedFuel = 0;
-
-        //         let parent = this.controlShip.parent;
-
-        //         let dvx = this.controlShip.vx - parent.vx;
-        //         let dvy = this.controlShip.vy - parent.vy;
-
-        //         let dist = Math.hypot(dvx, dvy);
-
-        //         let direction = { x: dvx / dist, y: dvy / dist };
-
-        //         this.controlShip.vx += direction.x * this.progradeV;
-        //         this.controlShip.vy += direction.y * this.progradeV;
-
-        //         this.controlShip.vx += direction.y * this.radialInV;
-        //         this.controlShip.vy += -direction.x * this.radialInV;
-        //     }
-
-        //     this.progradeV = 0;
-        //     this.radialInV = 0;
-        // }
     }
 
     refuel() {
@@ -522,6 +491,7 @@ class Game {
     }
 
     calcTrajectory() {
+        if (!this.drawTrajectories) { return; }
         for (let body of this.bodies) { body.calcTrajectory(this.logMap); }
     }
 
@@ -544,16 +514,6 @@ class Game {
             this.mode = "Pilot";
         }
     }
-
-    // executePlan() {
-
-    //     if (this.isPause) { return; }
-
-    //     if (this.progradeV === 0 && this.radialInV === 0) { return; }
-    //     if (this.plannedFuel > this.fuel) { return; }
-
-    //     this.mode = "Pilot";
-    // }
 
     clearPlan() {
 
@@ -637,8 +597,11 @@ class Game {
 
         let offCtx = offScreenCanvas.getContext("2d");
 
-        for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrail(offCtx, this.camera, this.logMap); }
-        for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap); }
+        // for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrail(offCtx, this.camera, this.logMap); }
+
+        if (this.drawTrajectories) {
+            for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap); }
+        }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
             let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
@@ -924,12 +887,6 @@ class Game {
         log.innerHTML = logStr;
     }
 
-    wheel(event) {
-        // event.preventDefault();
-        // this.zoom += Math.sign(event.deltaY);
-        // this.camera.r -= Math.sign(event.deltaY) / 180 * Math.PI;
-    }
-
     keydown(event) {
         // console.log(event)
         let mod = event.ctrlKey * 4 + event.shiftKey * 2 + event.altKey * 1;
@@ -953,8 +910,6 @@ class Game {
             case "0_KeyO": event.preventDefault(); this.cycleTarget(1); break;
 
             case "0_KeyN": event.preventDefault(); this.toggleFollowSelf(); break;
-
-            case "0_Backslash": event.preventDefault(); this.takeControl(); break;
 
             case "0_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
             case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
@@ -980,22 +935,19 @@ class Game {
 
             case "2_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 1; break;
 
+            case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
+            case "0_KeyF": event.preventDefault(); this.toggleHoldHeading(); break;
             case "0_KeyC": event.preventDefault(); this.toggleMode(); break;
-            // case "0_KeyG": event.preventDefault(); this.executePlan(); break;
             case "0_KeyV": event.preventDefault(); this.clearPlan(); break;
 
-            case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
-
-            case "0_KeyF": event.preventDefault(); this.toggleHoldHeading(); break;
-
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
+            case "0_Backslash": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
         }
-        // console.log(this.pressedKeys)
     }
 
     keyup(event) {
+
         let mod = event.ctrlKey * 4 + event.shiftKey * 2 + event.altKey * 1;
-        // console.log(mod + "_" + event.code)
         switch (mod + "_" + event.code) {
 
             case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 0; break;
@@ -1025,7 +977,6 @@ class Game {
 
             case "0_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 0; break;
         }
-        // console.log(this.pressedKeys)
     }
 
     togglePause() {
@@ -1094,9 +1045,5 @@ class Game {
         } else {
             this.camPosition = this.focus;
         }
-    }
-
-    takeControl() {
-
     }
 }
