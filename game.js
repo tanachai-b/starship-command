@@ -387,8 +387,6 @@ class Game {
     }
 
     thruster() {
-        if (this.controlShip === undefined) { return; }
-
         let power = 10;
         if (this.pressedKeys.Shift) { power /= 10; }
 
@@ -407,6 +405,9 @@ class Game {
             if (this.pressedKeys.D) { this.heading = "radial-out"; }
 
             if (this.pressedKeys.Z || this.pressedKeys.X) {
+
+                if (this.controlShip === undefined) { return; }
+                if (this.fuel === 0) { return; }
 
                 let vx1 = 0;
                 let vy1 = 0;
@@ -486,7 +487,7 @@ class Game {
     refuel() {
 
         let refuelDistance = 0.04;
-        let exchangeRate = 100000;
+        let exchangeRate = 10000;
         let precision = 10 ** (this.speed / 3);
 
         for (let fuelStation in this.fuelStationsMap) {
