@@ -273,12 +273,11 @@ class Game {
         if (this.fuel === 0) { return; }
 
         let power = 1;
+        if (this.pressedKeys.Shift) { power /= 10; }
 
         if (this.pressedKeys.Q || this.pressedKeys.E) {
 
             this.heading = "Manual";
-
-            if (this.pressedKeys.Shift) { power /= 10; }
 
             if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power / 10; }
             if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power / 10; }
@@ -288,12 +287,10 @@ class Game {
 
         } else if (this.heading === "Hold") {
 
-            if (this.pressedKeys.Shift) { power /= 10; }
-
             if (this.controlShip.vr < 0) {
                 this.controlShip.vr += power;
                 this.fuel -= power / 10;
-            } else {
+            } else if (this.controlShip.vr > 0) {
                 this.controlShip.vr -= power;
                 this.fuel -= power / 10;
             }
