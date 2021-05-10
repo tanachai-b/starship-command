@@ -881,12 +881,27 @@ class Game {
 
         let y = 24;
         for (let text of texts) {
-            offCtx.fillText(text, this.c.width-8, 8 + y);
+            offCtx.fillText(text, this.c.width - 8, 8 + y);
             y += 24;
         }
     }
 
     addModeBorder(offCtx) {
+
+        if (this.fuel === 0) {
+            offCtx.textAlign = "center";
+            offCtx.textBaseline = "middle";
+            offCtx.font = "64px Syne Mono";
+            offCtx.fillStyle = "#FF3300";;
+            offCtx.fillText("OUT OF FUEL!", this.c.width / 2, this.c.height / 2);
+
+        } else if (this.fuel < 1000) {
+            offCtx.textAlign = "center";
+            offCtx.textBaseline = "bottom";
+            offCtx.font = "32px Syne Mono";
+            offCtx.fillStyle = "#FF3300";;
+            offCtx.fillText("LOW FUEL!", this.c.width / 2, this.c.height - 96);
+        }
 
         if (this.isPause) {
 
@@ -977,9 +992,6 @@ class Game {
             case "0_Comma": event.preventDefault(); this.cyclePrecision(-1); break;
             case "0_Period": event.preventDefault(); this.cyclePrecision(1); break;
 
-            case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 1; break;
-            case "0_KeyK": event.preventDefault(); this.pressedKeys.K = 1; break;
-
             case "0_KeyU": event.preventDefault(); this.cycleTarget(-1); break;
             case "0_KeyO": event.preventDefault(); this.cycleTarget(1); break;
 
@@ -988,6 +1000,9 @@ class Game {
 
             case "0_KeyH": event.preventDefault(); this.cycleSolSys(-1); break;
             case "0_Semicolon": event.preventDefault(); this.cycleSolSys(1); break;
+
+            case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 1; break;
+            case "0_KeyK": event.preventDefault(); this.pressedKeys.K = 1; break;
 
             case "0_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
             case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
@@ -1022,6 +1037,8 @@ class Game {
             case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
             case "0_F10": event.preventDefault(); this.toggleFollowSelf(); break;
         }
+
+        // for (let key in this.pressedKeys) { this.logMap[key] = this.pressedKeys[key]; }
     }
 
     keyup(event) {
@@ -1056,6 +1073,8 @@ class Game {
 
             case "0_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 0; break;
         }
+
+        // for (let key in this.pressedKeys) { this.logMap[key] = this.pressedKeys[key]; }
     }
 
     togglePause() {
