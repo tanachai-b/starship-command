@@ -167,7 +167,7 @@ class Game {
 
         let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 10100, -29);
         this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
-        this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
+        this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 18000 };
 
         let fuelStation3 = new Body("fuelStation3", "#349FC9", 0.02, 0.5, mars, 40000, 75);
         this.bodies.push(fuelStation3); this.bodiesMap.fuelStation3 = fuelStation3;
@@ -302,17 +302,11 @@ class Game {
 
             let goal = 0;
 
-            if (this.heading === "prograde") {
-                goal = -Math.PI / 2;
-            } else if (this.heading === "retrograde") {
-                goal = +Math.PI / 2;
-            } else if (this.heading === "radial-out") {
-                goal = -Math.PI;
-            } else if (this.heading === "radial-in") {
-                goal = 0;
-            } else {
-                return;
-            }
+            if (this.heading === "Prograde") { goal = -Math.PI / 2; }
+            else if (this.heading === "Retrograde") { goal = +Math.PI / 2; }
+            else if (this.heading === "Radial-out") { goal = -Math.PI; }
+            else if (this.heading === "Radial-in") { goal = 0; }
+            else { return; }
 
             let parent = this.controlShip.parent;
 
@@ -401,10 +395,26 @@ class Game {
             this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
 
         } else {
-            if (this.pressedKeys.W) { this.heading = "prograde"; }
-            if (this.pressedKeys.S) { this.heading = "retrograde"; }
-            if (this.pressedKeys.A) { this.heading = "radial-in"; }
-            if (this.pressedKeys.D) { this.heading = "radial-out"; }
+            if (this.pressedKeys.W) {
+                this.heading = "Prograde";
+                // if (this.heading !== "Prograde") { this.heading = "Prograde"; }
+                // else { this.heading = "Hold"; }
+            }
+            if (this.pressedKeys.S) {
+                this.heading = "Retrograde";
+                // if (this.heading !== "Retrograde") { this.heading = "Retrograde"; }
+                // else { this.heading = "Hold"; }
+            }
+            if (this.pressedKeys.A) {
+                this.heading = "Radial-in";
+                // if (this.heading !== "Radial-in") { this.heading = "Radial-in"; }
+                // else { this.heading = "Hold"; }
+            }
+            if (this.pressedKeys.D) {
+                this.heading = "Radial-out";
+                // if (this.heading !== "Radial-out") { this.heading = "Radial-out"; }
+                // else { this.heading = "Hold"; }
+            }
 
             if (this.pressedKeys.Z || this.pressedKeys.X) {
 
@@ -759,10 +769,10 @@ class Game {
 
                 y += lineWidth * 2;
             }
-        } else if (this.enableBlurEffect) {
 
+        } else if (this.enableBlurEffect) {
             this.ctx.filter = 'opacity(2%) blur(2px)';
-            this.ctx.drawImage(this.overlay, 0, 0);
+            this.ctx.drawImage(this.overlay, 0, (this.frameCount % 64) / 4);
         }
     }
 
@@ -921,6 +931,8 @@ class Game {
         let texts = [];
         texts.push("Missions");
         texts.push("Rendezvous with FuelStation2 using 200 fuel max");
+        texts.push("Refuel at FuelStation2 and go to the moon");
+        texts.push("Orbit the Moon and come back to FuelStation1");
 
         offCtx.textAlign = "right";
         offCtx.textBaseline = "top";
