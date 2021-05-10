@@ -62,16 +62,17 @@ class Game {
         this.fuelStations = [];
         this.fuelStationsMap = {};
 
-        this.enableBlurEffect = true;
-        this.drawTrajectories = false;
-
         this.logMap = {};
 
         this.lastFrameTime;
         this.frameRate;
         this.frameCount = 0;
 
+        this.drawTrajectories = false;
+        this.enableBlurEffect = true;
+
         this.background;
+        this.overlay;
     }
 
     initiate() {
@@ -211,8 +212,8 @@ class Game {
 
             this.calcTrajectory();
             this.calcPlan();
-
             this.moveCamera();
+
             this.drawBackground();
             this.drawBodies();
             this.drawHUD();
@@ -630,6 +631,11 @@ class Game {
         this.ctx.translate(-this.camera.x / 10000000, -this.camera.y / 10000000);
         this.ctx.translate(-cw, -ch);
 
+        if (this.enableBlurEffect) {
+            this.ctx.filter = "blur(16px)";
+            this.ctx.drawImage(this.background, 0, 0);
+        }
+
         this.ctx.filter = "none";
         this.ctx.drawImage(this.background, 0, 0);
 
@@ -693,7 +699,7 @@ class Game {
         }
 
         if (this.enableBlurEffect) {
-            this.ctx.filter = 'blur(8px)';
+            this.ctx.filter = 'blur(16px)';
             this.ctx.drawImage(offScreenCanvas, 0, 0);
         }
 
@@ -715,12 +721,49 @@ class Game {
         this.addModeBorder(offCtx);
 
         if (this.enableBlurEffect) {
-            this.ctx.filter = 'blur(8px)';
+            this.ctx.filter = 'blur(16px)';
             this.ctx.drawImage(offScreenCanvas, 0, 0);
         }
 
         this.ctx.filter = "none";
         this.ctx.drawImage(offScreenCanvas, 0, 0);
+
+        this.addScanLines(this.ctx);
+    }
+
+    addScanLines(ctx) {
+
+        if (this.overlay === undefined) {
+
+            this.overlay = document.createElement("canvas");
+            this.overlay.width = this.c.width;
+            this.overlay.height = this.c.height;
+
+            let overlayCtx = this.overlay.getContext("2d");
+
+            let cw = overlayCtx.canvas.width;
+            let ch = overlayCtx.canvas.height;
+
+            let lineWidth = 8;
+
+            let y = 0;
+            while (y < ch) {
+
+                overlayCtx.beginPath();
+                overlayCtx.moveTo(0, y + 0);
+                overlayCtx.lineTo(cw, y + 0);
+
+                overlayCtx.lineWidth = lineWidth;
+                overlayCtx.strokeStyle = "#808080";
+                overlayCtx.stroke();
+
+                y += lineWidth * 2;
+            }
+        } else if (this.enableBlurEffect) {
+
+            this.ctx.filter = 'opacity(2%) blur(2px)';
+            this.ctx.drawImage(this.overlay, 0, 0);
+        }
     }
 
     addCrossHair(offCtx) {
@@ -817,7 +860,7 @@ class Game {
         let texts = [];
         texts.push("V0.1");
         texts.push("");
-        texts.push("[Backspace]  : Toggle Blur Effect");
+        texts.push("[Backspace]  : Toggle Screen Effect");
         texts.push("[Space]      : Pause Simulator");
         texts.push("[,][.]       : Slowdown, Speedup Time");
         texts.push("");
