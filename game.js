@@ -24,7 +24,7 @@ class Game {
         this.isPause = false;
         this.speed = -12;
 
-        this.zoom = 26;
+        this.zoom = -47;
         this.isFollowSelf = true;
         this.camera = new Camera();
         this.camPosition;
@@ -37,7 +37,7 @@ class Game {
         this.camMoons = {};
 
         this.camSolSysIndex = 3;
-        this.camMoonIndex = 0;
+        this.camMoonIndex = 1;
         this.camTargetIndex = 1;
 
         this.focus;
@@ -49,7 +49,7 @@ class Game {
         this.controlShip;
 
         this.mode = "Pilot";
-        this.engine = "Thruster";
+        this.engine = "RCS";
         this.maxFuel = 999999;
         this.fuel = 10000;
 
@@ -152,15 +152,18 @@ class Game {
 
         // ========================
 
-        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000, 45);
+        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000, 45);
+        // this.bodies.push(starship); this.bodiesMap.starship = starship;
+        // this.controlShip = starship;
+        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -30.00005);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
 
-        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 30000, -30);
+        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -30);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
         this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 10000 };
 
-        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 100000, 190);
+        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 10010, -29);
         this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
         this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
 
@@ -487,7 +490,7 @@ class Game {
         for (let body of this.bodies) {
 
             if (body.name === this.controlShip.name) {
-                body.calcTrajAdvance(this.target, this.logMap);
+                body.calcTrajAdv(this.target, this.logMap);
 
             } else if (this.drawTrajectories) {
                 body.calcTrajectory(this.logMap);
@@ -569,8 +572,8 @@ class Game {
         if (this.pressedKeys.I) { this.zoom -= 1 / 4; }
         if (this.pressedKeys.K) { this.zoom += 1 / 4; }
 
-        this.zoom = Math.max(this.zoom, -64);
-        this.zoom = Math.min(this.zoom, 96);
+        this.zoom = Math.max(this.zoom, -60);
+        this.zoom = Math.min(this.zoom, 100);
 
         this.camera.zoom += (this.zoom - this.camera.zoom) / 8;
 
