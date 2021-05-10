@@ -706,6 +706,7 @@ class Game {
 
         this.addCrossHair(offCtx);
         this.addSideText(offCtx);
+        this.addSideTextRight(offCtx);
         this.addModeBorder(offCtx);
 
         if (this.enableBlurEffect) {
@@ -836,14 +837,15 @@ class Game {
         texts.push("");
         texts.push("Distance to Target : " + Math.round(targDist));
         texts.push("Relative Velocity  : " + Math.round(relativeV));
-        texts.push("Closest Approach  : " + closestDist + planDistText);
-        texts.push("");
-        texts.push("Fuel   : " + Math.round(this.fuel) + plannedFuelText);
+        texts.push("Closest Approach   : " + closestDist + planDistText);
+        texts.push("Fuel               : " + Math.round(this.fuel) + plannedFuelText);
         texts.push("");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));
         texts.push("FPS              : " + this.frameRate);
+        texts.push("[\\]              : Toggle Trajectories");
 
+        offCtx.textAlign = "left";
         offCtx.textBaseline = "top";
         offCtx.fillStyle = "#00FFA3";
         offCtx.font = "19px Syne Mono";
@@ -864,6 +866,24 @@ class Game {
         offCtx.textBaseline = "bottom";
         offCtx.font = "13px Syne Mono";
         offCtx.fillText("© 2021 Tanachai Bunlutangtum, All Rights Reserved", this.c.width / 2, this.c.height - 4);
+    }
+
+    addSideTextRight(offCtx) {
+
+        let texts = [];
+        texts.push("Missions");
+        texts.push("Go to FuelStation2 with 200 fuel");
+
+        offCtx.textAlign = "right";
+        offCtx.textBaseline = "top";
+        offCtx.fillStyle = "#888888";
+        offCtx.font = "13px Syne Mono";
+
+        let y = 24;
+        for (let text of texts) {
+            offCtx.fillText(text, this.c.width-8, 8 + y);
+            y += 24;
+        }
     }
 
     addModeBorder(offCtx) {
