@@ -156,16 +156,6 @@ class Game {
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
 
-        // let dvx = starship.vx - earth.vx;
-        // let dvy = starship.vy - earth.vy;
-        // starship.vx = earth.vx + dvx * 1.35;
-        // starship.vy = earth.vy + dvy * 1.35;
-        // this.progradeV = Math.hypot(dvx/8, dvy/8);
-
-        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 6378.10 + 10000.03, -30.00015);
-        // this.bodies.push(starship); this.bodiesMap.starship = starship;
-        // this.controlShip = starship;
-
         let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 30000, -30);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
         this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 10000 };
@@ -285,7 +275,6 @@ class Game {
             if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power / 10; }
             if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power / 10; }
 
-            // this.controlShip.vr = this.controlShip.vr  % (2 * Math.PI);
             this.fuel = Math.max(this.fuel, 0);
 
         } else if (this.heading === "Hold") {
@@ -298,7 +287,6 @@ class Game {
                 this.fuel -= power / 10;
             }
 
-            // this.controlShip.vr = this.controlShip.vr  % (2 * Math.PI);
             this.fuel = Math.max(this.fuel, 0);
 
         } else {
@@ -324,12 +312,8 @@ class Game {
             let prog = Math.atan2(dvy, dvx);
 
             let dir = this.controlShip.r + goal;
+            let dist = ((((prog - dir + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
 
-            let dist = (prog - dir + 5 * Math.PI) % (2 * Math.PI) - Math.PI;
-
-            // this.logMap["prog"] = (prog + 5 * Math.PI) % (2 * Math.PI) - Math.PI;
-            // this.logMap["dir"] = (dir + 5 * Math.PI) % (2 * Math.PI) - Math.PI;
-            // this.logMap["dist"] = dist;
 
             let precision = 10 ** (this.speed / 3);
 
@@ -338,28 +322,21 @@ class Game {
                 if (Math.sign(this.controlShip.vr) * this.controlShip.vr / power * this.controlShip.vr * precision / 2 > dist) {
                     this.controlShip.vr -= power;
                     this.fuel -= power / 10;
-                    // this.logMap["move"] = "plus";
                 } else {
                     this.controlShip.vr += power;
                     this.fuel -= power / 10;
-                    // this.logMap["move"] = "minus";
                 }
             } else {
                 if (Math.sign(this.controlShip.vr) * this.controlShip.vr / power * this.controlShip.vr * precision / 2 < dist) {
                     this.controlShip.vr += power;
                     this.fuel -= power / 10;
-                    // this.logMap["move"] = "plus";
                 } else {
                     this.controlShip.vr -= power;
                     this.fuel -= power / 10;
-                    // this.logMap["move"] = "minus";
                 }
             }
 
-            // this.controlShip.vr = this.controlShip.vr  % (2 * Math.PI);
             this.fuel = Math.max(this.fuel, 0);
-
-            // this.logMap["triangle"] = Math.sign(this.controlShip.vr) * this.controlShip.vr * precision / 0.1 * this.controlShip.vr / 2;
         }
     }
 
@@ -372,11 +349,6 @@ class Game {
 
         } else if (this.engine === "Thruster") {
             this.engine = "RCS";
-
-            // this.progradeV = 0;
-            // this.radialInV = 0;
-            // this.plannedFuel = 0;
-
             this.mode = "Pilot";
 
             if (this.heading !== "Manual") {
@@ -528,9 +500,6 @@ class Game {
             this.engine = "Thruster";
 
         } else if (this.mode === "Planning") {
-            // this.progradeV = 0;
-            // this.radialInV = 0;
-            // this.plannedFuel = 0;
             this.mode = "Pilot";
         }
     }
@@ -606,7 +575,8 @@ class Game {
         //     this.camAngle = 0;
         // }
 
-        this.camera.r += ((this.camAngle - this.camera.r + 5 * Math.PI) % (2 * Math.PI) - Math.PI) / 8;
+        let dr = (((this.camAngle - this.camera.r + Math.PI) % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI) - Math.PI;
+        this.camera.r += dr / 8;
     }
 
     drawBackground() {
@@ -626,11 +596,10 @@ class Game {
 
             for (let i = 0; i < 1000; i++) {
 
-                let randCol = Math.trunc((Math.random() * 256)).toString(16).padStart(2, 0);
-                let randColCode = "#" + randCol + randCol + randCol;
-                this.logMap["col"] = randColCode;
+                let randVal = Math.trunc((Math.random() * 256)).toString(16).padStart(2, 0);
+                let randCol = "#" + randVal + randVal + randVal;
 
-                offCtx.fillStyle = randColCode;
+                offCtx.fillStyle = randCol;
                 offCtx.fillRect(Math.random() * cw * 3, Math.random() * ch * 3, 1.5, 1.5);
             }
         }
