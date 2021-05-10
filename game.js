@@ -37,8 +37,8 @@ class Game {
         this.camMoons = {};
 
         this.camSolSysIndex = 3;
-        this.camMoonIndex = 1;
-        this.camTargetIndex = 1;
+        this.camMoonIndex = 0;
+        this.camTargetIndex = 2;
 
         this.focus;
         this.target;
@@ -51,7 +51,7 @@ class Game {
         this.mode = "Pilot";
         this.engine = "RCS";
         this.maxFuel = 999999;
-        this.fuel = 10000;
+        this.fuel = 200;
 
         this.heading = "Manual";
 
@@ -161,9 +161,9 @@ class Game {
 
         let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -30);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
-        this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 10000 };
+        this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 0 };
 
-        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 10010, -29);
+        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 10100, -29);
         this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
         this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
 
@@ -452,7 +452,7 @@ class Game {
     refuel() {
 
         let refuelDistance = 0.04;
-        let exchangeRate = 10000;
+        let exchangeRate = 100000;
         let precision = 10 ** (this.speed / 3);
 
         for (let fuelStation in this.fuelStationsMap) {
@@ -764,6 +764,7 @@ class Game {
     addSideText(offCtx) {
 
         let ship = this.controlShip;
+        let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
 
         // fuel usage (planned)
         let plannedFuelText = ""
@@ -796,7 +797,7 @@ class Game {
 
         // closest approach (planned)
         let planDistText = ""
-        if (ship.planClosest !== undefined) {
+        if (ship.planClosest !== undefined && isHavePlan) {
 
             if (ship.planTargetClosest !== undefined) {
                 let pdx = ship.planTargetClosest.x - ship.planClosest.x;

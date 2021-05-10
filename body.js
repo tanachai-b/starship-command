@@ -349,7 +349,7 @@ class Body {
             ty += tvy * planPrecision;
 
             let dtt = Math.hypot(tx - this.trajTarget[0].x, ty - this.trajTarget[0].y);
-            if (dtt < dist / 60 && time > 1000 / 2) { isTargetLoop = true; }
+            if (dtt < dist2 / 60 && time > 1000 / 2) { isTargetLoop = true; }
 
             if (!isTargetLoop) { this.trajTarget.push({ x: tx, y: ty }); }
 
@@ -430,7 +430,11 @@ class Body {
 
         if (this.parent === null || target === undefined) { return; }
 
-        if (target.name === this.parent.name) {
+        if (this.name === this.parent.name) {
+            this.calcPlanTargetAlone(target, logMap);
+            return;
+
+        } else if (target.name === this.parent.name) {
             this.calcPlanAlone(progradeV, radialInV, logMap);
             return;
         }
@@ -538,7 +542,7 @@ class Body {
             ty += tvy * planPrecision;
 
             let dtt = Math.hypot(tx - this.planTarget[0].x, ty - this.planTarget[0].y);
-            if (dtt < dist / 60 && time > 1000 / 2) { isTargetLoop = true; }
+            if (dtt < dist2 / 60 && time > 1000 / 2) { isTargetLoop = true; }
 
             if (!isTargetLoop) { this.planTarget.push({ x: tx, y: ty }); }
 
@@ -549,6 +553,62 @@ class Body {
 
         if (closestTime === time) {
             this.planClosest = undefined;
+            this.planTargetClosest = undefined;
+        }
+    }
+
+    calcPlanTargetAlone(target, logMap) {
+        logMap["vs"] = 1;
+        // target compared to parent
+        let tx = target.x - this.parent.x;
+        let ty = target.y - this.parent.y;
+
+        this.trajTarget = [{ x: tx, y: ty }];
+
+        let tvx = target.vx - this.parent.vx;
+        let tvy = target.vy - this.parent.vy;
+
+        // prep find closest points
+        let closestDist;
+        let closestTime;
+        let time = 0;
+
+        for (time = 0; time < 1000; time++) {
+
+            // parent <- target
+            let dist2 = Math.hypot(tx, ty);
+            let grav2 = this.parent.mass / dist2 ** 2;
+
+            let tax = grav2 * -tx / dist2;
+            let tay = grav2 * -ty / dist2;
+
+            // find closest approach
+            if (closestDist === undefined) {
+                closestDist = dist2;
+
+            } else if (dist2 < closestDist) {
+                closestDist = dist2;
+                closestTime = time;
+                this.planTargetClosest = { x: tx, y: ty };
+            }
+
+            let planPrecision = Math.min(dist2 / Math.hypot(tvx, tvy) / 100)
+
+            // move target
+            tvx += tax * planPrecision;
+            tvy += tay * planPrecision;
+
+            tx += tvx * planPrecision;
+            ty += tvy * planPrecision;
+
+            this.planTarget.push({ x: tx, y: ty });
+
+            // completed loop, break
+            let dtt = Math.hypot(tx - this.trajTarget[0].x, ty - this.trajTarget[0].y);
+            if (dtt < dist2 / 60 && time > 1000 / 2) { break; }
+        }
+
+        if (closestTime === time) {
             this.planTargetClosest = undefined;
         }
     }
