@@ -69,6 +69,7 @@ class Game {
 
         this.lastFrameTime;
         this.frameRate;
+        this.frameCount = 0;
 
         this.background;
     }
@@ -222,6 +223,10 @@ class Game {
                 this.frameRate = (1000 / (Date.now() - this.lastFrameTime)).toFixed(2);
             }
             this.lastFrameTime = Date.now();
+
+            this.frameCount++;
+            if (this.frameCount >= 1000) { this.frameCount = 0; }
+
             await timer(1);
         }
     }
@@ -888,19 +893,21 @@ class Game {
 
     addModeBorder(offCtx) {
 
-        if (this.fuel === 0) {
-            offCtx.textAlign = "center";
-            offCtx.textBaseline = "middle";
-            offCtx.font = "64px Syne Mono";
-            offCtx.fillStyle = "#FF3300";;
-            offCtx.fillText("OUT OF FUEL!", this.c.width / 2, this.c.height / 2);
+        if (this.frameCount % 200 < 100) {
+            if (this.fuel === 0) {
+                offCtx.textAlign = "center";
+                offCtx.textBaseline = "middle";
+                offCtx.font = "64px Syne Mono";
+                offCtx.fillStyle = "#FF3300";;
+                offCtx.fillText("OUT OF FUEL!", this.c.width / 2, this.c.height / 2);
 
-        } else if (this.fuel < 1000) {
-            offCtx.textAlign = "center";
-            offCtx.textBaseline = "bottom";
-            offCtx.font = "32px Syne Mono";
-            offCtx.fillStyle = "#FF3300";;
-            offCtx.fillText("LOW FUEL!", this.c.width / 2, this.c.height - 96);
+            } else if (this.fuel < 1000) {
+                offCtx.textAlign = "center";
+                offCtx.textBaseline = "bottom";
+                offCtx.font = "32px Syne Mono";
+                offCtx.fillStyle = "#FF3300";;
+                offCtx.fillText("LOW FUEL!", this.c.width / 2, this.c.height - 96);
+            }
         }
 
         if (this.isPause) {
