@@ -237,6 +237,96 @@ class Body {
         }
     }
 
+    calcTrajAdvance(target, logMap) {
+
+        this.trajectory = [];
+
+        if (this.parent === null || target === undefined) { return; }
+
+        if (target.name === this.parent.name) {
+            this.calcTrajectory(logMap);
+            return;
+        }
+
+        // ship compared to parent
+        let px = this.x - this.parent.x;
+        let py = this.y - this.parent.y;
+
+        this.trajectory = [{ x: px, y: py }];
+
+        let pvx = this.vx - this.parent.vx;
+        let pvy = this.vy - this.parent.vy;
+
+        // target compared to parent
+        let tx = target.x - this.parent.x;
+        let ty = target.y - this.parent.y;
+
+        let tvx = target.vx - this.parent.vx;
+        let tvy = target.vy - this.parent.vy;
+
+        for (let time = 0; time < 1000; time++) {
+
+            // parent <- ship
+            let dist = Math.hypot(px, py);
+            let grav = this.parent.mass / dist ** 2;
+
+            let pax = grav * -px / dist;
+            let pay = grav * -py / dist;
+
+            // parent <- target
+            let dist2 = Math.hypot(tx, ty);
+            let grav2 = this.parent.mass / dist2 ** 2;
+
+            let tax = grav2 * -tx / dist2;
+            let tay = grav2 * -ty / dist2;
+
+            // ship -> target
+            let dx = tx - px;
+            let dy = ty - py;
+            let dist3 = Math.hypot(dx, dy);
+
+            let dvx = target.vx - this.vx;
+            let dvy = target.vy - this.vy;
+
+            let grav3 = target.mass / dist3 ** 2;
+
+            pax += grav3 * dx / dist3;
+            pay += grav3 * dy / dist3;
+
+            // ship <- target
+            let grav4 = this.mass / dist3 ** 2;
+
+            tax += grav4 * -dx / dist3;
+            tay += grav4 * -dy / dist3;
+
+            // move ship
+            let planPrecision = Math.min(
+                dist / Math.hypot(pvx, pvy) / 100,
+                dist2 / Math.hypot(tvx, tvy) / 100,
+                dist3 / Math.hypot(dvx, dvy) / 10
+            )
+
+            pvx += pax * planPrecision;
+            pvy += pay * planPrecision;
+
+            px += pvx * planPrecision;
+            py += pvy * planPrecision;
+
+            this.trajectory.push({ x: px, y: py });
+
+            // move target
+            tvx += tax * planPrecision;
+            tvy += tay * planPrecision;
+
+            tx += tvx * planPrecision;
+            ty += tvy * planPrecision;
+
+            // completed loop, break
+            let dt = Math.hypot(px - this.trajectory[0].x, py - this.trajectory[0].y);
+            if (dt < dist / 60 && time > 1000 / 2) { break; }
+        }
+    }
+
     calcPlan(progradeV, radialInV, target, logMap) {
 
         this.plan = [];
@@ -474,31 +564,33 @@ class Body {
 
         // let zoom = 2 ** (camera.zoom / 4);
 
-        ctx.beginPath();
-        for (let i = 0; i < this.plan.length; i++) {
-
-            // let nx = (this.plan[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            // let ny = (this.plan[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
-
-            let np = this.calcXY(ctx, camera, this.plan[i].x + this.parent.x, this.plan[i].y + this.parent.y);
-            let nx = np.x;
-            let ny = np.y;
-
-            if (i === 0) {
-                ctx.moveTo(nx, ny);
-            } else {
-                ctx.lineTo(nx, ny);
-            }
-        }
         if (isHavePlan) {
+            ctx.beginPath();
+            for (let i = 0; i < this.plan.length; i++) {
+
+                // let nx = (this.plan[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+                // let ny = (this.plan[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+
+                let np = this.calcXY(ctx, camera, this.plan[i].x + this.parent.x, this.plan[i].y + this.parent.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                if (i === 0) {
+                    ctx.moveTo(nx, ny);
+                } else {
+                    ctx.lineTo(nx, ny);
+                }
+            }
+            // if (isHavePlan) {
             ctx.strokeStyle = "#FF307C";
             ctx.lineWidth = 2;
-        } else {
-            ctx.strokeStyle = this.color;
+            // } else {
+            //     ctx.strokeStyle = this.color;
+            //     ctx.lineWidth = 1;
+            // }
+            ctx.stroke();
             ctx.lineWidth = 1;
         }
-        ctx.stroke();
-        ctx.lineWidth = 1;
 
         if (this.planClosest != undefined) {
 

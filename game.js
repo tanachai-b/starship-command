@@ -483,8 +483,16 @@ class Game {
     }
 
     calcTrajectory() {
-        if (!this.drawTrajectories) { return; }
-        for (let body of this.bodies) { body.calcTrajectory(this.logMap); }
+
+        for (let body of this.bodies) {
+
+            if (body.name === this.controlShip.name) {
+                body.calcTrajAdvance(this.target, this.logMap);
+
+            } else if (this.drawTrajectories) {
+                body.calcTrajectory(this.logMap);
+            }
+        }
     }
 
     calcPlan() {
@@ -636,8 +644,14 @@ class Game {
 
         // for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrail(offCtx, this.camera, this.logMap); }
 
-        if (this.drawTrajectories) {
-            for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap); }
+        for (let i = this.bodies.length - 1; i >= 0; i--) {
+
+            if (this.bodies[i].name === this.controlShip.name) {
+                this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap);
+
+            } else if (this.drawTrajectories) {
+                this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap);
+            }
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
