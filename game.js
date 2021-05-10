@@ -1104,7 +1104,7 @@ class Game {
         this.target = this.camSolSys[this.camSolSysIndex];
 
         this.controlShip.switchParent(this.focus);
-        this.heading = "Hold";
+        if (this.heading !== "Manual") { this.heading = "Hold"; }
         // this.isFollowSelf = false;
 
         this.camMoonIndex = 0;
@@ -1121,7 +1121,7 @@ class Game {
         this.focus = moons[this.camMoonIndex];
 
         this.controlShip.switchParent(this.focus);
-        this.heading = "Hold";
+        if (this.heading !== "Manual") { this.heading = "Hold"; }
         // this.isFollowSelf = false;
     }
 
