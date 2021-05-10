@@ -840,10 +840,10 @@ class Game {
         texts.push("Closest Approach   : " + closestDist + planDistText);
         texts.push("Fuel               : " + Math.round(this.fuel) + plannedFuelText);
         texts.push("");
+        texts.push("");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));
         texts.push("FPS              : " + this.frameRate);
-        texts.push("[\\]              : Toggle Trajectories");
 
         offCtx.textAlign = "left";
         offCtx.textBaseline = "top";
@@ -872,7 +872,7 @@ class Game {
 
         let texts = [];
         texts.push("Missions");
-        texts.push("Go to FuelStation2 with 200 fuel");
+        texts.push("Rendezvous with FuelStation2 using 200 fuel max");
 
         offCtx.textAlign = "right";
         offCtx.textBaseline = "top";
@@ -989,8 +989,6 @@ class Game {
             case "0_KeyH": event.preventDefault(); this.cycleSolSys(-1); break;
             case "0_Semicolon": event.preventDefault(); this.cycleSolSys(1); break;
 
-            // case "0_KeyN": event.preventDefault(); this.toggleFollowSelf(); break;
-
             case "0_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
             case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
             case "0_KeyA": event.preventDefault(); this.pressedKeys.A = 1; break;
@@ -1021,7 +1019,8 @@ class Game {
             case "0_KeyV": event.preventDefault(); this.clearPlan(); break;
 
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
-            case "0_Backslash": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
+            case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
+            case "0_F10": event.preventDefault(); this.toggleFollowSelf(); break;
         }
     }
 
