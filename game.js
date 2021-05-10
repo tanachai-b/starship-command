@@ -894,9 +894,7 @@ class Game {
             offCtx.font = "24px Syne Mono";
             offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
 
-            offCtx.textAlign = "center";
             offCtx.textBaseline = "bottom";
-            offCtx.font = "24px Syne Mono";
             offCtx.fillStyle = "#FFE100";;
             offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, this.c.height - 32);
 
@@ -915,10 +913,8 @@ class Game {
             offCtx.font = "24px Syne Mono";
             offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
 
-            offCtx.textAlign = "center";
-            offCtx.textBaseline = "bottom";
-            offCtx.font = "24px Syne Mono";
             offCtx.fillStyle = "#FFE100";;
+            offCtx.textBaseline = "bottom";
             offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, this.c.height - 32);
 
         } else {
@@ -929,13 +925,12 @@ class Game {
             offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 16);
 
             offCtx.font = "24px Syne Mono";
-            offCtx.fillText("Heading: " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1), this.c.width / 2, 64);
-
-            offCtx.textAlign = "center";
             offCtx.textBaseline = "bottom";
-            offCtx.font = "24px Syne Mono";
+            offCtx.fillText("Heading: " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1), this.c.width / 2, this.c.height - 32);
+
+            offCtx.textBaseline = "top";;
             offCtx.fillStyle = "#FFE100";;
-            offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, this.c.height - 32);
+            offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, 64);
         }
     }
 
@@ -964,14 +959,14 @@ class Game {
             case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 1; break;
             case "0_KeyK": event.preventDefault(); this.pressedKeys.K = 1; break;
 
-            case "0_KeyH": event.preventDefault(); this.cycleSolSys(-1); break;
-            case "0_Semicolon": event.preventDefault(); this.cycleSolSys(1); break;
+            case "0_KeyU": event.preventDefault(); this.cycleTarget(-1); break;
+            case "0_KeyO": event.preventDefault(); this.cycleTarget(1); break;
 
             case "0_KeyJ": event.preventDefault(); this.cycleMoon(-1); break;
             case "0_KeyL": event.preventDefault(); this.cycleMoon(1); break;
 
-            case "0_KeyU": event.preventDefault(); this.cycleTarget(-1); break;
-            case "0_KeyO": event.preventDefault(); this.cycleTarget(1); break;
+            case "0_KeyH": event.preventDefault(); this.cycleSolSys(-1); break;
+            case "0_Semicolon": event.preventDefault(); this.cycleSolSys(1); break;
 
             // case "0_KeyN": event.preventDefault(); this.toggleFollowSelf(); break;
 
@@ -1063,6 +1058,7 @@ class Game {
         this.target = this.camSolSys[this.camSolSysIndex];
 
         this.controlShip.switchParent(this.focus);
+        this.heading = "Hold";
         // this.isFollowSelf = false;
 
         this.camMoonIndex = 0;
@@ -1079,6 +1075,7 @@ class Game {
         this.focus = moons[this.camMoonIndex];
 
         this.controlShip.switchParent(this.focus);
+        this.heading = "Hold";
         // this.isFollowSelf = false;
     }
 
