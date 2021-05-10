@@ -763,29 +763,49 @@ class Game {
 
     addSideText(offCtx) {
 
-        // fuel usange (planned)
+        let ship = this.controlShip;
+
+        // fuel usage (planned)
         let plannedFuelText = ""
         if (this.plannedFuel > 0) {
             plannedFuelText = " (-" + Math.round(this.plannedFuel) + ")";
         }
 
         // distance to target
-        let tdx = this.target.x - this.controlShip.x;
-        let tdy = this.target.y - this.controlShip.y;
+        let tdx = this.target.x - ship.x;
+        let tdy = this.target.y - ship.y;
         let targDist = Math.hypot(tdx, tdy);
 
-        // distance to target (planned)
-        let planDistText = ""
-        if (this.controlShip.targetClosest !== undefined && this.controlShip.planClosest !== undefined) {
-            let pdx = this.controlShip.targetClosest.x - this.controlShip.planClosest.x;
-            let pdy = this.controlShip.targetClosest.y - this.controlShip.planClosest.y;
-            planDistText = " (" + Math.round(Math.hypot(pdx, pdy)) + ")";
+        // relative velocity
+        let dvx = this.target.vx - ship.vx;
+        let dvy = this.target.vy - ship.vy;
+        let relativeV = Math.hypot(dvx, dvy);
+
+        // closest approach
+        let closestDist = "N/A";
+        if (ship.trajClosest !== undefined) {
+
+            if (ship.trajTargetClosest !== undefined) {
+                let cdx = ship.trajTargetClosest.x - ship.trajClosest.x;
+                let cdy = ship.trajTargetClosest.y - ship.trajClosest.y;
+                closestDist = Math.round(Math.hypot(cdx, cdy));
+            } else {
+                closestDist = Math.round(Math.hypot(ship.trajClosest.x, ship.trajClosest.y));
+            }
         }
 
-        // relative velocy
-        let dvx = this.target.vx - this.controlShip.vx;
-        let dvy = this.target.vy - this.controlShip.vy;
-        let relativeV = Math.hypot(dvx, dvy);
+        // closest approach (planned)
+        let planDistText = ""
+        if (ship.planClosest !== undefined) {
+
+            if (ship.planTargetClosest !== undefined) {
+                let pdx = ship.planTargetClosest.x - ship.planClosest.x;
+                let pdy = ship.planTargetClosest.y - ship.planClosest.y;
+                planDistText = " (" + Math.round(Math.hypot(pdx, pdy)) + ")";
+            } else {
+                planDistText = " (" + Math.round(Math.hypot(ship.planClosest.x, ship.planClosest.y)) + ")";
+            }
+        }
 
         let texts = [];
         texts.push("V0.1");
@@ -813,16 +833,11 @@ class Game {
         texts.push("[V]          : Discard Plan");
         texts.push("[W][S][A][D] : Plan Direction Controls (Plan Mode)");
         texts.push("");
-        // texts.push("Trajectory Relative To     : " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1));
-        // texts.push("Find Closest Approach To   : " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1));
-        texts.push("Distance to Target : " + Math.round(targDist) + planDistText);
+        texts.push("Distance to Target : " + Math.round(targDist));
         texts.push("Relative Velocity  : " + Math.round(relativeV));
+        texts.push("Closest Approach  : " + closestDist + planDistText);
         texts.push("");
         texts.push("Fuel   : " + Math.round(this.fuel) + plannedFuelText);
-        texts.push("");
-        // texts.push("Heading : " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1));
-        // texts.push("Engine : " + this.engine);
-        // texts.push("Mode : " + this.mode);
         texts.push("");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));

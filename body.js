@@ -27,6 +27,7 @@ class Body {
         this.ay = 0;
 
         this.trail = [];
+
         this.trajectory = [];
         this.trajTarget = [];
         this.trajClosest;
