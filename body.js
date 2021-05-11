@@ -47,7 +47,7 @@ class Body {
             this.vy = parent.vy;
             this.setVelCirc(parent);
 
-            // this.r = Math.atan2(parent.vy - this.vy, parent.vx - this.vx) - Math.PI / 2;
+            this.r = Math.atan2(parent.vy - this.vy, parent.vx - this.vx) - Math.PI / 2;
         }
     }
 

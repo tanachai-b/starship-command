@@ -24,7 +24,7 @@ class Game {
         this.isPause = false;
         this.speed = -12;
 
-        this.zoom = -47;
+        this.zoom = 25;
         this.isFollowSelf = true;
         this.camera = new Camera();
         this.camPosition;
@@ -49,9 +49,9 @@ class Game {
         this.controlShip;
 
         this.mode = "Pilot";
-        this.engine = "RCS";
+        this.engine = "Thruster";
         this.maxFuel = 999999;
-        this.fuel = 200;
+        this.fuel = 20000;
 
         this.heading = "Manual";
 
@@ -260,12 +260,41 @@ class Game {
         if (this.engine === "Thruster") { this.thruster(); }
     }
 
+    autoHeading(key) {
+
+        if (this.mode === "Planning") { return; }
+        if (this.engine === "RCS") { return; }
+
+        let keyHeading = "Hold"
+        switch (key) {
+            case 'W': keyHeading = "Prograde"; break;
+            case 'S': keyHeading = "Retrograde"; break;
+            case 'A': keyHeading = "Radial-in"; break;
+            case 'D': keyHeading = "Radial-out"; break;
+        }
+
+        if (this.heading !== keyHeading) {
+            this.heading = keyHeading;
+        } else {
+            this.heading = "Manual";
+        }
+    }
+
     toggleHoldHeading() {
 
         if (this.heading === "Hold") {
             this.heading = "Manual";
         } else {
             this.heading = "Hold"
+        }
+    }
+
+    plannedThrustHeading() {
+
+        if (this.heading === "Planned") {
+            this.heading = "Manual";
+        } else {
+            this.heading = "Planned"
         }
     }
 
@@ -300,22 +329,24 @@ class Game {
 
         } else {
 
-            let goal = 0;
+            let heading = 0;
 
-            if (this.heading === "Prograde") { goal = -Math.PI / 2; }
-            else if (this.heading === "Retrograde") { goal = +Math.PI / 2; }
-            else if (this.heading === "Radial-out") { goal = -Math.PI; }
-            else if (this.heading === "Radial-in") { goal = 0; }
+            if (this.heading === "Prograde") { heading = 0; }
+            else if (this.heading === "Retrograde") { heading = Math.PI; }
+            else if (this.heading === "Radial-out") { heading = Math.PI / 2; }
+            else if (this.heading === "Radial-in") { heading = -Math.PI / 2; }
+            else if (this.heading === "Planned") { heading = -Math.atan2(this.radialInV, this.progradeV); }
             else { return; }
 
             let parent = this.controlShip.parent;
 
             let dvx = this.controlShip.vx - parent.vx;
             let dvy = this.controlShip.vy - parent.vy;
-            let prog = Math.atan2(dvy, dvx);
+            let prograde = Math.atan2(dvy, dvx) + Math.PI / 2;
 
-            let dir = this.controlShip.r + goal;
-            let dist = ((((prog - dir + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
+            let curDir = this.controlShip.r;
+
+            let dist = ((((prograde + heading - curDir + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
 
 
             let precision = 10 ** (this.speed / 3);
@@ -395,26 +426,6 @@ class Game {
             this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
 
         } else {
-            if (this.pressedKeys.W) {
-                this.heading = "Prograde";
-                // if (this.heading !== "Prograde") { this.heading = "Prograde"; }
-                // else { this.heading = "Hold"; }
-            }
-            if (this.pressedKeys.S) {
-                this.heading = "Retrograde";
-                // if (this.heading !== "Retrograde") { this.heading = "Retrograde"; }
-                // else { this.heading = "Hold"; }
-            }
-            if (this.pressedKeys.A) {
-                this.heading = "Radial-in";
-                // if (this.heading !== "Radial-in") { this.heading = "Radial-in"; }
-                // else { this.heading = "Hold"; }
-            }
-            if (this.pressedKeys.D) {
-                this.heading = "Radial-out";
-                // if (this.heading !== "Radial-out") { this.heading = "Radial-out"; }
-                // else { this.heading = "Hold"; }
-            }
 
             if (this.pressedKeys.Z || this.pressedKeys.X) {
 
@@ -433,15 +444,15 @@ class Game {
                     vy1 = -power / 10 * Math.cos(this.controlShip.r);
                 }
 
+                // minus current thrust from planned route / planned fuel
                 if (this.progradeV !== 0 || this.radialInV !== 0) {
-                    // minus current thrust from planned route / planned fuel
+
                     let dx = this.controlShip.vx - this.controlShip.parent.vx;
                     let dy = this.controlShip.vy - this.controlShip.parent.vy;
                     let dist = Math.hypot(dx, dy);
-                    let prograde = { cos: dx / dist, sin: dy / dist };
 
-                    let nvx = vx1 * prograde.cos - vy1 * prograde.sin;
-                    let nvy = vy1 * prograde.cos + vx1 * prograde.sin;
+                    let nvx = vx1 * dx / dist - vy1 * dy / dist;
+                    let nvy = vy1 * dx / dist + vx1 * dy / dist;
 
                     this.progradeV -= nvx;
                     this.radialInV -= nvy;
@@ -1066,10 +1077,10 @@ class Game {
             case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 1; break;
             case "0_KeyK": event.preventDefault(); this.pressedKeys.K = 1; break;
 
-            case "0_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
-            case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
-            case "0_KeyA": event.preventDefault(); this.pressedKeys.A = 1; break;
-            case "0_KeyD": event.preventDefault(); this.pressedKeys.D = 1; break;
+            case "0_KeyW": event.preventDefault(); this.autoHeading('W'); this.pressedKeys.W = 1; break;
+            case "0_KeyS": event.preventDefault(); this.autoHeading('S'); this.pressedKeys.S = 1; break;
+            case "0_KeyA": event.preventDefault(); this.autoHeading('A'); this.pressedKeys.A = 1; break;
+            case "0_KeyD": event.preventDefault(); this.autoHeading('D'); this.pressedKeys.D = 1; break;
 
             case "2_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
             case "2_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
@@ -1091,9 +1102,11 @@ class Game {
             case "2_ShiftLeft": event.preventDefault(); this.pressedKeys.Shift = 1; break;
 
             case "0_KeyR": event.preventDefault(); this.toggleEngine(); break;
-            case "0_KeyF": event.preventDefault(); this.toggleHoldHeading(); break;
             case "0_KeyC": event.preventDefault(); this.toggleMode(); break;
             case "0_KeyV": event.preventDefault(); this.clearPlan(); break;
+
+            case "0_KeyF": event.preventDefault(); this.toggleHoldHeading(); break;
+            case "0_KeyG": event.preventDefault(); this.plannedThrustHeading(); break;
 
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
             case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
