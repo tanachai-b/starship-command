@@ -143,61 +143,61 @@ class Body {
 
     switchParent(newParent) {
 
-        let x1 = this.parent.x;
-        let y1 = this.parent.y;
+        // let x1 = this.parent.x;
+        // let y1 = this.parent.y;
 
-        let x2 = newParent.x;
-        let y2 = newParent.y;
+        // let x2 = newParent.x;
+        // let y2 = newParent.y;
 
-        let dx = x2 - x1;
-        let dy = y2 - y1;
+        // let dx = x2 - x1;
+        // let dy = y2 - y1;
 
-        for (let point of this.trail) {
-            point.x -= dx;
-            point.y -= dy;
-        }
+        // for (let point of this.trail) {
+        //     point.x -= dx;
+        //     point.y -= dy;
+        // }
 
         this.parent = newParent;
     }
 
-    addTrail(logMap) {
+    // addTrail(logMap) {
 
-        if (this.parent === null) { return; }
+    //     if (this.parent === null) { return; }
 
-        this.trail.push({ x: this.x - this.parent.x, y: this.y - this.parent.y });
+    //     this.trail.push({ x: this.x - this.parent.x, y: this.y - this.parent.y });
 
-        if (this.trail.length >= 3) {
+    //     if (this.trail.length >= 3) {
 
-            // reduce nodes (if a trail section is shorter than radius/100, remove middle node)
-            let p1 = this.trail[this.trail.length - 1];
-            let p2 = this.trail[this.trail.length - 3];
+    //         // reduce nodes (if a trail section is shorter than radius/100, remove middle node)
+    //         let p1 = this.trail[this.trail.length - 1];
+    //         let p2 = this.trail[this.trail.length - 3];
 
-            let p1p2 = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
-            let p1p0 = p1.x ** 2 + p1.y ** 2;
+    //         let p1p2 = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
+    //         let p1p0 = p1.x ** 2 + p1.y ** 2;
 
-            if (p1p2 < p1p0 / 60 ** 2) { this.trail.splice(this.trail.length - 2, 1); }
+    //         if (p1p2 < p1p0 / 60 ** 2) { this.trail.splice(this.trail.length - 2, 1); }
 
-            // cut trail end (if trail end's distance to trail head is less than 1% of diameter, remove trail end nodes)
-            let pn = this.trail[this.trail.length - 1];
-            let pm = this.trail[Math.round(this.trail.length / 2)];
+    //         // cut trail end (if trail end's distance to trail head is less than 1% of diameter, remove trail end nodes)
+    //         let pn = this.trail[this.trail.length - 1];
+    //         let pm = this.trail[Math.round(this.trail.length / 2)];
 
-            for (let i = 0; i < Math.round(this.trail.length / 2); i++) {
+    //         for (let i = 0; i < Math.round(this.trail.length / 2); i++) {
 
-                let p0 = this.trail[i];
-                let p0pn = (p0.x - pn.x) ** 2 + (p0.y - pn.y) ** 2;
-                let pmpn = (pm.x - pn.x) ** 2 + (pm.y - pn.y) ** 2;
+    //             let p0 = this.trail[i];
+    //             let p0pn = (p0.x - pn.x) ** 2 + (p0.y - pn.y) ** 2;
+    //             let pmpn = (pm.x - pn.x) ** 2 + (pm.y - pn.y) ** 2;
 
-                if (p0pn < pmpn * 0.1 ** 2) {
-                    this.trail.splice(0, i + 1);
-                    i = 0;
-                }
-            }
-        }
+    //             if (p0pn < pmpn * 0.1 ** 2) {
+    //                 this.trail.splice(0, i + 1);
+    //                 i = 0;
+    //             }
+    //         }
+    //     }
 
-        if (this.trail.length > 720) {
-            this.trail.splice(0, this.trail.length - 720);
-        }
-    }
+    //     if (this.trail.length > 720) {
+    //         this.trail.splice(0, this.trail.length - 720);
+    //     }
+    // }
 
     calcTrajectory(logMap) {
 
@@ -678,32 +678,32 @@ class Body {
         }
     }
 
-    drawTrail(ctx, camera, logMap) {
+    // drawTrail(ctx, camera, logMap) {
 
-        if (this.trail.length == 0) { return; }
+    //     if (this.trail.length == 0) { return; }
 
-        // let zoom = 2 ** (camera.zoom / 4);
+    //     // let zoom = 2 ** (camera.zoom / 4);
 
-        ctx.beginPath();
-        for (let i = 0; i < this.trail.length; i++) {
+    //     ctx.beginPath();
+    //     for (let i = 0; i < this.trail.length; i++) {
 
-            // let nx = (this.trail[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            // let ny = (this.trail[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
+    //         // let nx = (this.trail[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
+    //         // let ny = (this.trail[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
 
-            let np = this.calcXY(ctx, camera, this.trail[i].x + this.parent.x, this.trail[i].y + this.parent.y);
-            let nx = np.x;
-            let ny = np.y;
+    //         let np = this.calcXY(ctx, camera, this.trail[i].x + this.parent.x, this.trail[i].y + this.parent.y);
+    //         let nx = np.x;
+    //         let ny = np.y;
 
-            if (i === 0) {
-                ctx.moveTo(nx, ny);
-            } else {
-                ctx.lineTo(nx, ny);
-            }
-        }
-        // ctx.strokeStyle = this.color;
-        ctx.strokeStyle = "red";
-        ctx.stroke();
-    }
+    //         if (i === 0) {
+    //             ctx.moveTo(nx, ny);
+    //         } else {
+    //             ctx.lineTo(nx, ny);
+    //         }
+    //     }
+    //     // ctx.strokeStyle = this.color;
+    //     ctx.strokeStyle = "red";
+    //     ctx.stroke();
+    // }
 
     drawTrajectory(ctx, camera, logMap) {
 
