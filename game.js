@@ -38,7 +38,7 @@ class Game {
 
         this.camSolSysIndex = 3;
         this.camMoonIndex = 0;
-        this.camTargetIndex = 2;
+        this.camTargetIndex = 0;
 
         this.focus;
         this.target;
@@ -271,30 +271,14 @@ class Game {
             case 'S': keyHeading = "Retrograde"; break;
             case 'A': keyHeading = "Radial-in"; break;
             case 'D': keyHeading = "Radial-out"; break;
+            case 'F': keyHeading = "Planned"; break;
+            case 'G': keyHeading = "Hold"; break;
         }
 
         if (this.heading !== keyHeading) {
             this.heading = keyHeading;
         } else {
             this.heading = "Manual";
-        }
-    }
-
-    toggleHoldHeading() {
-
-        if (this.heading === "Hold") {
-            this.heading = "Manual";
-        } else {
-            this.heading = "Hold"
-        }
-    }
-
-    plannedThrustHeading() {
-
-        if (this.heading === "Planned") {
-            this.heading = "Manual";
-        } else {
-            this.heading = "Planned"
         }
     }
 
@@ -384,12 +368,7 @@ class Game {
         } else if (this.engine === "Thruster") {
             this.engine = "RCS";
             this.mode = "Pilot";
-
-            if (this.heading !== "Manual") {
-                this.heading = "Hold";
-            } else {
-                this.heading = "Manual";
-            }
+            this.heading = "Hold";
         }
     }
 
@@ -536,6 +515,7 @@ class Game {
         if (this.mode === "Pilot") {
             this.mode = "Planning";
             this.engine = "Thruster";
+            this.heading = "Hold";
 
         } else if (this.mode === "Planning") {
             this.mode = "Pilot";
@@ -893,8 +873,8 @@ class Game {
         texts.push("");
         texts.push("[E][Q]       : Manual Heading Controls");
         texts.push("[W][S][A][D] : Auto Heading Controls (Main)");
-        texts.push("[F]          : Toggle Hold/Manual Heading");
-        texts.push("[G]          : Planned Thrust Heading");
+        texts.push("[F]          : Planned Thrust Heading");
+        texts.push("[G]          : Hold Heading");
         texts.push("[Z][X]       : Main Thruster Controls (Main)");
         texts.push("");
         texts.push("[R]          : Toggle RCS Thruster Mode");
@@ -1077,11 +1057,6 @@ class Game {
             case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 1; break;
             case "0_KeyK": event.preventDefault(); this.pressedKeys.K = 1; break;
 
-            case "0_KeyW": event.preventDefault(); this.autoHeading('W'); this.pressedKeys.W = 1; break;
-            case "0_KeyS": event.preventDefault(); this.autoHeading('S'); this.pressedKeys.S = 1; break;
-            case "0_KeyA": event.preventDefault(); this.autoHeading('A'); this.pressedKeys.A = 1; break;
-            case "0_KeyD": event.preventDefault(); this.autoHeading('D'); this.pressedKeys.D = 1; break;
-
             case "2_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
             case "2_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
             case "2_KeyA": event.preventDefault(); this.pressedKeys.A = 1; break;
@@ -1105,8 +1080,13 @@ class Game {
             case "0_KeyC": event.preventDefault(); this.toggleMode(); break;
             case "0_KeyV": event.preventDefault(); this.clearPlan(); break;
 
-            case "0_KeyF": event.preventDefault(); this.toggleHoldHeading(); break;
-            case "0_KeyG": event.preventDefault(); this.plannedThrustHeading(); break;
+            case "0_KeyW": event.preventDefault(); this.autoHeading('W'); this.pressedKeys.W = 1; break;
+            case "0_KeyS": event.preventDefault(); this.autoHeading('S'); this.pressedKeys.S = 1; break;
+            case "0_KeyA": event.preventDefault(); this.autoHeading('A'); this.pressedKeys.A = 1; break;
+            case "0_KeyD": event.preventDefault(); this.autoHeading('D'); this.pressedKeys.D = 1; break;
+
+            case "0_KeyF": event.preventDefault(); this.autoHeading('F'); break;
+            case "0_KeyG": event.preventDefault(); this.autoHeading('G'); break;
 
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
             case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
