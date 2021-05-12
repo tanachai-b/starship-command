@@ -265,18 +265,25 @@ class Game {
         if (this.mode === "Planning") { return; }
         if (this.engine === "RCS") { return; }
 
-        let keyHeading = "Hold"
+        let keyHeading = "Manual"
         switch (key) {
             case 'W': keyHeading = "Prograde"; break;
             case 'S': keyHeading = "Retrograde"; break;
             case 'A': keyHeading = "Radial-in"; break;
             case 'D': keyHeading = "Radial-out"; break;
             case 'F': keyHeading = "Planned"; break;
-            case 'G': keyHeading = "Hold"; break;
         }
 
         if (this.heading !== keyHeading) {
             this.heading = keyHeading;
+        } else {
+            this.heading = "Manual";
+        }
+    }
+
+    holdHeading() {
+        if (this.heading !== "Hold") {
+            this.heading = "Hold";
         } else {
             this.heading = "Manual";
         }
@@ -1086,7 +1093,7 @@ class Game {
             case "0_KeyD": event.preventDefault(); this.autoHeading('D'); this.pressedKeys.D = 1; break;
 
             case "0_KeyF": event.preventDefault(); this.autoHeading('F'); break;
-            case "0_KeyG": event.preventDefault(); this.autoHeading('G'); break;
+            case "0_KeyG": event.preventDefault(); this.holdHeading(); break;
 
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
             case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
