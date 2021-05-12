@@ -557,7 +557,8 @@ class Game {
             this.target = this.camMoons[this.camSolSys[this.camSolSysIndex].name][this.camTargetIndex];
         }
 
-        this.controlShip.switchParent(this.focus);
+        // this.controlShip.switchParent(this.focus);
+        // this.changeFocus(this.focus);
 
         if (this.isFollowSelf) {
             this.camPosition = this.controlShip;
@@ -1158,9 +1159,10 @@ class Game {
         this.focus = this.camSolSys[this.camSolSysIndex];
         this.target = this.camSolSys[this.camSolSysIndex];
 
-        this.controlShip.switchParent(this.focus);
-        if (this.heading !== "Manual") { this.heading = "Hold"; }
+        // this.controlShip.switchParent(this.focus);
+        this.heading = "Hold";
         // this.isFollowSelf = false;
+        this.changeFocus(this.focus);
 
         this.camMoonIndex = 0;
         this.camTargetIndex = 0;
@@ -1175,9 +1177,33 @@ class Game {
         this.camMoonIndex = (this.camMoonIndex + moons.length) % moons.length;
         this.focus = moons[this.camMoonIndex];
 
-        this.controlShip.switchParent(this.focus);
-        if (this.heading !== "Manual") { this.heading = "Hold"; }
+        // this.controlShip.switchParent(this.focus);
+        this.heading = "Hold";
         // this.isFollowSelf = false;
+        this.changeFocus(this.focus);
+    }
+
+    changeFocus(newFocus) {
+
+        let ship = this.controlShip;
+        let vx = ship.vx - ship.parent.vx;
+        let vy = ship.vy - ship.parent.vy;
+        let dist = Math.hypot(vx, vy);
+
+
+        let nvx = ship.vx - newFocus.vx;
+        let nvy = ship.vy - newFocus.vy;
+
+        let dvx = nvx * vx / dist + nvy * vy / dist;
+        let dvy = nvx * vy / dist - nvy * vx / dist;
+        let ddist = Math.hypot(dvx, dvy);
+
+        let p = this.progradeV * dvx / ddist - this.radialInV * dvy / ddist;
+        let r = this.progradeV * dvy / ddist + this.radialInV * dvx / ddist;
+        this.progradeV = p;
+        this.radialInV = r;
+
+        ship.parent = newFocus;
     }
 
     cycleTarget(direction) {

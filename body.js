@@ -141,24 +141,24 @@ class Body {
         }
     }
 
-    switchParent(newParent) {
+    // switchParent(newParent) {
 
-        // let x1 = this.parent.x;
-        // let y1 = this.parent.y;
+    //     let x1 = this.parent.x;
+    //     let y1 = this.parent.y;
 
-        // let x2 = newParent.x;
-        // let y2 = newParent.y;
+    //     let x2 = newParent.x;
+    //     let y2 = newParent.y;
 
-        // let dx = x2 - x1;
-        // let dy = y2 - y1;
+    //     let dx = x2 - x1;
+    //     let dy = y2 - y1;
 
-        // for (let point of this.trail) {
-        //     point.x -= dx;
-        //     point.y -= dy;
-        // }
+    //     for (let point of this.trail) {
+    //         point.x -= dx;
+    //         point.y -= dy;
+    //     }
 
-        this.parent = newParent;
-    }
+    //     this.parent = newParent;
+    // }
 
     // addTrail(logMap) {
 
@@ -451,11 +451,11 @@ class Body {
         // add planned velocity (progradeV, radialInV)
         let dist = Math.hypot(pvx, pvy);
 
-        pvx += pvx / dist * progradeV;
-        pvy += pvy / dist * progradeV;
+        pvx += progradeV * pvx / dist;
+        pvy += progradeV * pvy / dist;
 
-        pvx += pvy / dist * radialInV;
-        pvy += -pvx / dist * radialInV;
+        pvx += radialInV * pvy / dist;
+        pvy += radialInV * -pvx / dist;
 
         // target compared to parent
         let tx = target.x - this.parent.x;
@@ -627,11 +627,8 @@ class Body {
         // add planned velocity (progradeV, radialInV)
         let dist = Math.hypot(pvx, pvy);
 
-        pvx += pvx / dist * progradeV;
-        pvy += pvy / dist * progradeV;
-
-        pvx += pvy / dist * radialInV;
-        pvy += -pvx / dist * radialInV;
+        pvx += progradeV * pvx / dist + radialInV * pvy / dist;
+        pvy += progradeV * pvy / dist - radialInV * pvx / dist;
 
         // prep find closest points
         let closestDist;
