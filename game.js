@@ -51,7 +51,7 @@ class Game {
         this.mode = "Pilot";
         this.engine = "Thruster";
         this.maxFuel = 999999;
-        this.fuel = 20000;
+        this.fuel = 999999;
 
         this.heading = "Manual";
 
@@ -99,13 +99,13 @@ class Game {
         let earth = new Body("earth", "#006AFF", 6378.10, 5.52, sun, 149597890, 10);
         this.bodies.push(earth); this.bodiesMap.earth = earth;
 
-        let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 60);
+        let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 40);
         this.bodies.push(mars); this.bodiesMap.mars = mars;
 
         let ceres = new Body("ceres", "#B0B0B0", 473, 2.16, sun, 413700000, 170);
         this.bodies.push(ceres); this.bodiesMap.ceres = ceres;
 
-        let jupiter = new Body("jupiter", "#A6662B", 71492.68, 1.33, sun, 778412010, -45);
+        let jupiter = new Body("jupiter", "#A6662B", 71492.68, 1.33, sun, 778412010, 90);
         this.bodies.push(jupiter); this.bodiesMap.jupiter = jupiter;
 
         let saturn = new Body("saturn", "#FFE4A6", 60267.14, 0.7, sun, 1426725400, 200);
@@ -157,15 +157,15 @@ class Game {
         // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000, 45);
         // this.bodies.push(starship); this.bodiesMap.starship = starship;
         // this.controlShip = starship;
-        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -30.00005);
+        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -120.00005);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
 
-        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -30);
+        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -120);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
         this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 0 };
 
-        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 10100, -29);
+        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 10100, -119);
         this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
         this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 18000 };
 
@@ -595,11 +595,11 @@ class Game {
         // set camera rotation
         if (this.camera.r === undefined) { this.camera.r = 0; }
 
-        // if (this.engine === "RCS") {
-        this.camAngle = -this.controlShip.r;
-        // } else {
-        //     this.camAngle = 0;
-        // }
+        if (this.engine === "RCS") {
+            this.camAngle = -this.controlShip.r;
+        } else {
+            this.camAngle = 0;
+        }
 
         let dr = (((this.camAngle - this.camera.r + Math.PI) % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI) - Math.PI;
         this.camera.r += dr / 8;
@@ -877,7 +877,6 @@ class Game {
         texts.push("[J][L]       : Cycle Moons/Objects");
         texts.push("[H][;]       : Cycle Planets");
         texts.push("[U][O]       : Cycle Targets");
-        texts.push("[N]          : Toggle Focus on Ship");
         texts.push("");
         texts.push("[E][Q]       : Manual Heading Controls");
         texts.push("[W][S][A][D] : Auto Heading Controls (Main)");
@@ -897,7 +896,8 @@ class Game {
         texts.push("Closest Approach   : " + closestDist + planDistText);
         texts.push("Fuel               : " + Math.round(this.fuel) + plannedFuelText);
         texts.push("");
-        texts.push("");
+        texts.push("[F10]            : Toggle Focus on Focus");
+        texts.push("[F11]            : Toggle Display Trajectories");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));
         texts.push("FPS              : " + this.frameRate);
