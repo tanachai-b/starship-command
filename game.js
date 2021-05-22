@@ -99,7 +99,7 @@ class Game {
         let earth = new Body("earth", "#006AFF", 6378.10, 5.52, sun, 149597890, 10);
         this.bodies.push(earth); this.bodiesMap.earth = earth;
 
-        let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 35);
+        let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 45);
         this.bodies.push(mars); this.bodiesMap.mars = mars;
 
         let ceres = new Body("ceres", "#B0B0B0", 473, 2.16, sun, 413700000, 170);
@@ -122,7 +122,7 @@ class Game {
 
         // ========================
 
-        let moon = new Body("moon", "#B5B0A3", 1737.1, 3.3464, earth, 384399, -135);
+        let moon = new Body("moon", "#B5B0A3", 1737.1, 3.3464, earth, 384399, 5);
         this.bodies.push(moon); this.bodiesMap.moon = moon;
 
         let phobos = new Body("phobos", "#B5B0A3", 11.1, 1.876, mars, 9377, 45);
@@ -259,6 +259,8 @@ class Game {
 
     autoHeading(key) {
 
+        if (this.isPause) { return; }
+
         if (this.mode === "Planning") { return; }
         if (this.engine === "RCS") { return; }
 
@@ -383,10 +385,10 @@ class Game {
         let power = 0.1;
         if (this.pressedKeys.Shift) { power /= 10; }
 
-        if (this.pressedKeys.W) { this.eachRcs(Math.atan2(-1, 0), power); this.fuel -= power; }
-        if (this.pressedKeys.S) { this.eachRcs(Math.atan2(1, 0), power); this.fuel -= power; }
-        if (this.pressedKeys.A) { this.eachRcs(Math.atan2(0, -1), power); this.fuel -= power; }
-        if (this.pressedKeys.D) { this.eachRcs(Math.atan2(0, 1), power); this.fuel -= power; }
+        if (this.pressedKeys.W) { this.eachRcs(Math.atan2(0, 1), power); this.fuel -= power; }
+        if (this.pressedKeys.S) { this.eachRcs(Math.atan2(0, -1), power); this.fuel -= power; }
+        if (this.pressedKeys.A) { this.eachRcs(Math.atan2(-1, 0), power); this.fuel -= power; }
+        if (this.pressedKeys.D) { this.eachRcs(Math.atan2(1, 0), power); this.fuel -= power; }
 
         this.fuel = Math.max(this.fuel, 0);
     }
@@ -599,7 +601,7 @@ class Game {
         if (this.camera.r === undefined) { this.camera.r = 0; }
 
         if (this.engine === "RCS") {
-            this.camAngle = -this.controlShip.r;
+            this.camAngle = -this.controlShip.r - Math.PI / 2;
         } else {
             this.camAngle = 0;
         }
@@ -673,17 +675,26 @@ class Game {
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
             if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap);
+                this.bodies[i].drawTrajectory(offCtx, this.camera, this.target, this.isFollowSelf, this.logMap);
 
             } else if (this.drawTrajectories) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap);
+                this.bodies[i].drawTrajectory(offCtx, this.camera, undefined, false, this.logMap);
             }
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
+
             let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
-            this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, this.logMap);
+
             this.bodies[i].drawPlanTarget(offCtx, this.camera, isHavePlan, this.logMap);
+
+            if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
+                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, this.target, this.isFollowSelf, this.logMap);
+
+            } else if (this.drawTrajectories) {
+                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, undefined, false, this.logMap);
+            }
+
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
@@ -796,30 +807,33 @@ class Game {
         offCtx.lineWidth = 2;
         offCtx.strokeStyle = "#00FFA3";
         if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
-        if (this.engine === "RCS") { offCtx.strokeStyle = "#006EFF"; }
+        if (this.engine === "RCS") { offCtx.strokeStyle = "#001EFF"; }
         offCtx.stroke();
 
-        if (this.heading !== "Manual") {
-            offCtx.beginPath();
-            offCtx.moveTo(cx + 24, cy + 48);
-            offCtx.lineTo(cx + 48, cy + 48);
-            offCtx.lineTo(cx + 48, cy + 24);
-            offCtx.moveTo(cx - 24, cy + 48);
-            offCtx.lineTo(cx - 48, cy + 48);
-            offCtx.lineTo(cx - 48, cy + 24);
-            offCtx.moveTo(cx - 24, cy - 48);
-            offCtx.lineTo(cx - 48, cy - 48);
-            offCtx.lineTo(cx - 48, cy - 24);
-            offCtx.moveTo(cx + 24, cy - 48);
-            offCtx.lineTo(cx + 48, cy - 48);
-            offCtx.lineTo(cx + 48, cy - 24);
+        if (this.frameCount % 100 < 80) {
+
+            if (this.heading !== "Manual") {
+                offCtx.beginPath();
+                offCtx.moveTo(cx + 24, cy + 48);
+                offCtx.lineTo(cx + 48, cy + 48);
+                offCtx.lineTo(cx + 48, cy + 24);
+                offCtx.moveTo(cx - 24, cy + 48);
+                offCtx.lineTo(cx - 48, cy + 48);
+                offCtx.lineTo(cx - 48, cy + 24);
+                offCtx.moveTo(cx - 24, cy - 48);
+                offCtx.lineTo(cx - 48, cy - 48);
+                offCtx.lineTo(cx - 48, cy - 24);
+                offCtx.moveTo(cx + 24, cy - 48);
+                offCtx.lineTo(cx + 48, cy - 48);
+                offCtx.lineTo(cx + 48, cy - 24);
+            }
+
+            offCtx.lineWidth = 1;
+            offCtx.strokeStyle = "#00FFA3";
+            if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
+            if (this.engine === "RCS") { offCtx.strokeStyle = "#006EFF"; }
+            offCtx.stroke();
         }
-
-        offCtx.lineWidth = 1;
-        offCtx.strokeStyle = "#00FFA3";
-        if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
-        if (this.engine === "RCS") { offCtx.strokeStyle = "#006EFF"; }
-        offCtx.stroke();
     }
 
     addSideText(offCtx) {
@@ -883,29 +897,30 @@ class Game {
         texts.push("[,][.]       : Slowdown, Speedup Time");
         texts.push("");
         texts.push("[I][K]       : Zoom In, Zoom Out");
-        texts.push("[J][L]       : Cycle Moons/Objects");
-        texts.push("[H][;]       : Cycle Planets");
-        texts.push("[U][O]       : Cycle Targets");
+        // texts.push("[J][L]       : Cycle Moons/Objects");
+        texts.push("[J][L]       : Select Reference Frame");
+        texts.push("[U][O]       : Select Targets");
+        texts.push("[M]          : Toggle Focus on Target");
         texts.push("");
         texts.push("[E][Q]       : Manual Heading Controls");
-        texts.push("[W][S][A][D] : Auto Heading Controls (Main)");
-        texts.push("[F]          : Planned Thrust Heading");
+        texts.push("[W][S][A][D] : Directional Headings");
+        texts.push("[F]          : Planned Heading");
         texts.push("[G]          : Hold Heading");
-        texts.push("[Z][X]       : Main Thruster Controls (Main)");
+        texts.push("[Z][X]       : Main Thrusters");
         texts.push("");
-        texts.push("[R]          : Toggle RCS Thruster Mode");
-        texts.push("[W][S][A][D] : Direction Controls (RCS)");
+        texts.push("[R]          : Toggle RCS Mode");
+        texts.push("[W][S][A][D] : Direction Thrusts (RCS)");
         texts.push("");
-        texts.push("[C]          : Toggle Trajectory Planning");
+        texts.push("[C]          : Toggle Plan Mode");
         texts.push("[V]          : Discard Plan");
-        texts.push("[W][S][A][D] : Plan Direction Controls (Plan Mode)");
+        texts.push("[W][S][A][D] : Plan Directions");
         texts.push("");
         texts.push("Distance to Target : " + Math.round(targDist));
         texts.push("Relative Velocity  : " + Math.round(relativeV));
         texts.push("Closest Approach   : " + closestDist + planDistText);
         texts.push("Fuel               : " + Math.round(this.fuel) + plannedFuelText);
         texts.push("");
-        texts.push("[F10]            : Toggle Focus on Focus");
+        texts.push("");
         texts.push("[F11]            : Toggle Display Trajectories");
         texts.push("Zoom             : " + this.zoom);
         texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));
@@ -956,7 +971,16 @@ class Game {
 
     addModeBorder(offCtx) {
 
-        if (this.frameCount % 200 < 100) {
+        // reference frame text
+        let refFrame = "";
+        if (this.isFollowSelf) {
+            refFrame = this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1);
+        } else {
+            refFrame = "Target";
+        }
+
+        // flashing out of fuel / low fuel warning text
+        if (this.frameCount % 100 < 80) {
             if (this.fuel === 0) {
                 offCtx.textAlign = "center";
                 offCtx.textBaseline = "middle";
@@ -967,11 +991,25 @@ class Game {
             } else if (this.fuel < 1000) {
                 offCtx.textAlign = "center";
                 offCtx.textBaseline = "bottom";
-                offCtx.font = "32px Syne Mono";
+                offCtx.font = "48px Syne Mono";
                 offCtx.fillStyle = "#FF3300";;
                 offCtx.fillText("LOW FUEL!", this.c.width / 2, this.c.height - 96);
             }
         }
+
+        offCtx.textAlign = "center";
+        offCtx.textBaseline = "top";
+        offCtx.font = "32px Syne Mono";
+        offCtx.fillStyle = "#00FFA3";
+        offCtx.fillText("Reference Frame: " + refFrame, this.c.width / 2, 16);
+
+        offCtx.font = "24px Syne Mono";
+        offCtx.textBaseline = "bottom";
+        offCtx.fillText("Heading: " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1), this.c.width / 2, this.c.height - 32);
+
+        offCtx.textBaseline = "top";;
+        offCtx.fillStyle = "#FFE100";;
+        offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, 64);
 
         if (this.isPause) {
 
@@ -979,11 +1017,13 @@ class Game {
             offCtx.lineWidth = 5;
             offCtx.strokeRect(0, 0, this.c.width, this.c.height);
 
-            offCtx.textAlign = "center";
-            offCtx.textBaseline = "top";
-            offCtx.font = "32px Syne Mono";
-            offCtx.fillStyle = "#FFE100";;
-            offCtx.fillText("Paused", this.c.width / 2, 16);
+            if (this.frameCount % 100 < 80) {
+                offCtx.textAlign = "center";
+                offCtx.textBaseline = "bottom";
+                offCtx.font = "48px Syne Mono";
+                offCtx.fillStyle = "#FFE100";;
+                offCtx.fillText("Paused", this.c.width / 2, this.c.height - 96);
+            }
 
         } else if (this.mode === "Planning") {
 
@@ -991,52 +1031,30 @@ class Game {
             offCtx.lineWidth = 5;
             offCtx.strokeRect(0, 0, this.c.width, this.c.height);
 
-            offCtx.textAlign = "center";
-            offCtx.textBaseline = "top";
-            offCtx.font = "32px Syne Mono";
-            offCtx.fillStyle = "#FF307C";;
-            offCtx.fillText("Trajectory Planning", this.c.width / 2, 16);
-
-            offCtx.font = "24px Syne Mono";
-            offCtx.fillText("Reference Frame: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
-
-            offCtx.textBaseline = "bottom";
-            offCtx.fillStyle = "#FFE100";;
-            offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, this.c.height - 32);
+            if (this.frameCount % 100 < 80) {
+                offCtx.textAlign = "center";
+                offCtx.textBaseline = "bottom";
+                offCtx.font = "48px Syne Mono";
+                offCtx.fillStyle = "#FF307C";;
+                offCtx.fillText("Plan", this.c.width / 2, this.c.height - 96);
+            }
 
         } else if (this.engine === "RCS") {
 
-            offCtx.strokeStyle = "#006EFF";
+            offCtx.strokeStyle = "#001EFF";
             offCtx.lineWidth = 5;
             offCtx.strokeRect(0, 0, this.c.width, this.c.height);
 
-            offCtx.textAlign = "center";
-            offCtx.textBaseline = "top";
-            offCtx.font = "32px Syne Mono";
-            offCtx.fillStyle = "#006EFF";;
-            offCtx.fillText("RCS Mode", this.c.width / 2, 16);
-
-            offCtx.font = "24px Syne Mono";
-            offCtx.fillText("Reference Frame: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
-
-            offCtx.fillStyle = "#FFE100";;
-            offCtx.textBaseline = "bottom";
-            offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, this.c.height - 32);
+            if (this.frameCount % 100 < 80) {
+                offCtx.textAlign = "center";
+                offCtx.textBaseline = "bottom";
+                offCtx.font = "48px Syne Mono";
+                offCtx.fillStyle = "#001EFF";;
+                offCtx.fillText("RCS", this.c.width / 2, this.c.height - 96);
+            }
 
         } else {
-            offCtx.textAlign = "center";
-            offCtx.textBaseline = "top";
-            offCtx.font = "32px Syne Mono";
-            offCtx.fillStyle = "#00FFA3";
-            offCtx.fillText("Reference Frame: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 16);
 
-            offCtx.font = "24px Syne Mono";
-            offCtx.textBaseline = "bottom";
-            offCtx.fillText("Heading: " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1), this.c.width / 2, this.c.height - 32);
-
-            offCtx.textBaseline = "top";;
-            offCtx.fillStyle = "#FFE100";;
-            offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, 64);
         }
     }
 
@@ -1062,14 +1080,16 @@ class Game {
             case "0_Comma": event.preventDefault(); this.cyclePrecision(-1); break;
             case "0_Period": event.preventDefault(); this.cyclePrecision(1); break;
 
-            case "0_KeyU": event.preventDefault(); this.cycleTarget(-1); break;
-            case "0_KeyO": event.preventDefault(); this.cycleTarget(1); break;
+            case "0_KeyU": event.preventDefault(); this.cycleSolSys(-1); break;
+            case "0_KeyO": event.preventDefault(); this.cycleSolSys(1); break;
 
-            case "0_KeyJ": event.preventDefault(); this.cycleMoon(-1); break;
-            case "0_KeyL": event.preventDefault(); this.cycleMoon(1); break;
+            // case "0_KeyJ": event.preventDefault(); this.cycleMoon(-1); break;
+            // case "0_KeyL": event.preventDefault(); this.cycleMoon(1); break;
 
-            case "0_KeyH": event.preventDefault(); this.cycleSolSys(-1); break;
-            case "0_Semicolon": event.preventDefault(); this.cycleSolSys(1); break;
+            case "0_KeyJ": event.preventDefault(); this.cycleTarget(-1); break;
+            case "0_KeyL": event.preventDefault(); this.cycleTarget(1); break;
+
+            case "0_KeyM": event.preventDefault(); this.toggleFollowSelf(); break;
 
             case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 1; break;
             case "0_KeyK": event.preventDefault(); this.pressedKeys.K = 1; break;
@@ -1105,9 +1125,8 @@ class Game {
             case "0_KeyF": event.preventDefault(); this.autoHeading('F'); break;
             case "0_KeyG": event.preventDefault(); this.holdHeading(); break;
 
-            case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
-            case "0_F10": event.preventDefault(); this.toggleFollowSelf(); break;
             case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
+            case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
         }
 
         // for (let key in this.pressedKeys) { this.logMap[key] = this.pressedKeys[key]; }
@@ -1177,20 +1196,20 @@ class Game {
         this.camTargetIndex = 0;
     }
 
-    cycleMoon(direction) {
+    // cycleMoon(direction) {
 
-        let moons = this.camMoons[this.camSolSys[this.camSolSysIndex].name];
-        if (moons === null) { return; }
+    //     let moons = this.camMoons[this.camSolSys[this.camSolSysIndex].name];
+    //     if (moons === null) { return; }
 
-        this.camMoonIndex += direction;
-        this.camMoonIndex = (this.camMoonIndex + moons.length) % moons.length;
-        this.focus = moons[this.camMoonIndex];
+    //     this.camMoonIndex += direction;
+    //     this.camMoonIndex = (this.camMoonIndex + moons.length) % moons.length;
+    //     this.focus = moons[this.camMoonIndex];
 
-        // this.controlShip.switchParent(this.focus);
-        this.heading = "Manual";
-        // this.isFollowSelf = false;
-        this.changeFocus(this.focus);
-    }
+    //     // this.controlShip.switchParent(this.focus);
+    //     this.heading = "Manual";
+    //     // this.isFollowSelf = false;
+    //     this.changeFocus(this.focus);
+    // }
 
     changeFocus(newFocus) {
 
@@ -1201,6 +1220,7 @@ class Game {
         let vy = ship.vy - ship.parent.vy;
         let dist = Math.hypot(vx, vy);
 
+        // update plan Vs
         let nvx = ship.vx + this.progradeV * vx / dist - this.radialInV * vy / dist;
         let nvy = ship.vy + this.progradeV * vy / dist + this.radialInV * vx / dist;
 

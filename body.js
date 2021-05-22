@@ -33,10 +33,16 @@ class Body {
         this.trajClosest;
         this.trajTargetClosest;
 
+        this.trajFrameTarg = [];
+        this.trajFrameTargClosest;
+
         this.plan = [];
         this.planTarget = [];
         this.planClosest;
         this.planTargetClosest;
+
+        this.planFrameTarg = [];
+        this.planFrameTargClosest;
 
         this.r = 0;
         this.vr = 0;
@@ -248,6 +254,9 @@ class Body {
         this.trajClosest = undefined;
         this.trajTargetClosest = undefined;
 
+        this.trajFrameTarg = [];
+        this.trajFrameTargClosest = undefined;
+
         if (this.parent === null || target === undefined) { return; }
 
         if (target.name === this.parent.name) {
@@ -324,6 +333,7 @@ class Body {
                 closestTime = time;
                 this.trajClosest = { x: px, y: py };
                 this.trajTargetClosest = { x: tx, y: ty };
+                this.trajFrameTargClosest = { x: px - tx, y: py - ty };
             }
 
             // move ship
@@ -347,6 +357,8 @@ class Body {
 
             tx += tvx * planPrecision;
             ty += tvy * planPrecision;
+
+            this.trajFrameTarg.push({ x: px - tx, y: py - ty });
 
             let dtt = Math.hypot(tx - this.trajTarget[0].x, ty - this.trajTarget[0].y);
             if (dtt < dist2 / 60 && time > 1000 / 2) { isTargetLoop = true; }
@@ -398,6 +410,7 @@ class Body {
                 closestDist = dist;
                 closestTime = time;
                 this.trajClosest = { x: px, y: py };
+                this.trajFrameTargClosest = { x: px, y: py };
             }
 
             // move ship
@@ -410,6 +423,7 @@ class Body {
             py += pvy * planPrecision;
 
             this.trajectory.push({ x: px, y: py });
+            this.trajFrameTarg.push({ x: px, y: py });
 
             // completed loop, break
             let dt = Math.hypot(px - this.trajectory[0].x, py - this.trajectory[0].y);
@@ -427,6 +441,9 @@ class Body {
         this.planTarget = [];
         this.planClosest = undefined;
         this.planTargetClosest = undefined;
+
+        this.planFrameTarg = [];
+        this.planFrameTargClosest = undefined;
 
         if (this.parent === null || target === undefined) { return; }
 
@@ -514,6 +531,7 @@ class Body {
                 closestTime = time;
                 this.planClosest = { x: px, y: py };
                 this.planTargetClosest = { x: tx, y: ty };
+                this.planFrameTargClosest = { x: px - tx, y: py - ty };
             }
 
             // move ship
@@ -538,6 +556,8 @@ class Body {
             tx += tvx * planPrecision;
             ty += tvy * planPrecision;
 
+            this.planFrameTarg.push({ x: px - tx, y: py - ty });
+
             let dtt = Math.hypot(tx - this.planTarget[0].x, ty - this.planTarget[0].y);
             if (dtt < dist2 / 60 && time > 1000 / 2) { isTargetLoop = true; }
 
@@ -555,7 +575,7 @@ class Body {
     }
 
     calcPlanTargetAlone(target, logMap) {
-        logMap["vs"] = 1;
+
         // target compared to parent
         let tx = target.x - this.parent.x;
         let ty = target.y - this.parent.y;
@@ -649,6 +669,7 @@ class Body {
                 closestDist = dist;
                 closestTime = time;
                 this.planClosest = { x: px, y: py };
+                this.planFrameTargClosest = { x: px, y: py };
             }
 
             // move ship
@@ -661,6 +682,7 @@ class Body {
             py += pvy * planPrecision;
 
             this.plan.push({ x: px, y: py });
+            this.planFrameTarg.push({ x: px, y: py });
 
             // completed loop, break
             let dt = Math.hypot(px - this.plan[0].x, py - this.plan[0].y);
@@ -699,94 +721,158 @@ class Body {
     //     ctx.stroke();
     // }
 
-    drawTrajectory(ctx, camera, logMap) {
+    drawTrajectory(ctx, camera, target, isFollowSelf, logMap) {
 
         if (this.trajectory.length == 0) { return; }
 
-        // let zoom = 2 ** (camera.zoom / 4);
-
-        ctx.beginPath();
-        for (let i = 0; i < this.trajectory.length; i++) {
-
-            // let nx = (this.trajectory[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            // let ny = (this.trajectory[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
-
-            let np = this.calcXY(ctx, camera, this.trajectory[i].x + this.parent.x, this.trajectory[i].y + this.parent.y);
-            let nx = np.x;
-            let ny = np.y;
-
-            if (i === 0) {
-                ctx.moveTo(nx, ny);
-            } else {
-                ctx.lineTo(nx, ny);
-            }
-        }
-        ctx.strokeStyle = this.color;
-        ctx.stroke();
-
-        if (this.trajClosest != undefined) {
-
-            let np = this.calcXY(ctx, camera, this.trajClosest.x + this.parent.x, this.trajClosest.y + this.parent.y);
-            let nx = np.x;
-            let ny = np.y;
+        if (target !== undefined && !isFollowSelf) {
 
             ctx.beginPath();
-            ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+            for (let i = 0; i < this.trajFrameTarg.length; i++) {
 
-            ctx.strokeStyle = this.color
+                let np = this.calcXY(ctx, camera, this.trajFrameTarg[i].x + target.x, this.trajFrameTarg[i].y + target.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                if (i === 0) {
+                    ctx.moveTo(nx, ny);
+                } else {
+                    ctx.lineTo(nx, ny);
+                }
+            }
+            ctx.strokeStyle = this.color;
             ctx.stroke();
+
+            if (this.trajFrameTargClosest != undefined) {
+
+                let np = this.calcXY(ctx, camera, this.trajFrameTargClosest.x + target.x, this.trajFrameTargClosest.y + target.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                ctx.beginPath();
+                ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+
+                ctx.strokeStyle = this.color
+                ctx.stroke();
+            }
+
+        } else {
+
+            ctx.beginPath();
+            for (let i = 0; i < this.trajectory.length; i++) {
+
+                let np = this.calcXY(ctx, camera, this.trajectory[i].x + this.parent.x, this.trajectory[i].y + this.parent.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                if (i === 0) {
+                    ctx.moveTo(nx, ny);
+                } else {
+                    ctx.lineTo(nx, ny);
+                }
+            }
+            ctx.strokeStyle = this.color;
+            ctx.stroke();
+
+            if (this.trajClosest != undefined) {
+
+                let np = this.calcXY(ctx, camera, this.trajClosest.x + this.parent.x, this.trajClosest.y + this.parent.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                ctx.beginPath();
+                ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+
+                ctx.strokeStyle = this.color
+                ctx.stroke();
+            }
         }
     }
 
-    drawPlan(ctx, camera, isHavePlan, logMap) {
+    drawPlan(ctx, camera, isHavePlan, target, isFollowSelf, logMap) {
 
         if (this.plan.length === 0) { return; }
         if (!isHavePlan) { return; }
 
-        // let zoom = 2 ** (camera.zoom / 4);
-
-        ctx.beginPath();
-        for (let i = 0; i < this.plan.length; i++) {
-
-            // let nx = (this.plan[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            // let ny = (this.plan[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
-
-            let np = this.calcXY(ctx, camera, this.plan[i].x + this.parent.x, this.plan[i].y + this.parent.y);
-            let nx = np.x;
-            let ny = np.y;
-
-            if (i === 0) {
-                ctx.moveTo(nx, ny);
-            } else {
-                ctx.lineTo(nx, ny);
-            }
-        }
-        ctx.strokeStyle = "#FF307C";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.lineWidth = 1;
-
-        if (this.planClosest !== undefined) {
-
-            // let nx = (this.planClosest.x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            // let ny = (this.planClosest.y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
-
-            let np = this.calcXY(ctx, camera, this.planClosest.x + this.parent.x, this.planClosest.y + this.parent.y);
-            let nx = np.x;
-            let ny = np.y;
+        if (target !== undefined && !isFollowSelf) {
 
             ctx.beginPath();
-            ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+            for (let i = 0; i < this.planFrameTarg.length; i++) {
 
-            if (isHavePlan) {
-                ctx.strokeStyle = "#FF307C";
-                ctx.lineWidth = 2;
-            } else {
-                ctx.strokeStyle = this.color
-                ctx.lineWidth = 1;
+                let np = this.calcXY(ctx, camera, this.planFrameTarg[i].x + target.x, this.planFrameTarg[i].y + target.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                if (i === 0) {
+                    ctx.moveTo(nx, ny);
+                } else {
+                    ctx.lineTo(nx, ny);
+                }
             }
+            ctx.strokeStyle = "#FF307C";
+            ctx.lineWidth = 2;
             ctx.stroke();
             ctx.lineWidth = 1;
+
+            if (this.planFrameTargClosest !== undefined) {
+
+                let np = this.calcXY(ctx, camera, this.planFrameTargClosest.x + target.x, this.planFrameTargClosest.y + target.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                ctx.beginPath();
+                ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+
+                if (isHavePlan) {
+                    ctx.strokeStyle = "#FF307C";
+                    ctx.lineWidth = 2;
+                } else {
+                    ctx.strokeStyle = this.color
+                    ctx.lineWidth = 1;
+                }
+                ctx.stroke();
+                ctx.lineWidth = 1;
+            }
+
+        } else {
+
+            ctx.beginPath();
+            for (let i = 0; i < this.plan.length; i++) {
+
+                let np = this.calcXY(ctx, camera, this.plan[i].x + this.parent.x, this.plan[i].y + this.parent.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                if (i === 0) {
+                    ctx.moveTo(nx, ny);
+                } else {
+                    ctx.lineTo(nx, ny);
+                }
+            }
+            ctx.strokeStyle = "#FF307C";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+
+            if (this.planClosest !== undefined) {
+
+                let np = this.calcXY(ctx, camera, this.planClosest.x + this.parent.x, this.planClosest.y + this.parent.y);
+                let nx = np.x;
+                let ny = np.y;
+
+                ctx.beginPath();
+                ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
+
+                if (isHavePlan) {
+                    ctx.strokeStyle = "#FF307C";
+                    ctx.lineWidth = 2;
+                } else {
+                    ctx.strokeStyle = this.color
+                    ctx.lineWidth = 1;
+                }
+                ctx.stroke();
+                ctx.lineWidth = 1;
+            }
         }
     }
 
