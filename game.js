@@ -154,15 +154,9 @@ class Game {
 
         // ========================
 
-        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000, 45);
-        // this.bodies.push(starship); this.bodiesMap.starship = starship;
-        // this.controlShip = starship;
         let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -120.00005);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
-        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, jupiter, 1000000.05, -120.00005);
-        // this.bodies.push(starship); this.bodiesMap.starship = starship;
-        // this.controlShip = starship;
 
         let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -120);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
@@ -470,6 +464,8 @@ class Game {
 
     refuel() {
 
+        if (this.controlShip === undefined) { return; }
+
         let refuelDistance = 0.04;
         let exchangeRate = 100000;
         let precision = 10 ** (this.speed / 3);
@@ -508,7 +504,7 @@ class Game {
 
         for (let body of this.bodies) {
 
-            if (body.name === this.controlShip.name) {
+            if (this.controlShip !== undefined && body.name === this.controlShip.name) {
                 body.calcTrajAdv(this.target, this.logMap);
 
             } else if (this.drawTrajectories) {
@@ -518,6 +514,7 @@ class Game {
     }
 
     calcPlan() {
+        if (this.controlShip === undefined) { return; }
         this.controlShip.calcPlan(this.progradeV, this.radialInV, this.target, this.logMap);
     }
 
@@ -566,7 +563,7 @@ class Game {
         // this.controlShip.switchParent(this.focus);
         // this.changeFocus(this.focus);
 
-        if (this.isFollowSelf) {
+        if (this.controlShip !== undefined && this.isFollowSelf) {
             this.camPosition = this.controlShip;
         } else {
             this.camPosition = this.focus;
@@ -675,7 +672,7 @@ class Game {
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
-            if (this.bodies[i].name === this.controlShip.name) {
+            if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
                 this.bodies[i].drawTrajectory(offCtx, this.camera, this.logMap);
 
             } else if (this.drawTrajectories) {
@@ -691,7 +688,7 @@ class Game {
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
-            let isShip = this.bodies[i].name === this.controlShip.name;
+            let isShip = this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name;
             let isFuelStation = this.fuelStationsMap[this.bodies[i].name] !== undefined;
 
             this.bodies[i].drawBody(offCtx, this.camera, isShip, isFuelStation, this.logMap);
@@ -699,7 +696,7 @@ class Game {
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
-            let isShip = this.bodies[i].name === this.controlShip.name;
+            let isShip = this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name;
             let isFocus = this.bodies[i].name === this.focus.name;
             let isPlanning = this.mode === "Planning";
             let isTarget = this.bodies[i].name === this.target.name;
@@ -709,7 +706,7 @@ class Game {
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
-            let isShip = this.bodies[i].name === this.controlShip.name;
+            let isShip = this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name;
             this.bodies[i].drawName(offCtx, this.camera, isShip, this.isFollowSelf, this.fuelStationsMap, this.logMap);
         }
 
@@ -837,18 +834,24 @@ class Game {
         }
 
         // distance to target
-        let tdx = this.target.x - ship.x;
-        let tdy = this.target.y - ship.y;
-        let targDist = Math.hypot(tdx, tdy);
+        let targDist = 0;
+        if (ship !== undefined) {
+            let tdx = this.target.x - ship.x;
+            let tdy = this.target.y - ship.y;
+            targDist = Math.hypot(tdx, tdy);
+        }
 
         // relative velocity
-        let dvx = this.target.vx - ship.vx;
-        let dvy = this.target.vy - ship.vy;
-        let relativeV = Math.hypot(dvx, dvy);
+        let relativeV = 0;
+        if (ship !== undefined) {
+            let dvx = ship.vx - this.target.vx;
+            let dvy = ship.vy - this.target.vy;
+            relativeV = Math.hypot(dvx, dvy);
+        }
 
         // closest approach
         let closestDist = "N/A";
-        if (ship.trajClosest !== undefined) {
+        if (ship !== undefined && ship.trajClosest !== undefined) {
 
             if (ship.trajTargetClosest !== undefined) {
                 let cdx = ship.trajTargetClosest.x - ship.trajClosest.x;
@@ -861,7 +864,7 @@ class Game {
 
         // closest approach (planned)
         let planDistText = ""
-        if (ship.planClosest !== undefined && isHavePlan) {
+        if (ship !== undefined && ship.planClosest !== undefined && isHavePlan) {
 
             if (ship.planTargetClosest !== undefined) {
                 let pdx = ship.planTargetClosest.x - ship.planClosest.x;
@@ -1190,6 +1193,8 @@ class Game {
     }
 
     changeFocus(newFocus) {
+
+        if (this.controlShip === undefined) { return; }
 
         let ship = this.controlShip;
         let vx = ship.vx - ship.parent.vx;
