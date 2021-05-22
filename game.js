@@ -329,14 +329,14 @@ class Game {
             else if (this.heading === "Retrograde") { heading = Math.PI; }
             else if (this.heading === "Radial-out") { heading = Math.PI / 2; }
             else if (this.heading === "Radial-in") { heading = -Math.PI / 2; }
-            else if (this.heading === "Planned") { heading = -Math.atan2(this.radialInV, this.progradeV); }
+            else if (this.heading === "Planned") { heading = Math.atan2(this.radialInV, this.progradeV); }
             else { return; }
 
             let parent = this.controlShip.parent;
 
             let dvx = this.controlShip.vx - parent.vx;
             let dvy = this.controlShip.vy - parent.vy;
-            let prograde = Math.atan2(dvy, dvx) + Math.PI / 2;
+            let prograde = Math.atan2(dvy, dvx);
 
             let curDir = this.controlShip.r;
 
@@ -409,8 +409,8 @@ class Game {
         if (this.mode === "Planning") {
             if (this.pressedKeys.W) { this.progradeV += power; }
             if (this.pressedKeys.S) { this.progradeV -= power; }
-            if (this.pressedKeys.A) { this.radialInV += power; }
-            if (this.pressedKeys.D) { this.radialInV -= power; }
+            if (this.pressedKeys.A) { this.radialInV -= power; }
+            if (this.pressedKeys.D) { this.radialInV += power; }
 
             this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
 
@@ -425,43 +425,46 @@ class Game {
                 let vy1 = 0;
 
                 if (this.pressedKeys.Z) {
-                    vx1 = power * Math.sin(this.controlShip.r);
-                    vy1 = power * Math.cos(this.controlShip.r);
+                    vx1 = power * Math.cos(this.controlShip.r);
+                    vy1 = power * Math.sin(this.controlShip.r);
+                    this.fuel -= power;
                 }
                 if (this.pressedKeys.X) {
-                    vx1 = -power / 10 * Math.sin(this.controlShip.r);
-                    vy1 = -power / 10 * Math.cos(this.controlShip.r);
+                    vx1 = -power / 10 * Math.cos(this.controlShip.r);
+                    vy1 = -power / 10 * Math.sin(this.controlShip.r);
+                    this.fuel -= power / 10;
                 }
+
+                this.fuel = Math.max(this.fuel, 0);
 
                 // minus current thrust from planned route / planned fuel
                 if (this.progradeV !== 0 || this.radialInV !== 0) {
 
-                    let dx = this.controlShip.vx - this.controlShip.parent.vx;
-                    let dy = this.controlShip.vy - this.controlShip.parent.vy;
-                    let dist = Math.hypot(dx, dy);
+                    let ship = this.controlShip;
 
-                    let nvx = vx1 * dx / dist - vy1 * dy / dist;
-                    let nvy = vy1 * dx / dist + vx1 * dy / dist;
+                    let dvx = ship.vx - ship.parent.vx;
+                    let dvy = ship.vy - ship.parent.vy;
+                    let dist = Math.hypot(dvx, dvy);
 
-                    this.progradeV -= nvx;
-                    this.radialInV -= nvy;
+                    let pvx = dvx + this.progradeV * dvx / dist - this.radialInV * dvy / dist;
+                    let pvy = dvy + this.radialInV * dvx / dist + this.progradeV * dvy / dist;
+
+                    let nvx = dvx + vx1;
+                    let nvy = dvy + vy1;
+                    let ndist = Math.hypot(nvx, nvy);
+
+                    let dpvx = pvx - nvx;
+                    let dpvy = pvy - nvy;
+
+                    this.progradeV = dpvx * nvx / ndist - dpvy * -nvy / ndist;
+                    this.radialInV = dpvy * nvx / ndist + dpvx * -nvy / ndist;
 
                     this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
                 }
 
-                if (this.pressedKeys.Z) {
-                    this.controlShip.vx += vx1;
-                    this.controlShip.vy += -vy1;
-                    this.fuel -= power;
-                }
-                if (this.pressedKeys.X) {
-                    this.controlShip.vx += vx1;
-                    this.controlShip.vy += -vy1;
-                    this.fuel -= power / 10;
-                }
+                this.controlShip.vx += vx1;
+                this.controlShip.vy += vy1;
             }
-
-            this.fuel = Math.max(this.fuel, 0);
         }
     }
 

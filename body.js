@@ -47,7 +47,7 @@ class Body {
             this.vy = parent.vy;
             this.setVelCirc(parent);
 
-            this.r = Math.atan2(parent.vy - this.vy, parent.vx - this.vx) - Math.PI / 2;
+            this.r = Math.atan2(this.vy - parent.vy, this.vx - parent.vx);
         }
     }
 
@@ -451,11 +451,8 @@ class Body {
         // add planned velocity (progradeV, radialInV)
         let dist = Math.hypot(pvx, pvy);
 
-        pvx += progradeV * pvx / dist;
-        pvy += progradeV * pvy / dist;
-
-        pvx += radialInV * pvy / dist;
-        pvy += radialInV * -pvx / dist;
+        pvx += progradeV * pvx / dist - radialInV * pvy / dist;
+        pvy += progradeV * pvy / dist + radialInV * pvx / dist;
 
         // target compared to parent
         let tx = target.x - this.parent.x;
@@ -627,8 +624,8 @@ class Body {
         // add planned velocity (progradeV, radialInV)
         let dist = Math.hypot(pvx, pvy);
 
-        pvx += progradeV * pvx / dist + radialInV * pvy / dist;
-        pvy += progradeV * pvy / dist - radialInV * pvx / dist;
+        pvx += progradeV * pvx / dist - radialInV * pvy / dist;
+        pvy += progradeV * pvy / dist + radialInV * pvx / dist;
 
         // prep find closest points
         let closestDist;
@@ -909,7 +906,7 @@ class Body {
             for (let i = 0; i < triangle.length; i++) {
 
                 let point = triangle[i];
-                let np1 = this.calcXY(ctx, new Camera(0, 0, this.r - Math.PI / 2, 42), point.x, point.y);
+                let np1 = this.calcXY(ctx, new Camera(0, 0, this.r, 42), point.x, point.y);
                 let np = this.calcXY(ctx, camera, np1.x + this.x - ctx.canvas.width / 2, np1.y + this.y - ctx.canvas.height / 2);
 
                 if (i === 0) {
@@ -973,7 +970,7 @@ class Body {
 
                 let point = triangle[i];
 
-                let np1 = this.calcXY(ctx, new Camera(0, 0, this.r - Math.PI / 2 + camera.r, 0), point.x, point.y);
+                let np1 = this.calcXY(ctx, new Camera(0, 0, this.r + camera.r, 0), point.x, point.y);
 
                 let x = np.x + np1.x - ctx.canvas.width / 2;
                 let y = np.y + np1.y - ctx.canvas.height / 2;
