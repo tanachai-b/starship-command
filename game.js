@@ -99,16 +99,16 @@ class Game {
         let earth = new Body("earth", "#006AFF", 6378.10, 5.52, sun, 149597890, 10);
         this.bodies.push(earth); this.bodiesMap.earth = earth;
 
-        let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 40);
+        let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 35);
         this.bodies.push(mars); this.bodiesMap.mars = mars;
 
         let ceres = new Body("ceres", "#B0B0B0", 473, 2.16, sun, 413700000, 170);
         this.bodies.push(ceres); this.bodiesMap.ceres = ceres;
 
-        let jupiter = new Body("jupiter", "#A6662B", 71492.68, 1.33, sun, 778412010, 90);
+        let jupiter = new Body("jupiter", "#A6662B", 71492.68, 1.33, sun, 778412010, 70);
         this.bodies.push(jupiter); this.bodiesMap.jupiter = jupiter;
 
-        let saturn = new Body("saturn", "#FFE4A6", 60267.14, 0.7, sun, 1426725400, 200);
+        let saturn = new Body("saturn", "#FFE4A6", 60267.14, 0.7, sun, 1426725400, 155);
         this.bodies.push(saturn); this.bodiesMap.saturn = saturn;
 
         let uranus = new Body("uranus", "#80FFE8", 25557.25, 1.3, sun, 2870972200, 135);
@@ -160,6 +160,9 @@ class Game {
         let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -120.00005);
         this.bodies.push(starship); this.bodiesMap.starship = starship;
         this.controlShip = starship;
+        // let starship = new Body("starship", "#00FFA3", 0.005, 0.5, jupiter, 1000000.05, -120.00005);
+        // this.bodies.push(starship); this.bodiesMap.starship = starship;
+        // this.controlShip = starship;
 
         let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -120);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
