@@ -566,7 +566,7 @@ class Game {
         if (this.controlShip !== undefined && this.isFollowSelf) {
             this.camPosition = this.controlShip;
         } else {
-            this.camPosition = this.focus;
+            this.camPosition = this.target;
         }
 
         // initialize camera position
@@ -998,7 +998,7 @@ class Game {
             offCtx.fillText("Trajectory Planning", this.c.width / 2, 16);
 
             offCtx.font = "24px Syne Mono";
-            offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
+            offCtx.fillText("Reference Frame: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
 
             offCtx.textBaseline = "bottom";
             offCtx.fillStyle = "#FFE100";;
@@ -1017,7 +1017,7 @@ class Game {
             offCtx.fillText("RCS Mode", this.c.width / 2, 16);
 
             offCtx.font = "24px Syne Mono";
-            offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
+            offCtx.fillText("Reference Frame: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 64);
 
             offCtx.fillStyle = "#FFE100";;
             offCtx.textBaseline = "bottom";
@@ -1028,7 +1028,7 @@ class Game {
             offCtx.textBaseline = "top";
             offCtx.font = "32px Syne Mono";
             offCtx.fillStyle = "#00FFA3";
-            offCtx.fillText("Relative to: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 16);
+            offCtx.fillText("Reference Frame: " + this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1), this.c.width / 2, 16);
 
             offCtx.font = "24px Syne Mono";
             offCtx.textBaseline = "bottom";
@@ -1106,8 +1106,8 @@ class Game {
             case "0_KeyG": event.preventDefault(); this.holdHeading(); break;
 
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
-            case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
             case "0_F10": event.preventDefault(); this.toggleFollowSelf(); break;
+            case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
         }
 
         // for (let key in this.pressedKeys) { this.logMap[key] = this.pressedKeys[key]; }
@@ -1242,10 +1242,10 @@ class Game {
 
         this.isFollowSelf = !this.isFollowSelf;
 
-        if (this.isFollowSelf) {
-            this.camPosition = this.controlShip;
-        } else {
-            this.camPosition = this.focus;
-        }
+        // if (this.isFollowSelf) {
+        //     this.camPosition = this.controlShip;
+        // } else {
+        //     this.camPosition = this.target;
+        // }
     }
 }
