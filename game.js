@@ -301,8 +301,8 @@ class Game {
 
             this.heading = "Manual";
 
-            if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power / 10; }
-            if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power / 10; }
+            if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power / 100; }
+            if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power / 100; }
 
             this.fuel = Math.max(this.fuel, 0);
 
@@ -310,10 +310,10 @@ class Game {
 
             if (this.controlShip.vr < 0) {
                 this.controlShip.vr += power;
-                this.fuel -= power / 10;
+                this.fuel -= power / 100;
             } else if (this.controlShip.vr > 0) {
                 this.controlShip.vr -= power;
-                this.fuel -= power / 10;
+                this.fuel -= power / 100;
             }
 
             this.fuel = Math.max(this.fuel, 0);
@@ -346,18 +346,18 @@ class Game {
 
                 if (Math.sign(this.controlShip.vr) * this.controlShip.vr / power * this.controlShip.vr * precision / 2 > dist) {
                     this.controlShip.vr -= power;
-                    this.fuel -= power / 10;
+                    this.fuel -= power / 100;
                 } else {
                     this.controlShip.vr += power;
-                    this.fuel -= power / 10;
+                    this.fuel -= power / 100;
                 }
             } else {
                 if (Math.sign(this.controlShip.vr) * this.controlShip.vr / power * this.controlShip.vr * precision / 2 < dist) {
                     this.controlShip.vr += power;
-                    this.fuel -= power / 10;
+                    this.fuel -= power / 100;
                 } else {
                     this.controlShip.vr -= power;
-                    this.fuel -= power / 10;
+                    this.fuel -= power / 100;
                 }
             }
 
@@ -375,7 +375,7 @@ class Game {
         } else if (this.engine === "Thruster") {
             this.engine = "RCS";
             this.mode = "Pilot";
-            this.heading = "Hold";
+            this.heading = "Manual";
         }
     }
 
@@ -522,7 +522,7 @@ class Game {
         if (this.mode === "Pilot") {
             this.mode = "Planning";
             this.engine = "Thruster";
-            this.heading = "Hold";
+            this.heading = "Manual";
 
         } else if (this.mode === "Planning") {
             this.mode = "Pilot";
@@ -1160,7 +1160,7 @@ class Game {
         this.target = this.camSolSys[this.camSolSysIndex];
 
         // this.controlShip.switchParent(this.focus);
-        this.heading = "Hold";
+        this.heading = "Manual";
         // this.isFollowSelf = false;
         this.changeFocus(this.focus);
 
@@ -1178,7 +1178,7 @@ class Game {
         this.focus = moons[this.camMoonIndex];
 
         // this.controlShip.switchParent(this.focus);
-        this.heading = "Hold";
+        this.heading = "Manual";
         // this.isFollowSelf = false;
         this.changeFocus(this.focus);
     }
