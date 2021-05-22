@@ -1193,18 +1193,21 @@ class Game {
         let vy = ship.vy - ship.parent.vy;
         let dist = Math.hypot(vx, vy);
 
+        let nvx = ship.vx + this.progradeV * vx / dist - this.radialInV * vy / dist;
+        let nvy = ship.vy + this.progradeV * vy / dist + this.radialInV * vx / dist;
 
-        let nvx = ship.vx - newFocus.vx;
-        let nvy = ship.vy - newFocus.vy;
+        let fvx = ship.vx - newFocus.vx;
+        let fvy = ship.vy - newFocus.vy;
+        let fdist = Math.hypot(fvx, fvy);
 
-        let dvx = nvx * vx / dist + nvy * vy / dist;
-        let dvy = nvx * vy / dist - nvy * vx / dist;
-        let ddist = Math.hypot(dvx, dvy);
+        let dvx = nvx - newFocus.vx - fvx;
+        let dvy = nvy - newFocus.vy - fvy;
 
-        let p = this.progradeV * dvx / ddist - this.radialInV * dvy / ddist;
-        let r = this.progradeV * dvy / ddist + this.radialInV * dvx / ddist;
-        this.progradeV = p;
-        this.radialInV = r;
+        let npv = dvx * fvx / fdist - dvy * -fvy / fdist;
+        let nrv = dvy * fvx / fdist + dvx * -fvy / fdist;
+
+        this.progradeV = npv;
+        this.radialInV = nrv;
 
         ship.parent = newFocus;
     }
