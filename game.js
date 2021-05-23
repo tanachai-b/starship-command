@@ -22,6 +22,9 @@ class Game {
         this.c = document.getElementById("canvas");
         this.ctx = this.c.getContext("2d");
 
+        this.background;
+        this.overlay;
+
         this.isPause = false;
         this.speed = -12;
 
@@ -33,6 +36,9 @@ class Game {
 
         this.bodies = [];
         this.bodiesMap = {};
+
+        this.fuelStations = [];
+        this.fuelStationsMap = {};
 
         this.camSolSys = [];
         this.camMoons = {};
@@ -49,31 +55,30 @@ class Game {
         this.pressedKeys = {};
         this.controlShip;
 
+        this.heading = "Manual";
         this.mode = "Pilot";
         this.engine = "Thruster";
+
         this.maxFuel = 999999;
         this.fuel = 999999;
-
-        this.heading = "Manual";
 
         this.progradeV = 0;
         this.radialInV = 0;
         this.plannedFuel = 0;
 
-        this.fuelStations = [];
-        this.fuelStationsMap = {};
+        this.enableBlurEffect = true;
+        this.drawTrajectories = false;
 
-        this.logMap = {};
+        this.maxCargo = 10000;
+        this.cargo = 10000;
+
+        this.cash = 0;
 
         this.lastFrameTime;
         this.frameRate;
         this.frameCount = 0;
 
-        this.drawTrajectories = false;
-        this.enableBlurEffect = true;
-
-        this.background;
-        this.overlay;
+        this.logMap = {};
     }
 
     initiate() {
@@ -103,7 +108,7 @@ class Game {
         let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 45);
         this.bodies.push(mars); this.bodiesMap.mars = mars;
 
-        let ceres = new Body("ceres", "#B0B0B0", 473, 2.16, sun, 413700000, 170);
+        let ceres = new Body("ceres", "#B0B0B0", 473, 2.16, sun, 413700000, 80);
         this.bodies.push(ceres); this.bodiesMap.ceres = ceres;
 
         let jupiter = new Body("jupiter", "#A6662B", 71492.68, 1.33, sun, 778412010, 70);
@@ -112,7 +117,7 @@ class Game {
         let saturn = new Body("saturn", "#FFE4A6", 60267.14, 0.7, sun, 1426725400, 155);
         this.bodies.push(saturn); this.bodiesMap.saturn = saturn;
 
-        let uranus = new Body("uranus", "#80FFE8", 25557.25, 1.3, sun, 2870972200, 135);
+        let uranus = new Body("uranus", "#80FFE8", 25557.25, 1.3, sun, 2870972200, 185);
         this.bodies.push(uranus); this.bodiesMap.uranus = uranus;
 
         let neptune = new Body("neptune", "#2B7CFF", 24766.36, 1.76, sun, 4498252900, 30);
@@ -163,11 +168,11 @@ class Game {
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
         this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 0 };
 
-        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 10100, -119);
+        let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 30000, -0);
         this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
-        this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 18000 };
+        this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
 
-        let fuelStation3 = new Body("fuelStation3", "#349FC9", 0.02, 0.5, mars, 40000, 75);
+        let fuelStation3 = new Body("fuelStation3", "#349FC9", 0.02, 0.5, earth, 100000, 110);
         this.bodies.push(fuelStation3); this.bodiesMap.fuelStation3 = fuelStation3;
         this.fuelStations.push(fuelStation3); this.fuelStationsMap.fuelStation3 = { body: fuelStation3, fuel: 20000 };
 
@@ -469,25 +474,34 @@ class Game {
 
         if (this.controlShip === undefined) { return; }
 
+        let precision = 10 ** (this.speed / 3);
+
+        let stationRefuelRate = 100;
+        let stationMaxFuel = 20000;
+
         let refuelDistance = 0.04;
         let exchangeRate = 100000;
-        let precision = 10 ** (this.speed / 3);
 
         for (let fuelStation in this.fuelStationsMap) {
 
             let station = this.fuelStationsMap[fuelStation];
+
+            // refuel station
+            station.fuel += stationRefuelRate * precision;
+            station.fuel = Math.min(station.fuel, stationMaxFuel);
+
+            // refuel ship (if near)
             let stationBody = station.body;
 
             let ship = this.controlShip;
 
             let dx = stationBody.x - ship.x;
-            let dy = stationBody.y - ship.y;
-
             if (Math.abs(dx) > refuelDistance) { continue; }
+
+            let dy = stationBody.y - ship.y;
             if (Math.abs(dy) > refuelDistance) { continue; }
 
             let dist = Math.hypot(dx, dy);
-
             if (dist > refuelDistance) { continue; }
 
             if (station.fuel > 0) {
@@ -497,8 +511,6 @@ class Game {
 
                 this.fuel = Math.min(this.fuel, this.maxFuel);
                 station.fuel = Math.max(station.fuel, 0);
-
-                break;
             }
         }
     }
