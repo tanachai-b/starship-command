@@ -40,20 +40,20 @@ class Game {
         this.fuelStations = [];
         this.fuelStationsMap = {};
 
-        this.camSolSys = [];
-        this.camMoons = {};
+        this.badPrecBodies = {};
 
-        this.camSolSysIndex = 3;
-        this.camMoonIndex = 0;
-        this.camTargetIndex = 0;
+        // this.camSolSys = [];
+        // this.camMoons = {};
 
+        // this.camSolSysIndex = 3;
+        // this.camMoonIndex = 0;
+        // this.camTargetIndex = 0;
+
+        this.controlShip;
         this.focus;
         this.target;
 
-        this.badPrecBodies = {};
-
         this.pressedKeys = {};
-        this.controlShip;
 
         this.heading = "Manual";
         this.mode = "Pilot";
@@ -160,10 +160,6 @@ class Game {
 
         // ========================
 
-        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -120.00005);
-        this.bodies.push(starship); this.bodiesMap.starship = starship;
-        this.controlShip = starship;
-
         let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -120);
         this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
         this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 0 };
@@ -178,27 +174,47 @@ class Game {
 
         // ========================
 
+        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -120.00005);
+        this.bodies.push(starship); this.bodiesMap.starship = starship;
+
         for (let body of this.bodies) {
+            if (body.child.length === 0) { continue; }
 
-            if (body.name === "starship") {
-                continue;
+            body.child.sort(function (a, b) { return a.distance - b.distance; });
 
-            } else if (body.name === "sun") {
-                this.camSolSys.push(body);
-
-            } else if (body.parent.name === "sun") {
-                this.camSolSys.push(body);
-                this.camMoons[body.name] = [body];
-
-            } else {
-                this.camMoons[body.parent.name].push(body);
+            for (let i = 0; i < body.child.length; i++) {
+                let child = body.child[i];
+                body.childMap[child.name] = i;
             }
         }
 
-        for (let planet in this.camMoons) {
-            this.camMoons[planet][0].distance = 0;
-            this.camMoons[planet].sort(function (a, b) { return a.distance - b.distance; });
-        }
+        // ========================
+
+        this.controlShip = starship;
+        this.focus = earth;
+        this.target = earth;
+
+        // for (let body of this.bodies) {
+
+        //     if (body.name === "starship") {
+        //         continue;
+
+        //     } else if (body.name === "sun") {
+        //         this.camSolSys.push(body);
+
+        //     } else if (body.parent.name === "sun") {
+        //         this.camSolSys.push(body);
+        //         this.camMoons[body.name] = [body];
+
+        //     } else {
+        //         this.camMoons[body.parent.name].push(body);
+        //     }
+        // }
+
+        // for (let planet in this.camMoons) {
+        //     this.camMoons[planet][0].distance = 0;
+        //     this.camMoons[planet].sort(function (a, b) { return a.distance - b.distance; });
+        // }
     }
 
     async gameLoop() {
@@ -562,18 +578,18 @@ class Game {
 
         let precision = 10 ** (this.speed / 3);
 
-        // initalize focus and target
-        if (this.focus === undefined) {
-            if (this.camMoonIndex != 0) {
-                this.focus = this.camMoons[this.camSolSys[this.camSolSysIndex].name][this.camMoonIndex];
-            } else {
-                this.focus = this.camSolSys[this.camSolSysIndex];
-            }
-        }
+        // // initalize focus and target
+        // if (this.focus === undefined) {
+        //     if (this.camMoonIndex != 0) {
+        //         this.focus = this.camMoons[this.camSolSys[this.camSolSysIndex].name][this.camMoonIndex];
+        //     } else {
+        //         this.focus = this.camSolSys[this.camSolSysIndex];
+        //     }
+        // }
 
-        if (this.target === undefined) {
-            this.target = this.camMoons[this.camSolSys[this.camSolSysIndex].name][this.camTargetIndex];
-        }
+        // if (this.target === undefined) {
+        //     this.target = this.camMoons[this.camSolSys[this.camSolSysIndex].name][this.camTargetIndex];
+        // }
 
         // this.controlShip.switchParent(this.focus);
         // this.changeFocus(this.focus);
@@ -870,9 +886,11 @@ class Game {
         topText.push("View Controls");
         topText.push("---------------------------------------");
         topText.push("      [I][K] : Zoom");
-        topText.push("      [U][O] : Select Reference Frame");
         topText.push("      [J][L] : Select Target");
-        topText.push("         [M] : Toggle Focus on Target");
+        topText.push("         [N] : Toggle Focus on Target");
+        topText.push("      [Y][H] : Set Reference Frame");
+        // topText.push("         [Y] : Set Primary As Ref. Frame");
+        // topText.push("         [H] : Set Target As Ref. Frame");
         topText.push("");
         topText.push("Main Thruster Mode");
         topText.push("---------------------------------------");
@@ -934,6 +952,9 @@ class Game {
 
         let ship = this.controlShip;
         let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
+
+        let primary = "N/A";
+        if (this.focus.parent !== null) { primary = this.focus.parent.name; }
 
         let periapsis = "N/A";
         let apoapsis = "N/A";
@@ -1032,6 +1053,7 @@ class Game {
         topText.push("");
         topText.push("       Reference Frame : " + this.capitalizeFirstChar(this.focus.name, 29));
         topText.push("---------------------   -----------------------------");
+        topText.push("              Primary : " + this.capitalizeFirstChar(primary, 29));
         topText.push("            Periapsis : " + this.formatNumber(periapsis, 29));
         topText.push("             Apoapsis : " + this.formatNumber(apoapsis, 29));
         topText.push("       Semimajor Axis : " + this.formatNumber(semimajor, 29));
@@ -1219,24 +1241,22 @@ class Game {
             case "0_Comma": event.preventDefault(); this.cyclePrecision(-1); break;
             case "0_Period": event.preventDefault(); this.cyclePrecision(1); break;
 
-            case "0_KeyU": event.preventDefault(); this.cycleSolSys(-1); break;
-            case "0_KeyO": event.preventDefault(); this.cycleSolSys(1); break;
-
-            // case "0_KeyJ": event.preventDefault(); this.cycleMoon(-1); break;
-            // case "0_KeyL": event.preventDefault(); this.cycleMoon(1); break;
+            // case "0_KeyU": event.preventDefault(); this.cycleSolSys(-1); break;
+            // case "0_KeyO": event.preventDefault(); this.cycleSolSys(1); break;
 
             case "0_KeyJ": event.preventDefault(); this.cycleTarget(-1); break;
             case "0_KeyL": event.preventDefault(); this.cycleTarget(1); break;
 
-            case "0_KeyM": event.preventDefault(); this.toggleFollowSelf(); break;
+            case "0_KeyY": event.preventDefault(); this.refFrameUp(); break;
+            case "0_KeyH": event.preventDefault(); this.refFrameDown(); break;
+
+            case "0_KeyN": event.preventDefault(); this.toggleFollowSelf(); break;
 
             case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 1; break;
             case "0_KeyK": event.preventDefault(); this.pressedKeys.K = 1; break;
 
-            case "2_KeyW": event.preventDefault(); this.pressedKeys.W = 1; break;
-            case "2_KeyS": event.preventDefault(); this.pressedKeys.S = 1; break;
-            case "2_KeyA": event.preventDefault(); this.pressedKeys.A = 1; break;
-            case "2_KeyD": event.preventDefault(); this.pressedKeys.D = 1; break;
+            case "2_KeyI": event.preventDefault(); this.pressedKeys.I = 1; break;
+            case "2_KeyK": event.preventDefault(); this.pressedKeys.K = 1; break;
 
             case "0_KeyQ": event.preventDefault(); this.pressedKeys.Q = 1; break;
             case "0_KeyE": event.preventDefault(); this.pressedKeys.E = 1; break;
@@ -1261,6 +1281,11 @@ class Game {
             case "0_KeyA": event.preventDefault(); this.autoHeading("A"); this.pressedKeys.A = 1; break;
             case "0_KeyD": event.preventDefault(); this.autoHeading("D"); this.pressedKeys.D = 1; break;
 
+            case "2_KeyW": event.preventDefault(); this.autoHeading("W"); this.pressedKeys.W = 1; break;
+            case "2_KeyS": event.preventDefault(); this.autoHeading("S"); this.pressedKeys.S = 1; break;
+            case "2_KeyA": event.preventDefault(); this.autoHeading("A"); this.pressedKeys.A = 1; break;
+            case "2_KeyD": event.preventDefault(); this.autoHeading("D"); this.pressedKeys.D = 1; break;
+
             case "0_KeyF": event.preventDefault(); this.autoHeading("F"); break;
             case "0_KeyG": event.preventDefault(); this.holdHeading(); break;
 
@@ -1278,6 +1303,9 @@ class Game {
 
             case "0_KeyI": event.preventDefault(); this.pressedKeys.I = 0; break;
             case "0_KeyK": event.preventDefault(); this.pressedKeys.K = 0; break;
+
+            case "2_KeyI": event.preventDefault(); this.pressedKeys.I = 0; break;
+            case "2_KeyK": event.preventDefault(); this.pressedKeys.K = 0; break;
 
             case "0_KeyW": event.preventDefault(); this.pressedKeys.W = 0; break;
             case "0_KeyS": event.preventDefault(); this.pressedKeys.S = 0; break;
@@ -1319,36 +1347,36 @@ class Game {
         this.speed = Math.max(this.speed, -12);
     }
 
-    cycleSolSys(direction) {
+    // cycleSolSys(direction) {
 
-        this.camSolSysIndex += direction;
-        this.camSolSysIndex = (this.camSolSysIndex + this.camSolSys.length) % this.camSolSys.length;
-        this.focus = this.camSolSys[this.camSolSysIndex];
-        this.target = this.camSolSys[this.camSolSysIndex];
-
-        // this.controlShip.switchParent(this.focus);
-        this.heading = "Manual";
-        // this.isFollowSelf = false;
-        this.changeFocus(this.focus);
-
-        this.camMoonIndex = 0;
-        this.camTargetIndex = 0;
-    }
-
-    // cycleMoon(direction) {
-
-    //     let moons = this.camMoons[this.camSolSys[this.camSolSysIndex].name];
-    //     if (moons === null) { return; }
-
-    //     this.camMoonIndex += direction;
-    //     this.camMoonIndex = (this.camMoonIndex + moons.length) % moons.length;
-    //     this.focus = moons[this.camMoonIndex];
+    //     this.camSolSysIndex += direction;
+    //     this.camSolSysIndex = (this.camSolSysIndex + this.camSolSys.length) % this.camSolSys.length;
+    //     this.focus = this.camSolSys[this.camSolSysIndex];
+    //     this.target = this.camSolSys[this.camSolSysIndex];
 
     //     // this.controlShip.switchParent(this.focus);
     //     this.heading = "Manual";
     //     // this.isFollowSelf = false;
     //     this.changeFocus(this.focus);
+
+    //     this.camMoonIndex = 0;
+    //     this.camTargetIndex = 0;
     // }
+
+    refFrameUp() {
+        if (this.focus.parent !== null) {
+            this.target = this.focus;
+            this.focus = this.focus.parent;
+            this.heading = "Manual";
+            this.changeFocus(this.focus);
+        }
+    }
+
+    refFrameDown() {
+        this.focus = this.target;
+        this.heading = "Manual";
+        this.changeFocus(this.focus);
+    }
 
     changeFocus(newFocus) {
 
@@ -1381,19 +1409,49 @@ class Game {
 
     cycleTarget(direction) {
 
-        if (this.camSolSysIndex === 0) {
+        // if (this.camSolSysIndex === 0) {
 
-            this.camTargetIndex += direction;
-            this.camTargetIndex = (this.camTargetIndex + this.camSolSys.length) % this.camSolSys.length;
-            this.target = this.camSolSys[this.camTargetIndex];
+        //     this.camTargetIndex += direction;
+        //     this.camTargetIndex = (this.camTargetIndex + this.camSolSys.length) % this.camSolSys.length;
+        //     this.target = this.camSolSys[this.camTargetIndex];
 
-        } else {
-            let moons = this.camMoons[this.camSolSys[this.camSolSysIndex].name];
-            if (moons === null) { return; }
+        // } else {
+        //     let moons = this.camMoons[this.camSolSys[this.camSolSysIndex].name];
+        //     if (moons === null) { return; }
 
-            this.camTargetIndex += direction;
-            this.camTargetIndex = (this.camTargetIndex + moons.length) % moons.length;
-            this.target = moons[this.camTargetIndex];
+        //     this.camTargetIndex += direction;
+        //     this.camTargetIndex = (this.camTargetIndex + moons.length) % moons.length;
+        //     this.target = moons[this.camTargetIndex];
+        // }
+
+        while (true) {
+            let childLength = this.focus.child.length;
+            let childIndex = this.focus.childMap[this.target.name];
+
+            if (childLength === 0) { return; }
+
+            if (childIndex === undefined) {
+
+                if (direction > 0) {
+                    this.target = this.focus.child[0];
+
+                } else {
+                    this.target = this.focus.child[this.focus.child.length - 1];
+                }
+
+            } else {
+                childIndex += direction
+
+                if (childIndex < 0 || childIndex >= childLength) {
+                    this.target = this.focus;
+
+                } else {
+                    this.target = this.focus.child[childIndex];
+                }
+            }
+
+            this.heading = "Manual";
+            if (this.target.name !== this.controlShip.name) { break; }
         }
     }
 

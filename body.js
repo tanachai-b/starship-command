@@ -14,8 +14,11 @@ class Body {
         this.parent = parent;
         this.distance = distance;
 
-        this.x = ((parent === null) ? 0 : parent.x) + distance * Math.cos(-angle / 180 * Math.PI);
-        this.y = ((parent === null) ? 0 : parent.y) + distance * Math.sin(-angle / 180 * Math.PI);
+        this.child = [];
+        this.childMap = {};
+
+        this.x = distance * Math.cos(-angle / 180 * Math.PI);
+        this.y = distance * Math.sin(-angle / 180 * Math.PI);
 
         this.lastx;
         this.lasty;
@@ -55,10 +58,16 @@ class Body {
 
         if (parent !== null) {
 
+            parent.child.push(this);
+            parent.childMap[name] = parent.child.length - 1;
+
+            this.x += parent.x;
+            this.y += parent.y;
+
             this.vx = parent.vx;
             this.vy = parent.vy;
-            this.orbit(parent);
 
+            this.orbit(parent);
             this.r = Math.atan2(this.vy - parent.vy, this.vx - parent.vx);
         }
     }
