@@ -267,11 +267,11 @@ class Game {
 
         let keyHeading = "Manual";
         switch (key) {
-            case 'W': keyHeading = "Prograde"; break;
-            case 'S': keyHeading = "Retrograde"; break;
-            case 'A': keyHeading = "Radial-in"; break;
-            case 'D': keyHeading = "Radial-out"; break;
-            case 'F': keyHeading = "Planned"; break;
+            case "W": keyHeading = "Prograde"; break;
+            case "S": keyHeading = "Retrograde"; break;
+            case "A": keyHeading = "Radial-in"; break;
+            case "D": keyHeading = "Radial-out"; break;
+            case "F": keyHeading = "Planned"; break;
         }
 
         if (this.heading !== keyHeading) {
@@ -723,7 +723,7 @@ class Game {
         }
 
         if (this.enableBlurEffect) {
-            this.ctx.filter = 'blur(16px)';
+            this.ctx.filter = "blur(16px)";
             this.ctx.drawImage(offScreenCanvas, 0, 0);
         }
 
@@ -745,7 +745,7 @@ class Game {
         this.addModeBorder(offCtx);
 
         if (this.enableBlurEffect) {
-            this.ctx.filter = 'blur(16px)';
+            this.ctx.filter = "blur(16px)";
             this.ctx.drawImage(offScreenCanvas, 0, 0);
         }
 
@@ -785,7 +785,7 @@ class Game {
             }
 
         } else if (this.enableBlurEffect) {
-            this.ctx.filter = 'opacity(2%) blur(2px)';
+            this.ctx.filter = "opacity(2%) blur(2px)";
             this.ctx.drawImage(this.overlay, 0, (this.frameCount % 64) / 4);
         }
     }
@@ -851,38 +851,38 @@ class Game {
         topText.push("");
         topText.push("");
         topText.push("Simulator Controls");
-        topText.push("==================");
+        topText.push("---------------------------------------");
         topText.push("     [Space] : Pause Simulator");
-        topText.push("      [,][.] : Slowdown, Speedup Time");
+        topText.push("      [,][.] : Simulation Speed");
         topText.push("");
-        topText.push("Trajectory Controls");
-        topText.push("===================");
+        topText.push("View Controls");
+        topText.push("---------------------------------------");
         topText.push("      [I][K] : Zoom");
         topText.push("      [U][O] : Select Reference Frame");
         topText.push("      [J][L] : Select Target");
         topText.push("         [M] : Toggle Focus on Target");
         topText.push("");
         topText.push("Main Thruster Mode");
-        topText.push("==================");
-        topText.push("      [E][Q] : Manual Direction Controls");
+        topText.push("---------------------------------------");
+        topText.push("      [E][Q] : Manual Directions");
         topText.push("[W][S][A][D] : Set Directions");
         topText.push("         [G] : Hold Direction");
         topText.push("         [F] : Planned Thrust Direction");
         topText.push("      [Z][X] : Main & Reverse Thruster");
-        topText.push("     [Shift] : Hold For Finer Thrust Controls");
+        topText.push("     [Shift] : Hold For Finer Thrust");
         topText.push("");
         topText.push("Plan Mode");
-        topText.push("=========");
+        topText.push("---------------------------------------");
         topText.push("         [C] : Toggle Plan Mode");
         topText.push("         [V] : Discard Plan");
         topText.push("[W][S][A][D] : Plan Directions");
-        topText.push("     [Shift] : Hold For Finer Plan Controls");
+        topText.push("     [Shift] : Hold For Finer Plan");
         topText.push("");
         topText.push("RCS Mode");
-        topText.push("========");
+        topText.push("---------------------------------------");
         topText.push("         [R] : Toggle RCS Mode");
         topText.push("[W][S][A][D] : Direction Thrusts (RCS)");
-        topText.push("     [Shift] : Hold For Finer RCS Controls");
+        topText.push("     [Shift] : Hold For Finer RCS");
 
         let bottomText = [];
         // bottomText.push("FPS              : " + this.frameRate);
@@ -923,6 +923,27 @@ class Game {
         let ship = this.controlShip;
         let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
 
+        let periapsis = "N/A";
+        let apoapsis = "N/A";
+        let semimajor = "N/A";
+        let argPeri = "N/A";
+        let period = "N/A";
+
+        if (ship !== undefined) {
+            periapsis = ship.periapsis;
+            apoapsis = ship.apoapsis;
+            semimajor = (periapsis + apoapsis) / 2;
+            argPeri = ship.argPeri;
+            period = 2 * Math.PI * (semimajor ** 3 / ship.parent.mass) ** (1 / 2);
+        }
+
+        let trueAnom = "N/A";
+
+        if (ship !== undefined) {
+            let dx = ship.x - ship.parent.x;
+            let dy = ship.y - ship.parent.y;
+            trueAnom = Math.atan2(dy, dx);
+        }
 
         let circularOrbitV = "N/A";
         let escapeV = "N/A";
@@ -952,12 +973,6 @@ class Game {
             relativeV = Math.hypot(dvx, dvy);
         }
 
-        // fuel usage (planned)
-        let plannedFuelText = "N/A";
-        if (this.plannedFuel > 0) {
-            plannedFuelText = this.plannedFuel;
-        }
-
         // closest approach
         let closestDist = "N/A";
         let approachV = "N/A";
@@ -972,6 +987,12 @@ class Game {
                 closestDist = Math.round(Math.hypot(ship.trajClosest.x, ship.trajClosest.y));
             }
             approachV = ship.trajApproachV;
+        }
+
+        // fuel usage (planned)
+        let plannedFuelText = "N/A";
+        if (this.plannedFuel > 0) {
+            plannedFuelText = this.plannedFuel;
         }
 
         // closest approach (planned)
@@ -997,23 +1018,37 @@ class Game {
         // texts.push("Orbit the Moon and come back to FuelStation1");
 
         topText.push("");
-        topText.push("                 Target : " + this.capitalizeFirstChar(this.target.name, 29));
-        topText.push("                 Radius : " + this.formatNumber(this.target.radius, 29));
-        topText.push("                   Mass : " + this.formatNumber(this.target.mass, 29));
-        topText.push("");
-        topText.push("               Distance : " + this.formatNumber(targDist, 29));
-        topText.push("      Relative Velocity : " + this.formatNumber(relativeV, 29));
-        topText.push("Circular Orbit Velocity : " + this.formatNumber(circularOrbitV, 29));
-        topText.push("        Escape Velocity : " + this.formatNumber(escapeV, 29));
-        topText.push("");
-        topText.push("  Actual            Plan");
-        topText.push("=============================");
-        topText.push("                   Fuel : " + this.formatNumber(this.fuel, 13) + this.formatNumber(-plannedFuelText, 16, true));
-        topText.push("       Closest Approach : " + this.formatNumber(closestDist, 13) + this.formatNumber(planDistText, 16, true));
-        topText.push("      Approach Velocity : " + this.formatNumber(approachV, 13) + this.formatNumber(planApproachV, 16, true));
+        topText.push("       Reference Frame : " + this.capitalizeFirstChar(this.focus.name, 29));
+        topText.push("---------------------   -----------------------------");
+        topText.push("            Periapsis : " + this.formatNumber(periapsis, 29));
+        topText.push("             Apoapsis : " + this.formatNumber(apoapsis, 29));
+        topText.push("       Semimajor Axis : " + this.formatNumber(semimajor, 29));
+        topText.push("Argument of Periapsis : " + this.formatAngle(argPeri, 29));
+        topText.push("         True Anomaly : " + this.formatAngle(trueAnom, 29));
+        topText.push("               Period : " + this.formatNumber(period * 1000, 29));
         topText.push("");
         topText.push("");
+        topText.push("                Target : " + this.capitalizeFirstChar(this.target.name, 29));
+        topText.push("---------------------   -----------------------------");
+        topText.push("                Radius : " + this.formatNumber(this.target.radius, 29));
+        topText.push("                  Mass : " + this.formatNumber(this.target.mass, 29));
         topText.push("");
+        topText.push("              Distance : " + this.formatNumber(targDist, 29));
+        topText.push("     Relative Velocity : " + this.formatNumber(relativeV, 29));
+        topText.push("");
+        topText.push("  Circularize Velocity : " + this.formatNumber(circularOrbitV, 29));
+        // topText.push("   Circularize delta-V : " + this.formatNumber("N/A", 29));
+        topText.push("       Escape Velocity : " + this.formatNumber(escapeV, 29));
+        topText.push("");
+        topText.push("");
+        topText.push("      Closest Approach          Actual            Plan");
+        topText.push("---------------------   -----------------------------");
+        topText.push("              Distance : " + this.formatNumber(closestDist, 13) + this.formatNumber(planDistText, 16, true));
+        topText.push("     Relative Velocity : " + this.formatNumber(approachV, 13) + this.formatNumber(planApproachV, 16, true));
+        topText.push("     Available delta-V : " + this.formatNumber(this.fuel, 13) + this.formatNumber(-plannedFuelText, 16, true));
+        topText.push("");
+        topText.push("  Circularize Velocity : " + this.capitalizeFirstChar("", 29));
+        topText.push("       Escape Velocity : " + this.capitalizeFirstChar("", 29));
         topText.push("");
 
         offCtx.textAlign = "right";
@@ -1032,12 +1067,12 @@ class Game {
 
         if (isNaN(number)) { return "N/A".padStart(padding); }
 
-        var input = "" + Math.round(number);
-        var output = "";
+        let input = "" + Math.round(number);
+        let output = "";
 
         while (input.length > 0) {
-            var section = input.slice(Math.max(input.length - 3, 0), input.length);
-            var input = input.slice(0, Math.max(input.length - 3, 0));
+            let section = input.slice(Math.max(input.length - 3, 0), input.length);
+            input = input.slice(0, Math.max(input.length - 3, 0));
             output = section + " " + output;
         }
 
@@ -1045,6 +1080,17 @@ class Game {
         if (isAddBracket) { output = "(" + output + ")"; }
 
         return output.padStart(padding);
+    }
+
+    formatAngle(angle, padding) {
+
+        if (isNaN(angle)) { return "N/A".padStart(padding); }
+
+        let text = -angle.toFixed(3) + "";
+        let texts = text.split(".");
+        if (texts[1] === undefined) { texts[1] = ""; }
+
+        return (texts[0] + "." + texts[1].padEnd(3, "0") + " pi").padStart(padding);
     }
 
     capitalizeFirstChar(input, padding) {
@@ -1058,7 +1104,7 @@ class Game {
         if (this.isFollowSelf) {
             refFrame = this.capitalizeFirstChar(this.focus.name);
         } else {
-            refFrame = "Target";
+            refFrame = this.capitalizeFirstChar(this.focus.name) + " + Target";
         }
 
         // flashing out of fuel / low fuel warning text
@@ -1198,12 +1244,12 @@ class Game {
             case "0_KeyC": event.preventDefault(); this.toggleMode(); break;
             case "0_KeyV": event.preventDefault(); this.clearPlan(); break;
 
-            case "0_KeyW": event.preventDefault(); this.autoHeading('W'); this.pressedKeys.W = 1; break;
-            case "0_KeyS": event.preventDefault(); this.autoHeading('S'); this.pressedKeys.S = 1; break;
-            case "0_KeyA": event.preventDefault(); this.autoHeading('A'); this.pressedKeys.A = 1; break;
-            case "0_KeyD": event.preventDefault(); this.autoHeading('D'); this.pressedKeys.D = 1; break;
+            case "0_KeyW": event.preventDefault(); this.autoHeading("W"); this.pressedKeys.W = 1; break;
+            case "0_KeyS": event.preventDefault(); this.autoHeading("S"); this.pressedKeys.S = 1; break;
+            case "0_KeyA": event.preventDefault(); this.autoHeading("A"); this.pressedKeys.A = 1; break;
+            case "0_KeyD": event.preventDefault(); this.autoHeading("D"); this.pressedKeys.D = 1; break;
 
-            case "0_KeyF": event.preventDefault(); this.autoHeading('F'); break;
+            case "0_KeyF": event.preventDefault(); this.autoHeading("F"); break;
             case "0_KeyG": event.preventDefault(); this.holdHeading(); break;
 
             case "0_Backslash": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;

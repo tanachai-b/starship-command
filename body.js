@@ -49,6 +49,10 @@ class Body {
         this.planFrameTarg = [];
         this.planFrameTargClosest;
 
+        this.periapsis;
+        this.apoapsis;
+        this.argPeri;
+
         if (parent !== null) {
 
             this.vx = parent.vx;
@@ -257,6 +261,10 @@ class Body {
         this.trajFrameTarg = [];
         this.trajFrameTargClosest = undefined;
 
+        this.periapsis = undefined;
+        this.apoapsis = undefined;
+        this.argPeri = undefined;
+
         if (this.parent === null || target === undefined) { return; }
 
         if (target.name === this.parent.name) {
@@ -285,10 +293,14 @@ class Body {
         // prep find closest points
         let closestDist;
         let closestTime;
-        let time = 0;
+
+        // prep find periapsis/apoapsis
+        let periapsisTime;
+        let apoapsisTime;
 
         let isTargetLoop = false;
 
+        let time = 0;
         for (time = 0; time < 1000; time++) {
 
             // parent <- ship
@@ -337,12 +349,34 @@ class Body {
                 this.trajApproachV = Math.hypot(dvx, dvy);
             }
 
+            // find periapsis
+            if (this.periapsis === undefined) {
+                this.periapsis = dist;
+                this.argPeri = Math.atan2(py, px);
+                periapsisTime = time;
+
+            } else if (dist < this.periapsis) {
+                this.periapsis = dist;
+                this.argPeri = Math.atan2(py, px);
+                periapsisTime = time;
+            }
+
+            // find apoapsis
+            if (this.apoapsis === undefined) {
+                this.apoapsis = dist;
+                apoapsisTime = time;
+
+            } else if (dist > this.apoapsis) {
+                this.apoapsis = dist;
+                apoapsisTime = time;
+            }
+
             // move ship
             let planPrecision = Math.min(
                 dist / Math.hypot(pvx, pvy) / 100,
                 dist2 / Math.hypot(tvx, tvy) / 100,
                 dist3 / Math.hypot(dvx, dvy) / 10
-            )
+            );
 
             pvx += pax * planPrecision;
             pvy += pay * planPrecision;
@@ -375,6 +409,9 @@ class Body {
             this.trajClosest = undefined;
             this.trajTargetClosest = undefined;
         }
+
+        // if (periapsisTime === 0 || periapsisTime === time) { this.periapsis = undefined; }
+        // if (apoapsisTime === 0 || apoapsisTime === time) { this.apoapsis = undefined; }
     }
 
     calcTrajAdvAlone(logMap) {
@@ -391,8 +428,12 @@ class Body {
         // prep find closest points
         let closestDist;
         let closestTime;
-        let time = 0;
 
+        // prep find periapsis/apoapsis
+        let periapsisTime;
+        let apoapsisTime;
+
+        let time = 0;
         for (let time = 0; time < 1000; time++) {
 
             // parent <- ship
@@ -412,6 +453,28 @@ class Body {
                 this.trajClosest = { x: px, y: py };
                 this.trajFrameTargClosest = { x: px, y: py };
                 this.trajApproachV = Math.hypot(pvx, pvy);
+            }
+
+            // find periapsis
+            if (this.periapsis === undefined) {
+                this.periapsis = dist;
+                this.argPeri = Math.atan2(py, px);
+                periapsisTime = time;
+
+            } else if (dist < this.periapsis) {
+                this.periapsis = dist;
+                this.argPeri = Math.atan2(py, px);
+                periapsisTime = time;
+            }
+
+            // find apoapsis
+            if (this.apoapsis === undefined) {
+                this.apoapsis = dist;
+                apoapsisTime = time;
+
+            } else if (dist > this.apoapsis) {
+                this.apoapsis = dist;
+                apoapsisTime = time;
             }
 
             // move ship
@@ -434,6 +497,9 @@ class Body {
         if (closestTime === time) {
             this.trajClosest = undefined;
         }
+
+        // if (periapsisTime === 0 || periapsisTime === time) { this.periapsis = undefined; }
+        // if (apoapsisTime === 0 || apoapsisTime === time) { this.apoapsis = undefined; }
     }
 
     calcPlan(progradeV, radialInV, target, logMap) {
