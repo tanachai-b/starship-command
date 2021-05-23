@@ -26,12 +26,16 @@ class Body {
         this.ax = 0;
         this.ay = 0;
 
+        this.r = 0;
+        this.vr = 0;
+
         this.trail = [];
 
         this.trajectory = [];
         this.trajTarget = [];
         this.trajClosest;
         this.trajTargetClosest;
+        this.trajApproachV;
 
         this.trajFrameTarg = [];
         this.trajFrameTargClosest;
@@ -40,34 +44,29 @@ class Body {
         this.planTarget = [];
         this.planClosest;
         this.planTargetClosest;
+        this.planApproachV;
 
         this.planFrameTarg = [];
         this.planFrameTargClosest;
-
-        this.r = 0;
-        this.vr = 0;
 
         if (parent !== null) {
 
             this.vx = parent.vx;
             this.vy = parent.vy;
-            this.setVelCirc(parent);
+            this.orbit(parent);
 
             this.r = Math.atan2(this.vy - parent.vy, this.vx - parent.vx);
         }
     }
 
-    setVelCirc(body) {
+    orbit(primary) {
 
-        let dx = this.x - body.x;
-        let dy = this.y - body.y;
-        let dist2 = dx ** 2 + dy ** 2;
-        let dist = dist2 ** (1 / 2);
+        let dx = this.x - primary.x;
+        let dy = this.y - primary.y;
+        let dist = Math.hypot(dx, dy);
 
-        let target_mass = body.mass
-
-        this.vx += (target_mass / dist) ** 0.5 * dy / dist;
-        this.vy += (target_mass / dist) ** 0.5 * -dx / dist;
+        this.vx += (primary.mass / dist) ** 0.5 * dy / dist;
+        this.vy += (primary.mass / dist) ** 0.5 * -dx / dist;
     }
 
     calcGrav(bodies, precision, badPrecBodies, logMap) {
@@ -231,7 +230,7 @@ class Body {
             tax = grav * -tx / dist;
             tay = grav * -ty / dist;
 
-            let trajPrecision = dist / Math.hypot(tvx, tvy) / 100
+            let trajPrecision = dist / Math.hypot(tvx, tvy) / 100;
 
             tvx += tax * trajPrecision;
             tvy += tay * trajPrecision;
@@ -253,6 +252,7 @@ class Body {
         this.trajTarget = [];
         this.trajClosest = undefined;
         this.trajTargetClosest = undefined;
+        this.trajApproachV = undefined;
 
         this.trajFrameTarg = [];
         this.trajFrameTargClosest = undefined;
@@ -310,8 +310,8 @@ class Body {
             let dy = ty - py;
             let dist3 = Math.hypot(dx, dy);
 
-            let dvx = target.vx - this.vx;
-            let dvy = target.vy - this.vy;
+            let dvx = pvx - tvx;
+            let dvy = pvy - tvy;
 
             let grav3 = target.mass / dist3 ** 2;
 
@@ -334,6 +334,7 @@ class Body {
                 this.trajClosest = { x: px, y: py };
                 this.trajTargetClosest = { x: tx, y: ty };
                 this.trajFrameTargClosest = { x: px - tx, y: py - ty };
+                this.trajApproachV = Math.hypot(dvx, dvy);
             }
 
             // move ship
@@ -401,7 +402,6 @@ class Body {
             let pax = grav * -px / dist;
             let pay = grav * -py / dist;
 
-
             // find closest approach
             if (closestDist === undefined) {
                 closestDist = dist;
@@ -411,6 +411,7 @@ class Body {
                 closestTime = time;
                 this.trajClosest = { x: px, y: py };
                 this.trajFrameTargClosest = { x: px, y: py };
+                this.trajApproachV = Math.hypot(pvx, pvy);
             }
 
             // move ship
@@ -441,6 +442,7 @@ class Body {
         this.planTarget = [];
         this.planClosest = undefined;
         this.planTargetClosest = undefined;
+        this.planApproachV = undefined;
 
         this.planFrameTarg = [];
         this.planFrameTargClosest = undefined;
@@ -508,8 +510,8 @@ class Body {
             let dy = ty - py;
             let dist3 = Math.hypot(dx, dy);
 
-            let dvx = target.vx - this.vx;
-            let dvy = target.vy - this.vy;
+            let dvx = pvx - tvx;
+            let dvy = pvy - tvy;
 
             let grav3 = target.mass / dist3 ** 2;
 
@@ -532,6 +534,7 @@ class Body {
                 this.planClosest = { x: px, y: py };
                 this.planTargetClosest = { x: tx, y: ty };
                 this.planFrameTargClosest = { x: px - tx, y: py - ty };
+                this.planApproachV = Math.hypot(dvx, dvy);
             }
 
             // move ship
@@ -609,7 +612,7 @@ class Body {
                 this.planTargetClosest = { x: tx, y: ty };
             }
 
-            let planPrecision = Math.min(dist2 / Math.hypot(tvx, tvy) / 100)
+            let planPrecision = Math.min(dist2 / Math.hypot(tvx, tvy) / 100);
 
             // move target
             tvx += tax * planPrecision;
@@ -670,6 +673,7 @@ class Body {
                 closestTime = time;
                 this.planClosest = { x: px, y: py };
                 this.planFrameTargClosest = { x: px, y: py };
+                this.planApproachV = Math.hypot(pvx, pvy);
             }
 
             // move ship
@@ -752,7 +756,7 @@ class Body {
                 ctx.beginPath();
                 ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
-                ctx.strokeStyle = this.color
+                ctx.strokeStyle = this.color;
                 ctx.stroke();
             }
 
@@ -783,7 +787,7 @@ class Body {
                 ctx.beginPath();
                 ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
-                ctx.strokeStyle = this.color
+                ctx.strokeStyle = this.color;
                 ctx.stroke();
             }
         }
@@ -827,7 +831,7 @@ class Body {
                     ctx.strokeStyle = "#FF307C";
                     ctx.lineWidth = 2;
                 } else {
-                    ctx.strokeStyle = this.color
+                    ctx.strokeStyle = this.color;
                     ctx.lineWidth = 1;
                 }
                 ctx.stroke();
@@ -867,7 +871,7 @@ class Body {
                     ctx.strokeStyle = "#FF307C";
                     ctx.lineWidth = 2;
                 } else {
-                    ctx.strokeStyle = this.color
+                    ctx.strokeStyle = this.color;
                     ctx.lineWidth = 1;
                 }
                 ctx.stroke();

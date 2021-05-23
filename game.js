@@ -18,6 +18,7 @@ class Game {
 
     constructor() {
 
+        this.version = "V0.0.1 (2021-05-23)";
         this.c = document.getElementById("canvas");
         this.ctx = this.c.getContext("2d");
 
@@ -191,7 +192,7 @@ class Game {
 
         for (let planet in this.camMoons) {
             this.camMoons[planet][0].distance = 0;
-            this.camMoons[planet].sort(function (a, b) { return a.distance - b.distance; })
+            this.camMoons[planet].sort(function (a, b) { return a.distance - b.distance; });
         }
     }
 
@@ -264,7 +265,7 @@ class Game {
         if (this.mode === "Planning") { return; }
         if (this.engine === "RCS") { return; }
 
-        let keyHeading = "Manual"
+        let keyHeading = "Manual";
         switch (key) {
             case 'W': keyHeading = "Prograde"; break;
             case 'S': keyHeading = "Retrograde"; break;
@@ -739,7 +740,7 @@ class Game {
         let offCtx = offScreenCanvas.getContext("2d");
 
         this.addCrossHair(offCtx);
-        this.addSideText(offCtx);
+        this.addSideTextLeft(offCtx);
         this.addSideTextRight(offCtx);
         this.addModeBorder(offCtx);
 
@@ -792,7 +793,7 @@ class Game {
     addCrossHair(offCtx) {
 
         let cx = this.c.width / 2;
-        let cy = this.c.height / 2
+        let cy = this.c.height / 2;
 
         offCtx.beginPath();
         offCtx.moveTo(cx + -64, cy + 0);
@@ -836,15 +837,103 @@ class Game {
         }
     }
 
-    addSideText(offCtx) {
+    addSideTextLeft(offCtx) {
+
+        offCtx.textAlign = "left";
+        offCtx.textBaseline = "top";
+        offCtx.fillStyle = "#00FFA3";
+        offCtx.font = "19px Syne Mono";
+
+        offCtx.fillText("Starship Command", 8, 8);
+
+        let topText = [];
+        topText.push(this.version);
+        topText.push("");
+        topText.push("");
+        topText.push("Simulator Controls");
+        topText.push("==================");
+        topText.push("     [Space] : Pause Simulator");
+        topText.push("      [,][.] : Slowdown, Speedup Time");
+        topText.push("");
+        topText.push("Trajectory Controls");
+        topText.push("===================");
+        topText.push("      [I][K] : Zoom");
+        topText.push("      [U][O] : Select Reference Frame");
+        topText.push("      [J][L] : Select Target");
+        topText.push("         [M] : Toggle Focus on Target");
+        topText.push("");
+        topText.push("Main Thruster Mode");
+        topText.push("==================");
+        topText.push("      [E][Q] : Manual Direction Controls");
+        topText.push("[W][S][A][D] : Set Directions");
+        topText.push("         [G] : Hold Direction");
+        topText.push("         [F] : Planned Thrust Direction");
+        topText.push("      [Z][X] : Main & Reverse Thruster");
+        topText.push("     [Shift] : Hold For Finer Thrust Controls");
+        topText.push("");
+        topText.push("Plan Mode");
+        topText.push("=========");
+        topText.push("         [C] : Toggle Plan Mode");
+        topText.push("         [V] : Discard Plan");
+        topText.push("[W][S][A][D] : Plan Directions");
+        topText.push("     [Shift] : Hold For Finer Plan Controls");
+        topText.push("");
+        topText.push("RCS Mode");
+        topText.push("========");
+        topText.push("         [R] : Toggle RCS Mode");
+        topText.push("[W][S][A][D] : Direction Thrusts (RCS)");
+        topText.push("     [Shift] : Hold For Finer RCS Controls");
+
+        let bottomText = [];
+        // bottomText.push("FPS              : " + this.frameRate);
+        // bottomText.push("");
+        // bottomText.push("Zoom             : " + this.zoom);
+        bottomText.push("Simulation Speed : " + this.speed);
+        bottomText.push("");
+        bottomText.push("[Backspace]      : Toggle Screen Effect");
+        bottomText.push("[\\]              : Toggle Display All Trajectories");
+
+        offCtx.fillStyle = "#888888";
+        offCtx.font = "13px Syne Mono";
+
+        let y = 24;
+        for (let text of topText) {
+
+            offCtx.textBaseline = "top";
+            offCtx.fillText(text, 8, 8 + y);
+            y += 16;
+        }
+
+        y = this.c.height;
+        for (let text of bottomText) {
+
+            offCtx.textBaseline = "bottom";
+            offCtx.fillText(text, 8, y - 8);
+            y -= 16;
+        }
+
+        offCtx.textAlign = "center";
+        offCtx.textBaseline = "bottom";
+        offCtx.font = "13px Syne Mono";
+        offCtx.fillText("© 2021 Tanachai Bunlutangtum, All Rights Reserved", this.c.width / 2, this.c.height - 4);
+    }
+
+    addSideTextRight(offCtx) {
 
         let ship = this.controlShip;
         let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
 
-        // fuel usage (planned)
-        let plannedFuelText = ""
-        if (this.plannedFuel > 0) {
-            plannedFuelText = " (-" + Math.round(this.plannedFuel) + ")";
+
+        let circularOrbitV = "N/A";
+        let escapeV = "N/A";
+
+        if (ship !== undefined) {
+            let dx = ship.x - this.target.x;
+            let dy = ship.y - this.target.y;
+            let dist = Math.hypot(dx, dy);
+
+            circularOrbitV = (this.target.mass / dist) ** 0.5
+            escapeV = circularOrbitV * 2 ** 0.5;
         }
 
         // distance to target
@@ -863,8 +952,16 @@ class Game {
             relativeV = Math.hypot(dvx, dvy);
         }
 
+        // fuel usage (planned)
+        let plannedFuelText = "N/A";
+        if (this.plannedFuel > 0) {
+            plannedFuelText = this.plannedFuel;
+        }
+
         // closest approach
         let closestDist = "N/A";
+        let approachV = "N/A";
+
         if (ship !== undefined && ship.trajClosest !== undefined) {
 
             if (ship.trajTargetClosest !== undefined) {
@@ -874,99 +971,84 @@ class Game {
             } else {
                 closestDist = Math.round(Math.hypot(ship.trajClosest.x, ship.trajClosest.y));
             }
+            approachV = ship.trajApproachV;
         }
 
         // closest approach (planned)
-        let planDistText = ""
+        let planDistText = "N/A";
+        let planApproachV = "N/A";
+
         if (ship !== undefined && ship.planClosest !== undefined && isHavePlan) {
 
             if (ship.planTargetClosest !== undefined) {
                 let pdx = ship.planTargetClosest.x - ship.planClosest.x;
                 let pdy = ship.planTargetClosest.y - ship.planClosest.y;
-                planDistText = " (" + Math.round(Math.hypot(pdx, pdy)) + ")";
+                planDistText = Math.hypot(pdx, pdy);
             } else {
-                planDistText = " (" + Math.round(Math.hypot(ship.planClosest.x, ship.planClosest.y)) + ")";
+                planDistText = Math.hypot(ship.planClosest.x, ship.planClosest.y);
             }
+            planApproachV = ship.planApproachV;
         }
 
-        let texts = [];
-        texts.push("V0.1");
-        texts.push("");
-        texts.push("[Backspace]  : Toggle Screen Effect");
-        texts.push("[Space]      : Pause Simulator");
-        texts.push("[,][.]       : Slowdown, Speedup Time");
-        texts.push("");
-        texts.push("[I][K]       : Zoom In, Zoom Out");
-        // texts.push("[J][L]       : Cycle Moons/Objects");
-        texts.push("[J][L]       : Select Reference Frame");
-        texts.push("[U][O]       : Select Targets");
-        texts.push("[M]          : Toggle Focus on Target");
-        texts.push("");
-        texts.push("[E][Q]       : Manual Heading Controls");
-        texts.push("[W][S][A][D] : Directional Headings");
-        texts.push("[F]          : Planned Heading");
-        texts.push("[G]          : Hold Heading");
-        texts.push("[Z][X]       : Main Thrusters");
-        texts.push("");
-        texts.push("[R]          : Toggle RCS Mode");
-        texts.push("[W][S][A][D] : Direction Thrusts (RCS)");
-        texts.push("");
-        texts.push("[C]          : Toggle Plan Mode");
-        texts.push("[V]          : Discard Plan");
-        texts.push("[W][S][A][D] : Plan Directions");
-        texts.push("");
-        texts.push("Distance to Target : " + Math.round(targDist));
-        texts.push("Relative Velocity  : " + Math.round(relativeV));
-        texts.push("Closest Approach   : " + closestDist + planDistText);
-        texts.push("Fuel               : " + Math.round(this.fuel) + plannedFuelText);
-        texts.push("");
-        texts.push("");
-        texts.push("[F11]            : Toggle Display Trajectories");
-        texts.push("Zoom             : " + this.zoom);
-        texts.push("Simulation Speed : " + this.speed + (this.isPause ? " [PAUSED]" : ""));
-        texts.push("FPS              : " + this.frameRate);
+        let topText = [];
+        // texts.push("Missions");
+        // texts.push("Rendezvous with FuelStation2 using 200 fuel max");
+        // texts.push("Refuel at FuelStation2 and go to the moon");
+        // texts.push("Orbit the Moon and come back to FuelStation1");
 
-        offCtx.textAlign = "left";
-        offCtx.textBaseline = "top";
-        offCtx.fillStyle = "#00FFA3";
-        offCtx.font = "19px Syne Mono";
-
-        offCtx.fillText("Starship Command", 8, 8);
-
-        offCtx.textBaseline = "top";
-        offCtx.fillStyle = "#888888";
-        offCtx.font = "13px Syne Mono";
-
-        let y = 24;
-        for (let text of texts) {
-            offCtx.fillText(text, 8, 8 + y);
-            y += 24;
-        }
-
-        offCtx.textAlign = "center";
-        offCtx.textBaseline = "bottom";
-        offCtx.font = "13px Syne Mono";
-        offCtx.fillText("© 2021 Tanachai Bunlutangtum, All Rights Reserved", this.c.width / 2, this.c.height - 4);
-    }
-
-    addSideTextRight(offCtx) {
-
-        let texts = [];
-        texts.push("Missions");
-        texts.push("Rendezvous with FuelStation2 using 200 fuel max");
-        texts.push("Refuel at FuelStation2 and go to the moon");
-        texts.push("Orbit the Moon and come back to FuelStation1");
+        topText.push("");
+        topText.push("                 Target : " + this.capitalizeFirstChar(this.target.name, 29));
+        topText.push("                 Radius : " + this.formatNumber(this.target.radius, 29));
+        topText.push("                   Mass : " + this.formatNumber(this.target.mass, 29));
+        topText.push("");
+        topText.push("               Distance : " + this.formatNumber(targDist, 29));
+        topText.push("      Relative Velocity : " + this.formatNumber(relativeV, 29));
+        topText.push("Circular Orbit Velocity : " + this.formatNumber(circularOrbitV, 29));
+        topText.push("        Escape Velocity : " + this.formatNumber(escapeV, 29));
+        topText.push("");
+        topText.push("  Actual            Plan");
+        topText.push("=============================");
+        topText.push("                   Fuel : " + this.formatNumber(this.fuel, 13) + this.formatNumber(-plannedFuelText, 16, true));
+        topText.push("       Closest Approach : " + this.formatNumber(closestDist, 13) + this.formatNumber(planDistText, 16, true));
+        topText.push("      Approach Velocity : " + this.formatNumber(approachV, 13) + this.formatNumber(planApproachV, 16, true));
+        topText.push("");
+        topText.push("");
+        topText.push("");
+        topText.push("");
 
         offCtx.textAlign = "right";
-        offCtx.textBaseline = "top";
         offCtx.fillStyle = "#888888";
         offCtx.font = "13px Syne Mono";
+        offCtx.textBaseline = "top";
 
-        let y = 24;
-        for (let text of texts) {
+        let y = 0;
+        for (let text of topText) {
             offCtx.fillText(text, this.c.width - 8, 8 + y);
-            y += 24;
+            y += 16;
         }
+    }
+
+    formatNumber(number, padding, isAddBracket) {
+
+        if (isNaN(number)) { return "N/A".padStart(padding); }
+
+        var input = "" + Math.round(number);
+        var output = "";
+
+        while (input.length > 0) {
+            var section = input.slice(Math.max(input.length - 3, 0), input.length);
+            var input = input.slice(0, Math.max(input.length - 3, 0));
+            output = section + " " + output;
+        }
+
+        output = output.trim();
+        if (isAddBracket) { output = "(" + output + ")"; }
+
+        return output.padStart(padding);
+    }
+
+    capitalizeFirstChar(input, padding) {
+        return (input.charAt(0).toUpperCase() + input.slice(1)).padStart(padding);
     }
 
     addModeBorder(offCtx) {
@@ -974,7 +1056,7 @@ class Game {
         // reference frame text
         let refFrame = "";
         if (this.isFollowSelf) {
-            refFrame = this.focus.name.charAt(0).toUpperCase() + this.focus.name.slice(1);
+            refFrame = this.capitalizeFirstChar(this.focus.name);
         } else {
             refFrame = "Target";
         }
@@ -997,6 +1079,7 @@ class Game {
             }
         }
 
+        // orbit / target / heading info
         offCtx.textAlign = "center";
         offCtx.textBaseline = "top";
         offCtx.font = "32px Syne Mono";
@@ -1005,12 +1088,13 @@ class Game {
 
         offCtx.font = "24px Syne Mono";
         offCtx.textBaseline = "bottom";
-        offCtx.fillText("Heading: " + this.heading.charAt(0).toUpperCase() + this.heading.slice(1), this.c.width / 2, this.c.height - 32);
+        offCtx.fillText("Heading: " + this.capitalizeFirstChar(this.heading), this.c.width / 2, this.c.height - 32);
 
         offCtx.textBaseline = "top";;
         offCtx.fillStyle = "#FFE100";;
-        offCtx.fillText("Target: " + this.target.name.charAt(0).toUpperCase() + this.target.name.slice(1), this.c.width / 2, 64);
+        offCtx.fillText("Target: " + this.capitalizeFirstChar(this.target.name), this.c.width / 2, 64);
 
+        // flashing mode text
         if (this.isPause) {
 
             offCtx.strokeStyle = "#FFE100";
@@ -1052,9 +1136,6 @@ class Game {
                 offCtx.fillStyle = "#001EFF";;
                 offCtx.fillText("RCS", this.c.width / 2, this.c.height - 96);
             }
-
-        } else {
-
         }
     }
 
@@ -1125,7 +1206,7 @@ class Game {
             case "0_KeyF": event.preventDefault(); this.autoHeading('F'); break;
             case "0_KeyG": event.preventDefault(); this.holdHeading(); break;
 
-            case "0_F11": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
+            case "0_Backslash": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
         }
 
