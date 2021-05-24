@@ -31,7 +31,7 @@ class Game {
         this.zoom = 25;
         this.isFollowSelf = true;
         this.camera = new Camera();
-        this.camPosition;
+        this.camFocus;
         this.camAngle = 0;
 
         this.bodies = [];
@@ -350,10 +350,8 @@ class Game {
             else if (this.heading === "Planned") { heading = Math.atan2(this.radialInV, this.progradeV); }
             else { return; }
 
-            let parent = this.controlShip.parent;
-
-            let dvx = this.controlShip.vx - parent.vx;
-            let dvy = this.controlShip.vy - parent.vy;
+            let dvx = this.controlShip.vx - this.focus.vx;
+            let dvy = this.controlShip.vy - this.focus.vy;
             let prograde = Math.atan2(dvy, dvx);
 
             let curDir = this.controlShip.r;
@@ -460,8 +458,8 @@ class Game {
 
                     let ship = this.controlShip;
 
-                    let dvx = ship.vx - ship.parent.vx;
-                    let dvy = ship.vy - ship.parent.vy;
+                    let dvx = ship.vx - this.focus.vx;
+                    let dvy = ship.vy - this.focus.vy;
                     let dist = Math.hypot(dvx, dvy);
 
                     let pvx = dvx + this.progradeV * dvx / dist - this.radialInV * dvy / dist;
@@ -595,23 +593,23 @@ class Game {
         // this.changeFocus(this.focus);
 
         if (this.controlShip !== undefined && this.isFollowSelf) {
-            this.camPosition = this.controlShip;
+            this.camFocus = this.controlShip;
         } else {
-            this.camPosition = this.target;
+            this.camFocus = this.target;
         }
 
         // initialize camera position
         if (this.camera.x === undefined && this.camera.y === undefined) {
-            this.camera.x = this.camPosition.x;
-            this.camera.y = this.camPosition.y;
+            this.camera.x = this.camFocus.x;
+            this.camera.y = this.camFocus.y;
 
         } else {
             if (!this.isPause) {
-                this.camera.x += this.camPosition.vx * precision;
-                this.camera.y += this.camPosition.vy * precision;
+                this.camera.x += this.camFocus.vx * precision;
+                this.camera.y += this.camFocus.vy * precision;
             }
-            this.camera.x += (this.camPosition.x - this.camera.x) / 8;
-            this.camera.y += (this.camPosition.y - this.camera.y) / 8;
+            this.camera.x += (this.camFocus.x - this.camera.x) / 8;
+            this.camera.y += (this.camFocus.y - this.camera.y) / 8;
         }
 
         // initialize camera zoom level
@@ -703,11 +701,16 @@ class Game {
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
+            let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
+            let isPlanning = this.mode === "Planning";
+
+            this.bodies[i].drawPlanTarget(offCtx, this.camera, isHavePlan, isPlanning, this.logMap);
+
             if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, this.target, this.isFollowSelf, this.logMap);
+                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, this.target, this.isFollowSelf, isPlanning, this.logMap);
 
             } else if (this.drawTrajectories) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, undefined, false, this.logMap);
+                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, undefined, false, false, this.logMap);
             }
         }
 
@@ -715,15 +718,12 @@ class Game {
 
             let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
 
-            this.bodies[i].drawPlanTarget(offCtx, this.camera, isHavePlan, this.logMap);
-
             if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
-                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, this.target, this.isFollowSelf, this.logMap);
+                this.bodies[i].drawTrajectory(offCtx, this.camera, this.target, this.isFollowSelf, isHavePlan, this.logMap);
 
             } else if (this.drawTrajectories) {
-                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, undefined, false, this.logMap);
+                this.bodies[i].drawTrajectory(offCtx, this.camera, undefined, false, isHavePlan, this.logMap);
             }
-
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
@@ -911,7 +911,7 @@ class Game {
         topText.push("RCS Mode");
         topText.push("---------------------------------------");
         topText.push("         [R] : Toggle RCS Mode");
-        topText.push("[W][S][A][D] : Direction Thrusts (RCS)");
+        topText.push("[W][S][A][D] : RCS Directions");
         topText.push("     [Shift] : Hold For Finer RCS");
 
         let bottomText = [];
@@ -967,14 +967,14 @@ class Game {
             apoapsis = ship.apoapsis;
             semimajor = (periapsis + apoapsis) / 2;
             argPeri = ship.argPeri;
-            period = 2 * Math.PI * (semimajor ** 3 / ship.parent.mass) ** (1 / 2);
+            period = 2 * Math.PI * (semimajor ** 3 / this.focus.mass) ** (1 / 2);
         }
 
         let trueAnom = "N/A";
 
         if (ship !== undefined) {
-            let dx = ship.x - ship.parent.x;
-            let dy = ship.y - ship.parent.y;
+            let dx = ship.x - this.focus.x;
+            let dy = ship.y - this.focus.y;
             trueAnom = Math.atan2(dy, dx);
         }
 
@@ -982,12 +982,28 @@ class Game {
         let escapeV = "N/A";
 
         if (ship !== undefined) {
-            let dx = ship.x - this.target.x;
-            let dy = ship.y - this.target.y;
+            let dx = ship.x - this.focus.x;
+            let dy = ship.y - this.focus.y;
             let dist = Math.hypot(dx, dy);
 
-            circularOrbitV = (this.target.mass / dist) ** 0.5
+            circularOrbitV = (this.focus.mass / dist) ** 0.5
             escapeV = circularOrbitV * 2 ** 0.5;
+        }
+
+        // distance to ref frame
+        let frameDist = 0;
+        if (ship !== undefined) {
+            let dx = ship.x - this.focus.x;
+            let dy = ship.y - this.focus.y;
+            frameDist = Math.hypot(dx, dy);
+        }
+
+        // relative velocity
+        let frameDeltaV = 0;
+        if (ship !== undefined) {
+            let dvx = ship.vx - this.focus.vx;
+            let dvy = ship.vy - this.focus.vy;
+            frameDeltaV = Math.hypot(dvx, dvy);
         }
 
         // distance to target
@@ -1023,9 +1039,9 @@ class Game {
         }
 
         // fuel usage (planned)
-        let plannedFuelText = "N/A";
+        let plannedDeltaV = "N/A";
         if (this.plannedFuel > 0) {
-            plannedFuelText = this.plannedFuel;
+            plannedDeltaV = this.plannedFuel;
         }
 
         // closest approach (planned)
@@ -1054,6 +1070,7 @@ class Game {
         topText.push("       Reference Frame : " + this.capitalizeFirstChar(this.focus.name, 29));
         topText.push("---------------------   -----------------------------");
         topText.push("              Primary : " + this.capitalizeFirstChar(primary, 29));
+        topText.push("");
         topText.push("            Periapsis : " + this.formatNumber(periapsis, 29));
         topText.push("             Apoapsis : " + this.formatNumber(apoapsis, 29));
         topText.push("       Semimajor Axis : " + this.formatNumber(semimajor, 29));
@@ -1061,29 +1078,37 @@ class Game {
         topText.push("         True Anomaly : " + this.formatAngle(trueAnom, 29));
         topText.push("               Period : " + this.formatNumber(period * 1000, 29));
         topText.push("");
+        topText.push("              Distance : " + this.formatNumber(frameDist, 29));
+        topText.push("     Relative Velocity : " + this.formatNumber(frameDeltaV, 29));
+        topText.push("  Circularize Velocity : " + this.formatNumber(circularOrbitV, 29));
+        topText.push("       Escape Velocity : " + this.formatNumber(escapeV, 29));
+        topText.push("");
         topText.push("");
         topText.push("                Target : " + this.capitalizeFirstChar(this.target.name, 29));
         topText.push("---------------------   -----------------------------");
-        topText.push("                Radius : " + this.formatNumber(this.target.radius, 29));
-        topText.push("                  Mass : " + this.formatNumber(this.target.mass, 29));
-        topText.push("");
+        // topText.push("                Radius : " + this.formatNumber(this.target.radius, 29));
+        // topText.push("               Density : " + this.formatDecimal(this.target.density, 29));
+        // topText.push("                  Mass : " + this.formatNumber(this.target.mass, 29));
+        // topText.push("");
         topText.push("              Distance : " + this.formatNumber(targDist, 29));
         topText.push("     Relative Velocity : " + this.formatNumber(relativeV, 29));
-        topText.push("");
-        topText.push("  Circularize Velocity : " + this.formatNumber(circularOrbitV, 29));
-        // topText.push("   Circularize delta-V : " + this.formatNumber("N/A", 29));
-        topText.push("       Escape Velocity : " + this.formatNumber(escapeV, 29));
         topText.push("");
         topText.push("");
         topText.push("      Closest Approach          Actual            Plan");
         topText.push("---------------------   -----------------------------");
         topText.push("              Distance : " + this.formatNumber(closestDist, 13) + this.formatNumber(planDistText, 16, true));
         topText.push("     Relative Velocity : " + this.formatNumber(approachV, 13) + this.formatNumber(planApproachV, 16, true));
-        topText.push("     Available delta-V : " + this.formatNumber(this.fuel, 13) + this.formatNumber(-plannedFuelText, 16, true));
-        topText.push("");
         topText.push("  Circularize Velocity : " + this.capitalizeFirstChar("", 29));
-        topText.push("       Escape Velocity : " + this.capitalizeFirstChar("", 29));
         topText.push("");
+        topText.push("");
+        topText.push("                Plan : " + this.capitalizeFirstChar("", 29));
+        topText.push("---------------------   -----------------------------");
+        topText.push("           Prograde dV : " + this.formatNumber(this.progradeV, 29));
+        topText.push("          Radial-In dV : " + this.formatNumber(-this.radialInV, 29));
+        topText.push("              Total dV : " + this.formatNumber(-this.plannedFuel, 29));
+        topText.push("");
+        topText.push("          Available dV : " + this.formatNumber(this.fuel, 29));
+        topText.push("                  Fuel : " + this.formatNumber(this.fuel, 29));
 
         offCtx.textAlign = "right";
         offCtx.fillStyle = "#888888";
@@ -1116,11 +1141,22 @@ class Game {
         return output.padStart(padding);
     }
 
+    formatDecimal(decimal, padding) {
+
+        if (isNaN(decimal)) { return "N/A".padStart(padding); }
+
+        let text = decimal.toFixed(3) + "";
+        let texts = text.split(".");
+        if (texts[1] === undefined) { texts[1] = ""; }
+
+        return (texts[0] + "." + texts[1].padEnd(3, "0")).padStart(padding);
+    }
+
     formatAngle(angle, padding) {
 
         if (isNaN(angle)) { return "N/A".padStart(padding); }
 
-        let text = -angle.toFixed(3) + "";
+        let text = (-angle / Math.PI).toFixed(3) + "";
         let texts = text.split(".");
         if (texts[1] === undefined) { texts[1] = ""; }
 
@@ -1364,18 +1400,20 @@ class Game {
     // }
 
     refFrameUp() {
-        if (this.focus.parent !== null) {
-            this.target = this.focus;
-            this.focus = this.focus.parent;
-            this.heading = "Manual";
-            this.changeFocus(this.focus);
-        }
+        if (this.focus.parent === null) { return; }
+
+        this.target = this.focus;
+        this.focus = this.focus.parent;
+        this.changeFocus(this.focus);
+
+        this.heading = "Manual";
     }
 
     refFrameDown() {
         this.focus = this.target;
-        this.heading = "Manual";
         this.changeFocus(this.focus);
+
+        this.heading = "Manual";
     }
 
     changeFocus(newFocus) {

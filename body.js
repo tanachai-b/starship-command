@@ -798,7 +798,7 @@ class Body {
     //     ctx.stroke();
     // }
 
-    drawTrajectory(ctx, camera, target, isFollowSelf, logMap) {
+    drawTrajectory(ctx, camera, target, isFollowSelf, isHavePlan, logMap) {
 
         if (this.trajectory.length == 0) { return; }
 
@@ -866,7 +866,7 @@ class Body {
         }
     }
 
-    drawPlan(ctx, camera, isHavePlan, target, isFollowSelf, logMap) {
+    drawPlan(ctx, camera, isHavePlan, target, isFollowSelf, isPlanning, logMap) {
 
         if (this.plan.length === 0) { return; }
         if (!isHavePlan) { return; }
@@ -886,8 +886,10 @@ class Body {
                     ctx.lineTo(nx, ny);
                 }
             }
+            // ctx.strokeStyle = this.color;
+            // if (isPlanning) { ctx.strokeStyle = "#FF307C"; }
             ctx.strokeStyle = "#FF307C";
-            ctx.lineWidth = 2;
+            if (isPlanning) { ctx.lineWidth = 2; }
             ctx.stroke();
             ctx.lineWidth = 1;
 
@@ -900,13 +902,10 @@ class Body {
                 ctx.beginPath();
                 ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
-                if (isHavePlan) {
-                    ctx.strokeStyle = "#FF307C";
-                    ctx.lineWidth = 2;
-                } else {
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = 1;
-                }
+                // ctx.strokeStyle = this.color;
+                // if (isPlanning) { ctx.strokeStyle = "#FF307C"; }
+                ctx.strokeStyle = "#FF307C";
+                if (isPlanning) { ctx.lineWidth = 2; }
                 ctx.stroke();
                 ctx.lineWidth = 1;
             }
@@ -926,8 +925,10 @@ class Body {
                     ctx.lineTo(nx, ny);
                 }
             }
+            // ctx.strokeStyle = this.color;
+            // if (isPlanning) { ctx.strokeStyle = "#FF307C"; }
             ctx.strokeStyle = "#FF307C";
-            ctx.lineWidth = 2;
+            if (isPlanning) { ctx.lineWidth = 2; }
             ctx.stroke();
             ctx.lineWidth = 1;
 
@@ -940,20 +941,17 @@ class Body {
                 ctx.beginPath();
                 ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
-                if (isHavePlan) {
-                    ctx.strokeStyle = "#FF307C";
-                    ctx.lineWidth = 2;
-                } else {
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = 1;
-                }
+                // ctx.strokeStyle = this.color;
+                // if (isPlanning) { ctx.strokeStyle = "#FF307C"; }
+                ctx.strokeStyle = "#FF307C";
+                if (isPlanning) { ctx.lineWidth = 2; }
                 ctx.stroke();
                 ctx.lineWidth = 1;
             }
         }
     }
 
-    drawPlanTarget(ctx, camera, isHavePlan, logMap) {
+    drawPlanTarget(ctx, camera, isHavePlan, isPlanning, logMap) {
 
         if (this.planTarget.length == 0) { return; }
 
@@ -971,12 +969,9 @@ class Body {
             }
         }
 
-        if (isHavePlan) {
-            ctx.lineWidth = 2;
-        } else {
-            ctx.lineWidth = 1;
-        }
         ctx.strokeStyle = "#FFEE00";
+        // if (isPlanning) { ctx.strokeStyle = "#FFEE00"; }
+        if (isPlanning) { ctx.lineWidth = 2; }
         ctx.stroke();
         ctx.lineWidth = 1;
 
@@ -989,12 +984,9 @@ class Body {
             ctx.beginPath();
             ctx.arc(nx, ny, 4, 0, 2 * Math.PI);
 
-            if (isHavePlan) {
-                ctx.lineWidth = 2;
-            } else {
-                ctx.lineWidth = 1;
-            }
             ctx.strokeStyle = "#FFEE00";
+            // if (isPlanning) { ctx.strokeStyle = "#FFEE00"; }
+            if (isPlanning) { ctx.lineWidth = 2; }
             ctx.stroke();
             ctx.lineWidth = 1;
         }
@@ -1029,9 +1021,7 @@ class Body {
             ctx.arc(nx, ny, refuelRadius, 0, 2 * Math.PI);
 
             ctx.strokeStyle = this.color;
-            ctx.setLineDash([5]);
             ctx.stroke();
-            ctx.setLineDash([]);
         }
 
         if (isShip) {
@@ -1097,7 +1087,7 @@ class Body {
             ctx.strokeStyle = "#FFEE00";
             let size = 12;
 
-            if (isHavePlan) { ctx.lineWidth = 2; } else { ctx.lineWidth = 1; }
+            if (isPlanning) { ctx.lineWidth = 2; }
             ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
             ctx.lineWidth = 1;
         }
