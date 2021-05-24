@@ -350,8 +350,11 @@ class Game {
             else if (this.heading === "Planned") { heading = Math.atan2(this.radialInV, this.progradeV); }
             else { return; }
 
-            let dvx = this.controlShip.vx - this.focus.vx;
-            let dvy = this.controlShip.vy - this.focus.vy;
+            let refFrame = this.camFocus;
+            if (refFrame.name === this.controlShip.name) { refFrame = this.focus; }
+
+            let dvx = this.controlShip.vx - refFrame.vx;
+            let dvy = this.controlShip.vy - refFrame.vy;
             let prograde = Math.atan2(dvy, dvx);
 
             let curDir = this.controlShip.r;
@@ -458,8 +461,11 @@ class Game {
 
                     let ship = this.controlShip;
 
-                    let dvx = ship.vx - this.focus.vx;
-                    let dvy = ship.vy - this.focus.vy;
+                    let refFrame = this.camFocus;
+                    if (refFrame.name === this.controlShip.name) { refFrame = this.focus; }
+
+                    let dvx = ship.vx - refFrame.vx;
+                    let dvy = ship.vy - refFrame.vy;
                     let dist = Math.hypot(dvx, dvy);
 
                     let pvx = dvx + this.progradeV * dvx / dist - this.radialInV * dvy / dist;
@@ -1404,14 +1410,24 @@ class Game {
 
         this.target = this.focus;
         this.focus = this.focus.parent;
-        this.changeFocus(this.focus);
+
+        if (!this.isFollowSelf) {
+            this.changeFocus(this.target);
+        } else {
+            this.changeFocus(this.focus);
+        }
 
         this.heading = "Manual";
     }
 
     refFrameDown() {
         this.focus = this.target;
-        this.changeFocus(this.focus);
+
+        if (!this.isFollowSelf) {
+            this.changeFocus(this.target);
+        } else {
+            this.changeFocus(this.focus);
+        }
 
         this.heading = "Manual";
     }
@@ -1488,19 +1504,25 @@ class Game {
                 }
             }
 
+            if (!this.isFollowSelf) {
+                this.changeFocus(this.target);
+            } else {
+                this.changeFocus(this.focus);
+            }
             this.heading = "Manual";
+
             if (this.target.name !== this.controlShip.name) { break; }
         }
     }
 
     toggleFollowSelf() {
-
         this.isFollowSelf = !this.isFollowSelf;
 
-        // if (this.isFollowSelf) {
-        //     this.camPosition = this.controlShip;
-        // } else {
-        //     this.camPosition = this.target;
-        // }
+        if (!this.isFollowSelf) {
+            this.changeFocus(this.target);
+        } else {
+            this.changeFocus(this.focus);
+        }
+        this.heading = "Manual";
     }
 }
