@@ -539,14 +539,13 @@ class Body {
 
         this.plan = [{ x: px, y: py }];
 
-        let pvx = this.vx - this.parent.vx;
-        let pvy = this.vy - this.parent.vy;
+        let pvx0 = this.vx - this.parent.vx;
+        let pvy0 = this.vy - this.parent.vy;
+        let dist = Math.hypot(pvx0, pvy0);
 
         // add planned velocity (progradeV, radialInV)
-        let dist = Math.hypot(pvx, pvy);
-
-        pvx += progradeV * pvx / dist - radialInV * pvy / dist;
-        pvy += progradeV * pvy / dist + radialInV * pvx / dist;
+        let pvx = pvx0 + progradeV * pvx0 / dist - radialInV * pvy0 / dist;
+        let pvy = pvy0 + radialInV * pvx0 / dist + progradeV * pvy0 / dist;
 
         // target compared to parent
         let tx = target.x - this.parent.x;
@@ -716,14 +715,13 @@ class Body {
 
         this.plan = [{ x: px, y: py }];
 
-        let pvx = this.vx - this.parent.vx;
-        let pvy = this.vy - this.parent.vy;
+        let pvx0 = this.vx - this.parent.vx;
+        let pvy0 = this.vy - this.parent.vy;
+        let dist = Math.hypot(pvx0, pvy0);
 
         // add planned velocity (progradeV, radialInV)
-        let dist = Math.hypot(pvx, pvy);
-
-        pvx += progradeV * pvx / dist - radialInV * pvy / dist;
-        pvy += progradeV * pvy / dist + radialInV * pvx / dist;
+        let pvx = pvx0 + progradeV * pvx0 / dist - radialInV * pvy0 / dist;
+        let pvy = pvy0 + radialInV * pvx0 / dist + progradeV * pvy0 / dist;
 
         // prep find closest points
         let closestDist;
@@ -959,13 +957,8 @@ class Body {
 
         if (this.planTarget.length == 0) { return; }
 
-        // let zoom = 2 ** (camera.zoom / 4);
-
         ctx.beginPath();
         for (let i = 0; i < this.planTarget.length; i++) {
-
-            // let nx = (this.planTarget[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            // let ny = (this.planTarget[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
 
             let np = this.calcXY(ctx, camera, this.planTarget[i].x + this.parent.x, this.planTarget[i].y + this.parent.y);
             let nx = np.x;
@@ -989,9 +982,6 @@ class Body {
 
         if (this.planTargetClosest !== undefined) {
 
-            // let nx = (this.planTargetClosest.x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-            // let ny = (this.planTargetClosest.y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
-
             let np = this.calcXY(ctx, camera, this.planTargetClosest.x + this.parent.x, this.planTargetClosest.y + this.parent.y);
             let nx = np.x;
             let ny = np.y;
@@ -1014,8 +1004,6 @@ class Body {
 
         let zoom = 2 ** (camera.zoom / 4);
 
-        // let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
-        // let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
         let nr = Math.max(this.radius / zoom, 2);
 
         let np = this.calcXY(ctx, camera, this.x, this.y);
@@ -1089,12 +1077,6 @@ class Body {
     drawMarker(ctx, camera, isShip, isFocus, isPlanning, isTarget, isHavePlan, logMap) {
 
         if (!isShip && !isFocus && !isTarget) { return; }
-
-        let zoom = 2 ** (camera.zoom / 4);
-
-        // let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
-        // let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
-        let nr = Math.max(this.radius / zoom, 2);
 
         let np = this.calcXY(ctx, camera, this.x, this.y);
         let nx = np.x;
@@ -1225,8 +1207,6 @@ class Body {
 
         let zoom = 2 ** (camera.zoom / 4);
 
-        // let nx = (this.x - camera.x) / zoom + ctx.canvas.width / 2;
-        // let ny = (this.y - camera.y) / zoom + ctx.canvas.height / 2;
         let nr = Math.max(this.radius / zoom, 2);
 
         let np = this.calcXY(ctx, camera, this.x, this.y);
