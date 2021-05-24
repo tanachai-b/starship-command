@@ -702,6 +702,18 @@ class Game {
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
             let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
+
+            if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
+                this.bodies[i].drawTrajectory(offCtx, this.camera, this.target, this.isFollowSelf, isHavePlan, this.logMap);
+
+            } else if (this.drawTrajectories) {
+                this.bodies[i].drawTrajectory(offCtx, this.camera, undefined, false, isHavePlan, this.logMap);
+            }
+        }
+
+        for (let i = this.bodies.length - 1; i >= 0; i--) {
+
+            let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
             let isPlanning = this.mode === "Planning";
 
             this.bodies[i].drawPlanTarget(offCtx, this.camera, isHavePlan, isPlanning, this.logMap);
@@ -711,18 +723,6 @@ class Game {
 
             } else if (this.drawTrajectories) {
                 this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, undefined, false, false, this.logMap);
-            }
-        }
-
-        for (let i = this.bodies.length - 1; i >= 0; i--) {
-
-            let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
-
-            if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, this.target, this.isFollowSelf, isHavePlan, this.logMap);
-
-            } else if (this.drawTrajectories) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, undefined, false, isHavePlan, this.logMap);
             }
         }
 

@@ -296,6 +296,8 @@ class Body {
 
         this.trajTarget = [{ x: tx, y: ty }];
 
+        this.trajFrameTarg = [{ x: px - tx, y: py - ty }];
+
         let tvx = target.vx - this.parent.vx;
         let tvy = target.vy - this.parent.vy;
 
@@ -307,10 +309,12 @@ class Body {
         let periapsisTime;
         let apoapsisTime;
 
+        let isTrajLoop = false;
         let isTargetLoop = false;
+        let isFrameTargLoop = false;
 
         let time = 0;
-        for (time = 0; time < 1000; time++) {
+        for (time = 0; time < 2000; time++) {
 
             // parent <- ship
             let dist = Math.hypot(px, py);
@@ -384,7 +388,7 @@ class Body {
             let planPrecision = Math.min(
                 dist / Math.hypot(pvx, pvy) / 100,
                 dist2 / Math.hypot(tvx, tvy) / 100,
-                dist3 / Math.hypot(dvx, dvy) / 10
+                dist3 / Math.hypot(dvx, dvy) / 100
             );
 
             pvx += pax * planPrecision;
@@ -393,8 +397,6 @@ class Body {
             px += pvx * planPrecision;
             py += pvy * planPrecision;
 
-            this.trajectory.push({ x: px, y: py });
-
             // move target
             tvx += tax * planPrecision;
             tvy += tay * planPrecision;
@@ -402,16 +404,18 @@ class Body {
             tx += tvx * planPrecision;
             ty += tvy * planPrecision;
 
-            this.trajFrameTarg.push({ x: px - tx, y: py - ty });
-
-            let dtt = Math.hypot(tx - this.trajTarget[0].x, ty - this.trajTarget[0].y);
-            if (dtt < dist2 / 60 && time > 1000 / 2) { isTargetLoop = true; }
-
-            if (!isTargetLoop) { this.trajTarget.push({ x: tx, y: ty }); }
-
             // completed loop, break
             let dt = Math.hypot(px - this.trajectory[0].x, py - this.trajectory[0].y);
-            if (dt < dist / 60 && time > 1000 / 2) { break; }
+            if (dt < dist / 60 && time > 2000 / 2) { isTrajLoop = true; }
+            if (!isTrajLoop) { this.trajectory.push({ x: px, y: py }); }
+
+            let dtt = Math.hypot(tx - this.trajTarget[0].x, ty - this.trajTarget[0].y);
+            if (dtt < dist2 / 60 && time > 2000 / 2) { isTargetLoop = true; }
+            if (!isTargetLoop) { this.trajTarget.push({ x: tx, y: ty }); }
+
+            let dttt = Math.hypot(px - tx - this.trajFrameTarg[0].x, py - ty - this.trajFrameTarg[0].y);
+            if (dttt < dist3 / 60 && time > 2000 / 2) { isFrameTargLoop = true; }
+            if (!isFrameTargLoop) { this.trajFrameTarg.push({ x: px - tx, y: py - ty }); }
         }
 
         if (closestTime === time) {
@@ -553,6 +557,8 @@ class Body {
 
         this.planTarget = [{ x: tx, y: ty }];
 
+        this.planFrameTarg = [{ x: px - tx, y: py - ty }];
+
         let tvx = target.vx - this.parent.vx;
         let tvy = target.vy - this.parent.vy;
 
@@ -561,9 +567,11 @@ class Body {
         let closestTime;
         let time = 0;
 
+        let isPlanLoop = false;
         let isTargetLoop = false;
+        let isFrameTargLoop = false;
 
-        for (time = 0; time < 1000; time++) {
+        for (time = 0; time < 2000; time++) {
 
             // parent <- ship
             let dist = Math.hypot(px, py);
@@ -615,7 +623,7 @@ class Body {
             let planPrecision = Math.min(
                 dist / Math.hypot(pvx, pvy) / 100,
                 dist2 / Math.hypot(tvx, tvy) / 100,
-                dist3 / Math.hypot(dvx, dvy) / 10
+                dist3 / Math.hypot(dvx, dvy) / 100
             )
 
             pvx += pax * planPrecision;
@@ -624,8 +632,6 @@ class Body {
             px += pvx * planPrecision;
             py += pvy * planPrecision;
 
-            this.plan.push({ x: px, y: py });
-
             // move target
             tvx += tax * planPrecision;
             tvy += tay * planPrecision;
@@ -633,16 +639,18 @@ class Body {
             tx += tvx * planPrecision;
             ty += tvy * planPrecision;
 
-            this.planFrameTarg.push({ x: px - tx, y: py - ty });
-
-            let dtt = Math.hypot(tx - this.planTarget[0].x, ty - this.planTarget[0].y);
-            if (dtt < dist2 / 60 && time > 1000 / 2) { isTargetLoop = true; }
-
-            if (!isTargetLoop) { this.planTarget.push({ x: tx, y: ty }); }
-
             // completed loop, break
             let dt = Math.hypot(px - this.plan[0].x, py - this.plan[0].y);
-            if (dt < dist / 60 && time > 1000 / 2) { break; }
+            if (dt < dist / 60 && time > 2000 / 2) { isPlanLoop = true; }
+            if (!isPlanLoop) { this.plan.push({ x: px, y: py }); }
+
+            let dtt = Math.hypot(tx - this.planTarget[0].x, ty - this.planTarget[0].y);
+            if (dtt < dist2 / 60 && time > 2000 / 2) { isTargetLoop = true; }
+            if (!isTargetLoop) { this.planTarget.push({ x: tx, y: ty }); }
+
+            let dttt = Math.hypot(px - tx - this.planFrameTarg[0].x, py - ty - this.planFrameTarg[0].y);
+            if (dttt < dist3 / 60 && time > 2000 / 2) { isFrameTargLoop = true; }
+            if (!isFrameTargLoop) { this.planFrameTarg.push({ x: px - tx, y: py - ty }); }
         }
 
         if (closestTime === time) {
