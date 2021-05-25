@@ -19,66 +19,55 @@ class Game {
     constructor() {
 
         this.version = "V0.0.1 (2021-05-23)";
+
         this.c = document.getElementById("canvas");
         this.ctx = this.c.getContext("2d");
-
-        this.background;
-        this.overlay;
+        this.starryBackground;
+        this.scanlineOverlay;
 
         this.isPause = false;
-        this.speed = -12;
-
+        this.simSpeed = -12;
         this.zoom = 25;
-        this.isFollowSelf = true;
-        this.camera = new Camera();
-        this.camFocus;
-        this.camAngle = 0;
-
-        this.bodies = [];
-        this.bodiesMap = {};
-
-        this.fuelStations = [];
-        this.fuelStationsMap = {};
-
-        this.badPrecBodies = {};
-
-        // this.camSolSys = [];
-        // this.camMoons = {};
-
-        // this.camSolSysIndex = 3;
-        // this.camMoonIndex = 0;
-        // this.camTargetIndex = 0;
-
-        this.controlShip;
-        this.focus;
-        this.target;
-
         this.pressedKeys = {};
 
-        this.heading = "Manual";
-        this.mode = "Pilot";
-        this.engine = "Thruster";
-
-        this.maxFuel = 999999;
-        this.fuel = 999999;
-
-        this.progradeV = 0;
-        this.radialInV = 0;
-        this.plannedFuel = 0;
-
         this.enableBlurEffect = true;
-        this.drawTrajectories = false;
-
-        this.maxCargo = 10000;
-        this.cargo = 10000;
-
-        this.cash = 0;
+        this.drawTrajToPrimary = false;
 
         this.lastFrameTime;
         this.frameRate;
         this.frameCount = 0;
 
         this.logMap = {};
+
+        this.camera = new Camera();
+        this.camFocus;
+        this.camAngle = 0;
+        this.isFollowShip = true;
+
+        this.bodies = [];
+        this.badPrecBodies = {};
+
+        this.currentShip;
+        this.fuelStationsMap = {};
+
+        this.focus;
+        // this.origin;
+        this.target;
+
+        this.heading = "Manual";
+        this.mode = "Pilot";
+        this.engine = "Thruster";
+
+        this.progradeV = 0;
+        this.radialInV = 0;
+        this.plannedFuel = 0;
+
+        this.maxFuel = 999999;
+        this.fuel = 999999;
+
+        // this.maxCargo = 10000;
+        // this.cargo = 10000;
+        // this.cash = 0;
     }
 
     initiate() {
@@ -92,90 +81,92 @@ class Game {
     buildGameMap() {
 
         let sun = new Body("sun", "#FFF200", 696340, 1.409, null, 0, 0);
-        this.bodies.push(sun); this.bodiesMap.sun = sun;
+        this.bodies.push(sun);
 
         // ========================
 
         let mercury = new Body("mercury", "#B0B0B0", 2439.64, 5.43, sun, 57909175, -90);
-        this.bodies.push(mercury); this.bodiesMap.mercury = mercury;
+        this.bodies.push(mercury);
 
         let venus = new Body("venus", "#FFECA0", 6051.59, 5.24, sun, 108208930, 190);
-        this.bodies.push(venus); this.bodiesMap.venus = venus;
+        this.bodies.push(venus);
 
         let earth = new Body("earth", "#006AFF", 6378.10, 5.52, sun, 149597890, 10);
-        this.bodies.push(earth); this.bodiesMap.earth = earth;
+        this.bodies.push(earth);
 
         let mars = new Body("mars", "#C74E33", 3397.00, 3.94, sun, 227936640, 45);
-        this.bodies.push(mars); this.bodiesMap.mars = mars;
+        this.bodies.push(mars);
 
         let ceres = new Body("ceres", "#B0B0B0", 473, 2.16, sun, 413700000, 80);
-        this.bodies.push(ceres); this.bodiesMap.ceres = ceres;
+        this.bodies.push(ceres);
 
         let jupiter = new Body("jupiter", "#A6662B", 71492.68, 1.33, sun, 778412010, 70);
-        this.bodies.push(jupiter); this.bodiesMap.jupiter = jupiter;
+        this.bodies.push(jupiter);
 
         let saturn = new Body("saturn", "#FFE4A6", 60267.14, 0.7, sun, 1426725400, 155);
-        this.bodies.push(saturn); this.bodiesMap.saturn = saturn;
+        this.bodies.push(saturn);
 
         let uranus = new Body("uranus", "#80FFE8", 25557.25, 1.3, sun, 2870972200, 185);
-        this.bodies.push(uranus); this.bodiesMap.uranus = uranus;
+        this.bodies.push(uranus);
 
         let neptune = new Body("neptune", "#2B7CFF", 24766.36, 1.76, sun, 4498252900, 30);
-        this.bodies.push(neptune); this.bodiesMap.neptune = neptune;
+        this.bodies.push(neptune);
 
         let pluto = new Body("pluto", "#B0B0B0", 1187, 1.87, sun, 5906380000, -100);
-        this.bodies.push(pluto); this.bodiesMap.pluto = pluto;
+        this.bodies.push(pluto);
 
         // ========================
 
         let moon = new Body("moon", "#B5B0A3", 1737.1, 3.3464, earth, 384399, 5);
-        this.bodies.push(moon); this.bodiesMap.moon = moon;
+        this.bodies.push(moon);
 
         let phobos = new Body("phobos", "#B5B0A3", 11.1, 1.876, mars, 9377, 45);
-        this.bodies.push(phobos); this.bodiesMap.phobos = phobos;
+        this.bodies.push(phobos);
 
         let deimos = new Body("deimos", "#B5B0A3", 6.3, 1.471, mars, 23460, -135);
-        this.bodies.push(deimos); this.bodiesMap.deimos = deimos;
+        this.bodies.push(deimos);
 
         let io = new Body("io", "#B5B0A3", 1815, 3.528, jupiter, 421600, 15);
-        this.bodies.push(io); this.bodiesMap.io = io;
+        this.bodies.push(io);
 
         let europa = new Body("europa", "#B5B0A3", 1569, 3.01, jupiter, 670900, 105);
-        this.bodies.push(europa); this.bodiesMap.europa = europa;
+        this.bodies.push(europa);
 
         let ganymede = new Body("ganymede", "#B5B0A3", 2634.1, 1.936, jupiter, 1070400, 80);
-        this.bodies.push(ganymede); this.bodiesMap.ganymede = ganymede;
+        this.bodies.push(ganymede);
 
         let callisto = new Body("callisto", "#B5B0A3", 2410.3, 1.83, jupiter, 1882700, -160);
-        this.bodies.push(callisto); this.bodiesMap.callisto = callisto;
+        this.bodies.push(callisto);
 
         let titan = new Body("titan", "#B5B0A3", 2576, 1.88, saturn, 1221870, -80);
-        this.bodies.push(titan); this.bodiesMap.titan = titan;
+        this.bodies.push(titan);
 
         let triton = new Body("triton", "#B0B0B0", 1353.4, 2.061, neptune, 354759, -170);
-        this.bodies.push(triton); this.bodiesMap.triton = triton;
+        this.bodies.push(triton);
 
         let charon = new Body("charon", "#B0B0B0", 603.5, 1.65, pluto, 17536, -100);
-        this.bodies.push(charon); this.bodiesMap.charon = charon;
+        this.bodies.push(charon);
 
         // ========================
 
         let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -120);
-        this.bodies.push(fuelStation1); this.bodiesMap.fuelStation1 = fuelStation1;
-        this.fuelStations.push(fuelStation1); this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 0 };
+        this.bodies.push(fuelStation1);
+        this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 0 };
 
         let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 30000, -0);
-        this.bodies.push(fuelStation2); this.bodiesMap.fuelStation2 = fuelStation2;
-        this.fuelStations.push(fuelStation2); this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
+        this.bodies.push(fuelStation2);
+        this.fuelStationsMap.fuelStation2 = { body: fuelStation2, fuel: 20000 };
 
         let fuelStation3 = new Body("fuelStation3", "#349FC9", 0.02, 0.5, earth, 100000, 110);
-        this.bodies.push(fuelStation3); this.bodiesMap.fuelStation3 = fuelStation3;
-        this.fuelStations.push(fuelStation3); this.fuelStationsMap.fuelStation3 = { body: fuelStation3, fuel: 20000 };
+        this.bodies.push(fuelStation3);
+        this.fuelStationsMap.fuelStation3 = { body: fuelStation3, fuel: 20000 };
 
         // ========================
 
         let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -120.00005);
-        this.bodies.push(starship); this.bodiesMap.starship = starship;
+        this.bodies.push(starship);
+
+        // ========================
 
         for (let body of this.bodies) {
             if (body.child.length === 0) { continue; }
@@ -190,31 +181,10 @@ class Game {
 
         // ========================
 
-        this.controlShip = starship;
+        // set initial focus/target
+        this.currentShip = starship;
         this.focus = earth;
         this.target = earth;
-
-        // for (let body of this.bodies) {
-
-        //     if (body.name === "starship") {
-        //         continue;
-
-        //     } else if (body.name === "sun") {
-        //         this.camSolSys.push(body);
-
-        //     } else if (body.parent.name === "sun") {
-        //         this.camSolSys.push(body);
-        //         this.camMoons[body.name] = [body];
-
-        //     } else {
-        //         this.camMoons[body.parent.name].push(body);
-        //     }
-        // }
-
-        // for (let planet in this.camMoons) {
-        //     this.camMoons[planet][0].distance = 0;
-        //     this.camMoons[planet].sort(function (a, b) { return a.distance - b.distance; });
-        // }
     }
 
     async gameLoop() {
@@ -225,27 +195,22 @@ class Game {
 
             if (!this.isPause) {
                 this.moveBodies();
-                this.moveShip();
+                this.controlShip();
                 this.refuel();
             }
 
             this.calcTrajectory();
-            this.calcPlan();
+            this.calcShipPlan();
+
             this.moveCamera();
 
             this.drawBackground();
             this.drawBodies();
             this.drawHUD();
+            this.drawScanlines();
 
+            this.calcFrameCountFrameRate();
             if (!this.isPause) { this.log(); }
-
-            if (this.lastFrameTime !== undefined) {
-                this.frameRate = (1000 / (Date.now() - this.lastFrameTime)).toFixed(2);
-            }
-            this.lastFrameTime = Date.now();
-
-            this.frameCount++;
-            if (this.frameCount >= 1000) { this.frameCount = 0; }
 
             await timer(1);
         }
@@ -253,66 +218,34 @@ class Game {
 
     moveBodies() {
 
-        let precision = 10 ** (this.speed / 3);
+        let precision = 10 ** (this.simSpeed / 3);
 
         this.badPrecBodies = {};
 
         for (let body of this.bodies) {
-            body.calcGrav(this.bodies, precision, this.badPrecBodies, this.logMap);
+            body.calcGravity(this.bodies, precision, this.badPrecBodies, this.logMap);
         }
 
         if (Object.keys(this.badPrecBodies).length > 0) {
             for (let body of this.bodies) {
-                body.calcGrav(this.bodies, precision, this.badPrecBodies, this.logMap);
+                body.calcGravity(this.bodies, precision, this.badPrecBodies, this.logMap);
             }
         }
 
         for (let body of this.bodies) {
             body.move(precision, this.badPrecBodies);
-            // body.addTrail(this.logMap);
         }
     }
 
-    moveShip() {
+    controlShip() {
         this.rotateShip();
-        if (this.engine === "RCS") { this.rcs(); }
-        if (this.engine === "Thruster") { this.thruster(); }
-    }
-
-    autoHeading(key) {
-
-        if (this.isPause) { return; }
-
-        if (this.mode === "Planning") { return; }
-        if (this.engine === "RCS") { return; }
-
-        let keyHeading = "Manual";
-        switch (key) {
-            case "W": keyHeading = "Prograde"; break;
-            case "S": keyHeading = "Retrograde"; break;
-            case "A": keyHeading = "Radial-in"; break;
-            case "D": keyHeading = "Radial-out"; break;
-            case "F": keyHeading = "Planned"; break;
-        }
-
-        if (this.heading !== keyHeading) {
-            this.heading = keyHeading;
-        } else {
-            this.heading = "Manual";
-        }
-    }
-
-    holdHeading() {
-        if (this.heading !== "Hold") {
-            this.heading = "Hold";
-        } else {
-            this.heading = "Manual";
-        }
+        if (this.engine === "RCS") { this.controlRcs(); }
+        if (this.engine === "Thruster") { this.controlThruster(); }
     }
 
     rotateShip() {
 
-        if (this.controlShip === undefined) { return; }
+        if (this.currentShip === undefined) { return; }
         if (this.fuel === 0) { return; }
 
         let power = 1;
@@ -322,18 +255,19 @@ class Game {
 
             this.heading = "Manual";
 
-            if (this.pressedKeys.Q) { this.controlShip.vr -= power; this.fuel -= power / 100; }
-            if (this.pressedKeys.E) { this.controlShip.vr += power; this.fuel -= power / 100; }
+            if (this.pressedKeys.Q) { this.currentShip.vr -= power; this.fuel -= power / 100; }
+            if (this.pressedKeys.E) { this.currentShip.vr += power; this.fuel -= power / 100; }
 
             this.fuel = Math.max(this.fuel, 0);
 
         } else if (this.heading === "Hold") {
 
-            if (this.controlShip.vr < 0) {
-                this.controlShip.vr += power;
+            if (this.currentShip.vr < 0) {
+                this.currentShip.vr += power;
                 this.fuel -= power / 100;
-            } else if (this.controlShip.vr > 0) {
-                this.controlShip.vr -= power;
+
+            } else if (this.currentShip.vr > 0) {
+                this.currentShip.vr -= power;
                 this.fuel -= power / 100;
             }
 
@@ -351,9 +285,9 @@ class Game {
             else { return; }
 
             let refFrame = this.camFocus;
-            if (refFrame.name === this.controlShip.name) { refFrame = this.focus; }
+            if (refFrame.name === this.currentShip.name) { refFrame = this.focus; }
 
-            let ship = this.controlShip;
+            let ship = this.currentShip;
 
             let dvx = ship.vx - refFrame.vx;
             let dvy = ship.vy - refFrame.vy;
@@ -363,7 +297,7 @@ class Game {
 
             let dist = ((((prograde + heading - curDir + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
 
-            let precision = 10 ** (this.speed / 3);
+            let precision = 10 ** (this.simSpeed / 3);
 
             if (dist < 0) {
 
@@ -388,41 +322,28 @@ class Game {
         }
     }
 
-    toggleEngine() {
-
-        if (this.isPause) { return; }
-
-        if (this.engine === "RCS") {
-            this.engine = "Thruster";
-
-        } else if (this.engine === "Thruster") {
-            this.engine = "RCS";
-            this.mode = "Pilot";
-            this.heading = "Manual";
-        }
-    }
-
-    rcs() {
-        if (this.controlShip === undefined) { return; }
+    controlRcs() {
+        if (this.currentShip === undefined) { return; }
         if (this.fuel === 0) { return; }
 
         let power = 0.1;
         if (this.pressedKeys.Shift) { power /= 10; }
 
-        if (this.pressedKeys.W) { this.eachRcs(Math.atan2(0, 1), power); this.fuel -= power; }
-        if (this.pressedKeys.S) { this.eachRcs(Math.atan2(0, -1), power); this.fuel -= power; }
-        if (this.pressedKeys.A) { this.eachRcs(Math.atan2(-1, 0), power); this.fuel -= power; }
-        if (this.pressedKeys.D) { this.eachRcs(Math.atan2(1, 0), power); this.fuel -= power; }
+        if (this.pressedKeys.W) { this.controlEachRcs(Math.atan2(0, 1), power); this.fuel -= power; }
+        if (this.pressedKeys.S) { this.controlEachRcs(Math.atan2(0, -1), power); this.fuel -= power; }
+        if (this.pressedKeys.A) { this.controlEachRcs(Math.atan2(-1, 0), power); this.fuel -= power; }
+        if (this.pressedKeys.D) { this.controlEachRcs(Math.atan2(1, 0), power); this.fuel -= power; }
 
         this.fuel = Math.max(this.fuel, 0);
     }
 
-    eachRcs(direction, power) {
-        this.controlShip.vx += power * Math.cos(this.controlShip.r + direction);
-        this.controlShip.vy += power * Math.sin(this.controlShip.r + direction);
+    controlEachRcs(direction, power) {
+        this.currentShip.vx += power * Math.cos(this.currentShip.r + direction);
+        this.currentShip.vy += power * Math.sin(this.currentShip.r + direction);
     }
 
-    thruster() {
+    controlThruster() {
+
         let power = 10;
         if (this.pressedKeys.Shift) { power /= 10; }
 
@@ -438,20 +359,20 @@ class Game {
 
             if (this.pressedKeys.Z || this.pressedKeys.X) {
 
-                if (this.controlShip === undefined) { return; }
+                if (this.currentShip === undefined) { return; }
                 if (this.fuel === 0) { return; }
 
                 let vx1 = 0;
                 let vy1 = 0;
 
                 if (this.pressedKeys.Z) {
-                    vx1 = power * Math.cos(this.controlShip.r);
-                    vy1 = power * Math.sin(this.controlShip.r);
+                    vx1 = power * Math.cos(this.currentShip.r);
+                    vy1 = power * Math.sin(this.currentShip.r);
                     this.fuel -= power;
                 }
                 if (this.pressedKeys.X) {
-                    vx1 = -power / 10 * Math.cos(this.controlShip.r);
-                    vy1 = -power / 10 * Math.sin(this.controlShip.r);
+                    vx1 = -power / 10 * Math.cos(this.currentShip.r);
+                    vy1 = -power / 10 * Math.sin(this.currentShip.r);
                     this.fuel -= power / 10;
                 }
 
@@ -460,10 +381,10 @@ class Game {
                 // minus current thrust from planned route / planned fuel
                 if (this.progradeV !== 0 || this.radialInV !== 0) {
 
-                    let ship = this.controlShip;
+                    let ship = this.currentShip;
 
                     let refFrame = this.camFocus;
-                    if (refFrame.name === this.controlShip.name) { refFrame = this.focus; }
+                    if (refFrame.name === this.currentShip.name) { refFrame = this.focus; }
 
                     let dvx = ship.vx - refFrame.vx;
                     let dvy = ship.vy - refFrame.vy;
@@ -485,17 +406,17 @@ class Game {
                     this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
                 }
 
-                this.controlShip.vx += vx1;
-                this.controlShip.vy += vy1;
+                this.currentShip.vx += vx1;
+                this.currentShip.vy += vy1;
             }
         }
     }
 
     refuel() {
 
-        if (this.controlShip === undefined) { return; }
+        if (this.currentShip === undefined) { return; }
 
-        let precision = 10 ** (this.speed / 3);
+        let precision = 10 ** (this.simSpeed / 3);
 
         let stationRefuelRate = 100;
         let stationMaxFuel = 20000;
@@ -514,7 +435,7 @@ class Game {
             // refuel ship (if near)
             let stationBody = station.body;
 
-            let ship = this.controlShip;
+            let ship = this.currentShip;
 
             let dx = stationBody.x - ship.x;
             if (Math.abs(dx) > refuelDistance) { continue; }
@@ -540,67 +461,27 @@ class Game {
 
         for (let body of this.bodies) {
 
-            if (this.controlShip !== undefined && body.name === this.controlShip.name) {
-                body.calcTrajAdv(this.target, this.logMap);
+            if (this.currentShip !== undefined && body.name === this.currentShip.name) {
+                body.calcShipTraj(this.target, this.logMap);
 
-            } else if (this.drawTrajectories) {
-                body.calcTrajectory(this.logMap);
+            } else if (this.drawTrajToPrimary) {
+                body.calcBodyTraj(this.logMap);
             }
         }
     }
 
-    calcPlan() {
-        if (this.controlShip === undefined) { return; }
-        this.controlShip.calcPlan(this.progradeV, this.radialInV, this.target, this.isFollowSelf, this.logMap);
-    }
-
-    toggleMode() {
-
-        if (this.isPause) { return; }
-
-        if (this.mode === "Pilot") {
-            this.mode = "Planning";
-            this.engine = "Thruster";
-            this.heading = "Manual";
-
-        } else if (this.mode === "Planning") {
-            this.mode = "Pilot";
-        }
-    }
-
-    clearPlan() {
-
-        if (this.isPause) { return; }
-
-        this.progradeV = 0;
-        this.radialInV = 0;
-        this.plannedFuel = 0;
-
-        this.mode = "Pilot";
+    calcShipPlan() {
+        if (this.currentShip === undefined) { return; }
+        this.currentShip.calcShipPlan(this.progradeV, this.radialInV, this.target, this.isFollowShip, this.logMap);
     }
 
     moveCamera() {
 
-        let precision = 10 ** (this.speed / 3);
+        let precision = 10 ** (this.simSpeed / 3);
 
-        // // initalize focus and target
-        // if (this.focus === undefined) {
-        //     if (this.camMoonIndex != 0) {
-        //         this.focus = this.camMoons[this.camSolSys[this.camSolSysIndex].name][this.camMoonIndex];
-        //     } else {
-        //         this.focus = this.camSolSys[this.camSolSysIndex];
-        //     }
-        // }
-
-        // if (this.target === undefined) {
-        //     this.target = this.camMoons[this.camSolSys[this.camSolSysIndex].name][this.camTargetIndex];
-        // }
-
-        // this.controlShip.switchParent(this.focus);
-        // this.changeFocus(this.focus);
-
-        if (this.controlShip !== undefined && this.isFollowSelf) {
-            this.camFocus = this.controlShip;
+        // initalize camera focus;
+        if (this.currentShip !== undefined && this.isFollowShip) {
+            this.camFocus = this.currentShip;
         } else {
             this.camFocus = this.target;
         }
@@ -635,7 +516,7 @@ class Game {
         if (this.camera.r === undefined) { this.camera.r = 0; }
 
         if (this.engine === "RCS") {
-            this.camAngle = -this.controlShip.r - Math.PI / 2;
+            this.camAngle = -this.currentShip.r - Math.PI / 2;
         } else {
             this.camAngle = 0;
         }
@@ -651,13 +532,13 @@ class Game {
 
         let zoom = 1.01 ** (this.camera.zoom / 4) / 1;
 
-        if (this.background === undefined) {
+        if (this.starryBackground === undefined) {
 
-            this.background = document.createElement("canvas");
-            this.background.width = this.c.width * 3;
-            this.background.height = this.c.height * 3;
+            this.starryBackground = document.createElement("canvas");
+            this.starryBackground.width = this.c.width * 3;
+            this.starryBackground.height = this.c.height * 3;
 
-            let offCtx = this.background.getContext("2d");
+            let offCtx = this.starryBackground.getContext("2d");
 
             for (let i = 0; i < 1000; i++) {
 
@@ -681,11 +562,11 @@ class Game {
 
         if (this.enableBlurEffect) {
             this.ctx.filter = "blur(16px)";
-            this.ctx.drawImage(this.background, 0, 0);
+            this.ctx.drawImage(this.starryBackground, 0, 0);
         }
 
         this.ctx.filter = "none";
-        this.ctx.drawImage(this.background, 0, 0);
+        this.ctx.drawImage(this.starryBackground, 0, 0);
 
         this.ctx.translate(cw, ch);
         this.ctx.translate(this.camera.x / 10000000, this.camera.y / 10000000);
@@ -704,16 +585,14 @@ class Game {
 
         let offCtx = offScreenCanvas.getContext("2d");
 
-        // for (let i = this.bodies.length - 1; i >= 0; i--) { this.bodies[i].drawTrail(offCtx, this.camera, this.logMap); }
-
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
             let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
 
-            if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, this.target, this.isFollowSelf, isHavePlan, this.logMap);
+            if (this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name) {
+                this.bodies[i].drawTrajectory(offCtx, this.camera, this.target, this.isFollowShip, isHavePlan, this.logMap);
 
-            } else if (this.drawTrajectories) {
+            } else if (this.drawTrajToPrimary) {
                 this.bodies[i].drawTrajectory(offCtx, this.camera, undefined, false, isHavePlan, this.logMap);
             }
         }
@@ -725,17 +604,17 @@ class Game {
 
             this.bodies[i].drawPlanTarget(offCtx, this.camera, isHavePlan, isPlanning, this.logMap);
 
-            if (this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name) {
-                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, this.target, this.isFollowSelf, isPlanning, this.logMap);
+            if (this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name) {
+                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, this.target, this.isFollowShip, isPlanning, this.logMap);
 
-            } else if (this.drawTrajectories) {
+            } else if (this.drawTrajToPrimary) {
                 this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, undefined, false, false, this.logMap);
             }
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
-            let isShip = this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name;
+            let isShip = this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name;
             let isFuelStation = this.fuelStationsMap[this.bodies[i].name] !== undefined;
 
             this.bodies[i].drawBody(offCtx, this.camera, isShip, isFuelStation, this.logMap);
@@ -743,7 +622,7 @@ class Game {
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
 
-            let isShip = this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name;
+            let isShip = this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name;
             let isFocus = this.bodies[i].name === this.focus.name;
             let isPlanning = this.mode === "Planning";
             let isTarget = this.bodies[i].name === this.target.name;
@@ -753,8 +632,8 @@ class Game {
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
-            let isShip = this.controlShip !== undefined && this.bodies[i].name === this.controlShip.name;
-            this.bodies[i].drawName(offCtx, this.camera, isShip, this.isFollowSelf, this.fuelStationsMap, this.logMap);
+            let isShip = this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name;
+            this.bodies[i].drawName(offCtx, this.camera, isShip, this.isFollowShip, this.fuelStationsMap, this.logMap);
         }
 
         if (this.enableBlurEffect) {
@@ -786,43 +665,6 @@ class Game {
 
         this.ctx.filter = "none";
         this.ctx.drawImage(offScreenCanvas, 0, 0);
-
-        this.addScanLines(this.ctx);
-    }
-
-    addScanLines(ctx) {
-
-        if (this.overlay === undefined) {
-
-            this.overlay = document.createElement("canvas");
-            this.overlay.width = this.c.width;
-            this.overlay.height = this.c.height;
-
-            let overlayCtx = this.overlay.getContext("2d");
-
-            let cw = overlayCtx.canvas.width;
-            let ch = overlayCtx.canvas.height;
-
-            let lineWidth = 8;
-
-            let y = 0;
-            while (y < ch) {
-
-                overlayCtx.beginPath();
-                overlayCtx.moveTo(0, y + 0);
-                overlayCtx.lineTo(cw, y + 0);
-
-                overlayCtx.lineWidth = lineWidth;
-                overlayCtx.strokeStyle = "#808080";
-                overlayCtx.stroke();
-
-                y += lineWidth * 2;
-            }
-
-        } else if (this.enableBlurEffect) {
-            this.ctx.filter = "opacity(2%) blur(2px)";
-            this.ctx.drawImage(this.overlay, 0, (this.frameCount % 64) / 4);
-        }
     }
 
     addCrossHair(offCtx) {
@@ -925,7 +767,7 @@ class Game {
         // bottomText.push("FPS              : " + this.frameRate);
         // bottomText.push("");
         // bottomText.push("Zoom             : " + this.zoom);
-        bottomText.push("Simulation Speed : " + this.speed);
+        bottomText.push("Simulation Speed : " + this.simSpeed);
         bottomText.push("");
         bottomText.push("[Backspace]      : Toggle Screen Effect");
         bottomText.push("[\\]              : Toggle Display All Trajectories");
@@ -957,7 +799,7 @@ class Game {
 
     addSideTextRight(offCtx) {
 
-        let ship = this.controlShip;
+        let ship = this.currentShip;
         let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
 
         let primary = "N/A";
@@ -1178,7 +1020,7 @@ class Game {
 
         // reference frame text
         let refFrame = "";
-        if (this.isFollowSelf) {
+        if (this.isFollowShip) {
             refFrame = this.capitalizeFirstChar(this.focus.name);
         } else {
             refFrame = this.capitalizeFirstChar(this.focus.name) + " + Target";
@@ -1262,6 +1104,52 @@ class Game {
         }
     }
 
+    drawScanlines() {
+
+        if (this.scanlineOverlay === undefined) {
+
+            this.scanlineOverlay = document.createElement("canvas");
+            this.scanlineOverlay.width = this.c.width;
+            this.scanlineOverlay.height = this.c.height;
+
+            let overlayCtx = this.scanlineOverlay.getContext("2d");
+
+            let cw = overlayCtx.canvas.width;
+            let ch = overlayCtx.canvas.height;
+
+            let lineWidth = 8;
+
+            let y = 0;
+            while (y < ch) {
+
+                overlayCtx.beginPath();
+                overlayCtx.moveTo(0, y + 0);
+                overlayCtx.lineTo(cw, y + 0);
+
+                overlayCtx.lineWidth = lineWidth;
+                overlayCtx.strokeStyle = "#808080";
+                overlayCtx.stroke();
+
+                y += lineWidth * 2;
+            }
+        }
+
+        if (this.enableBlurEffect) {
+            this.ctx.filter = "opacity(2%) blur(2px)";
+            this.ctx.drawImage(this.scanlineOverlay, 0, (this.frameCount % 64) / 4);
+        }
+    }
+
+    calcFrameCountFrameRate() {
+        if (this.lastFrameTime !== undefined) {
+            this.frameRate = (1000 / (Date.now() - this.lastFrameTime)).toFixed(2);
+        }
+        this.lastFrameTime = Date.now();
+
+        this.frameCount++;
+        if (this.frameCount >= 1000) { this.frameCount = 0; }
+    }
+
     log() {
 
         let logStr = "log items: " + Object.keys(this.logMap).length + "<br>";
@@ -1281,11 +1169,8 @@ class Game {
 
             case "0_Space": event.preventDefault(); this.togglePause(); break;
 
-            case "0_Comma": event.preventDefault(); this.cyclePrecision(-1); break;
-            case "0_Period": event.preventDefault(); this.cyclePrecision(1); break;
-
-            // case "0_KeyU": event.preventDefault(); this.cycleSolSys(-1); break;
-            // case "0_KeyO": event.preventDefault(); this.cycleSolSys(1); break;
+            case "0_Comma": event.preventDefault(); this.cycleSimSpeed(-1); break;
+            case "0_Period": event.preventDefault(); this.cycleSimSpeed(1); break;
 
             case "0_KeyJ": event.preventDefault(); this.cycleTarget(-1); break;
             case "0_KeyL": event.preventDefault(); this.cycleTarget(1); break;
@@ -1319,20 +1204,20 @@ class Game {
             case "0_KeyC": event.preventDefault(); this.toggleMode(); break;
             case "0_KeyV": event.preventDefault(); this.clearPlan(); break;
 
-            case "0_KeyW": event.preventDefault(); this.autoHeading("W"); this.pressedKeys.W = 1; break;
-            case "0_KeyS": event.preventDefault(); this.autoHeading("S"); this.pressedKeys.S = 1; break;
-            case "0_KeyA": event.preventDefault(); this.autoHeading("A"); this.pressedKeys.A = 1; break;
-            case "0_KeyD": event.preventDefault(); this.autoHeading("D"); this.pressedKeys.D = 1; break;
+            case "0_KeyW": event.preventDefault(); this.setHeading("W"); this.pressedKeys.W = 1; break;
+            case "0_KeyS": event.preventDefault(); this.setHeading("S"); this.pressedKeys.S = 1; break;
+            case "0_KeyA": event.preventDefault(); this.setHeading("A"); this.pressedKeys.A = 1; break;
+            case "0_KeyD": event.preventDefault(); this.setHeading("D"); this.pressedKeys.D = 1; break;
 
-            case "2_KeyW": event.preventDefault(); this.autoHeading("W"); this.pressedKeys.W = 1; break;
-            case "2_KeyS": event.preventDefault(); this.autoHeading("S"); this.pressedKeys.S = 1; break;
-            case "2_KeyA": event.preventDefault(); this.autoHeading("A"); this.pressedKeys.A = 1; break;
-            case "2_KeyD": event.preventDefault(); this.autoHeading("D"); this.pressedKeys.D = 1; break;
+            case "2_KeyW": event.preventDefault(); this.setHeading("W"); this.pressedKeys.W = 1; break;
+            case "2_KeyS": event.preventDefault(); this.setHeading("S"); this.pressedKeys.S = 1; break;
+            case "2_KeyA": event.preventDefault(); this.setHeading("A"); this.pressedKeys.A = 1; break;
+            case "2_KeyD": event.preventDefault(); this.setHeading("D"); this.pressedKeys.D = 1; break;
 
-            case "0_KeyF": event.preventDefault(); this.autoHeading("F"); break;
-            case "0_KeyG": event.preventDefault(); this.holdHeading(); break;
+            case "0_KeyF": event.preventDefault(); this.setHeading("F"); break;
+            case "0_KeyG": event.preventDefault(); this.setHeading("G"); break;
 
-            case "0_Backslash": event.preventDefault(); this.drawTrajectories = !this.drawTrajectories; break;
+            case "0_Backslash": event.preventDefault(); this.drawTrajToPrimary = !this.drawTrajToPrimary; break;
             case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
         }
 
@@ -1382,12 +1267,75 @@ class Game {
         this.isPause = !this.isPause;
     }
 
-    cyclePrecision(direction) {
+    cycleSimSpeed(direction) {
 
-        this.speed += direction;
+        this.simSpeed += direction;
 
-        this.speed = Math.min(this.speed, 12);
-        this.speed = Math.max(this.speed, -12);
+        this.simSpeed = Math.min(this.simSpeed, 12);
+        this.simSpeed = Math.max(this.simSpeed, -12);
+    }
+
+    setHeading(key) {
+
+        if (this.isPause) { return; }
+
+        if (this.mode === "Planning") { return; }
+        if (this.engine === "RCS") { return; }
+
+        let headingGoal = "Manual";
+        switch (key) {
+            case "W": headingGoal = "Prograde"; break;
+            case "S": headingGoal = "Retrograde"; break;
+            case "A": headingGoal = "Radial-in"; break;
+            case "D": headingGoal = "Radial-out"; break;
+            case "F": headingGoal = "Planned"; break;
+            case "G": headingGoal = "Hold"; break;
+        }
+
+        if (this.heading !== headingGoal) {
+            this.heading = headingGoal;
+        } else {
+            this.heading = "Manual";
+        }
+    }
+
+    toggleEngine() {
+
+        if (this.isPause) { return; }
+
+        if (this.engine === "RCS") {
+            this.engine = "Thruster";
+
+        } else if (this.engine === "Thruster") {
+            this.engine = "RCS";
+            this.mode = "Pilot";
+            this.heading = "Manual";
+        }
+    }
+
+    toggleMode() {
+
+        if (this.isPause) { return; }
+
+        if (this.mode === "Pilot") {
+            this.mode = "Planning";
+            this.engine = "Thruster";
+            this.heading = "Manual";
+
+        } else if (this.mode === "Planning") {
+            this.mode = "Pilot";
+        }
+    }
+
+    clearPlan() {
+
+        if (this.isPause) { return; }
+
+        this.progradeV = 0;
+        this.radialInV = 0;
+        this.plannedFuel = 0;
+
+        this.mode = "Pilot";
     }
 
     refFrameUp() {
@@ -1396,7 +1344,7 @@ class Game {
         let newfocus = this.focus.parent;
         let newtarget = this.focus;
 
-        if (this.isFollowSelf) {
+        if (this.isFollowShip) {
             this.recalcPlan(newfocus);
         } else {
             this.recalcPlan(newtarget);
@@ -1405,7 +1353,7 @@ class Game {
         this.focus = newfocus;
         this.target = newtarget;
 
-        this.controlShip.parent = this.focus;
+        this.currentShip.parent = this.focus;
         this.heading = "Manual";
     }
 
@@ -1413,13 +1361,13 @@ class Game {
 
         let newfocus = this.target;
 
-        if (this.isFollowSelf) {
+        if (this.isFollowShip) {
             this.recalcPlan(newfocus);
         }
 
         this.focus = newfocus;
 
-        this.controlShip.parent = this.focus;
+        this.currentShip.parent = this.focus;
         this.heading = "Manual";
     }
 
@@ -1451,10 +1399,10 @@ class Game {
                 }
             }
 
-            if (newtarget.name !== this.controlShip.name) { break; }
+            if (newtarget.name !== this.currentShip.name) { break; }
         }
 
-        if (!this.isFollowSelf) {
+        if (!this.isFollowShip) {
             this.recalcPlan(newtarget);
         }
 
@@ -1463,9 +1411,9 @@ class Game {
     }
 
     toggleFollowSelf() {
-        this.isFollowSelf = !this.isFollowSelf;
+        this.isFollowShip = !this.isFollowShip;
 
-        if (this.isFollowSelf) {
+        if (this.isFollowShip) {
             this.recalcPlan(this.focus);
         } else {
             this.recalcPlan(this.target);
@@ -1474,13 +1422,13 @@ class Game {
 
     recalcPlan(newFocus) {
 
-        if (this.controlShip === undefined) { return; }
+        if (this.currentShip === undefined) { return; }
         if (this.progradeV === 0 && this.radialInV === 0) { return; }
 
-        let ship = this.controlShip;
+        let ship = this.currentShip;
 
         let refFrame = this.camFocus;
-        if (refFrame.name === this.controlShip.name) { refFrame = this.focus; }
+        if (refFrame.name === this.currentShip.name) { refFrame = this.focus; }
 
         let dvx = ship.vx - refFrame.vx;
         let dvy = ship.vy - refFrame.vy;

@@ -32,8 +32,6 @@ class Body {
         this.r = 0;
         this.vr = 0;
 
-        this.trail = [];
-
         this.trajectory = [];
         this.trajTarget = [];
         this.trajClosest;
@@ -70,6 +68,10 @@ class Body {
             this.orbit(parent);
             this.r = Math.atan2(this.vy - parent.vy, this.vx - parent.vx);
         }
+
+        // this.trajColor = "";
+        // this.planColor = "";
+        // this.targetPlanColor = "";
     }
 
     orbit(primary) {
@@ -82,7 +84,7 @@ class Body {
         this.vy += (primary.mass / dist) ** 0.5 * -dx / dist;
     }
 
-    calcGrav(bodies, precision, badPrecBodies, logMap) {
+    calcGravity(bodies, precision, badPrecBodies, logMap) {
 
         this.ax = 0;
         this.ay = 0;
@@ -159,65 +161,7 @@ class Body {
         }
     }
 
-    // switchParent(newParent) {
-
-    //     let x1 = this.parent.x;
-    //     let y1 = this.parent.y;
-
-    //     let x2 = newParent.x;
-    //     let y2 = newParent.y;
-
-    //     let dx = x2 - x1;
-    //     let dy = y2 - y1;
-
-    //     for (let point of this.trail) {
-    //         point.x -= dx;
-    //         point.y -= dy;
-    //     }
-
-    //     this.parent = newParent;
-    // }
-
-    // addTrail(logMap) {
-
-    //     if (this.parent === null) { return; }
-
-    //     this.trail.push({ x: this.x - this.parent.x, y: this.y - this.parent.y });
-
-    //     if (this.trail.length >= 3) {
-
-    //         // reduce nodes (if a trail section is shorter than radius/100, remove middle node)
-    //         let p1 = this.trail[this.trail.length - 1];
-    //         let p2 = this.trail[this.trail.length - 3];
-
-    //         let p1p2 = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
-    //         let p1p0 = p1.x ** 2 + p1.y ** 2;
-
-    //         if (p1p2 < p1p0 / 60 ** 2) { this.trail.splice(this.trail.length - 2, 1); }
-
-    //         // cut trail end (if trail end's distance to trail head is less than 1% of diameter, remove trail end nodes)
-    //         let pn = this.trail[this.trail.length - 1];
-    //         let pm = this.trail[Math.round(this.trail.length / 2)];
-
-    //         for (let i = 0; i < Math.round(this.trail.length / 2); i++) {
-
-    //             let p0 = this.trail[i];
-    //             let p0pn = (p0.x - pn.x) ** 2 + (p0.y - pn.y) ** 2;
-    //             let pmpn = (pm.x - pn.x) ** 2 + (pm.y - pn.y) ** 2;
-
-    //             if (p0pn < pmpn * 0.1 ** 2) {
-    //                 this.trail.splice(0, i + 1);
-    //                 i = 0;
-    //             }
-    //         }
-    //     }
-
-    //     if (this.trail.length > 720) {
-    //         this.trail.splice(0, this.trail.length - 720);
-    //     }
-    // }
-
-    calcTrajectory(logMap) {
+    calcBodyTraj(logMap) {
 
         if (this.parent === null) { return; }
 
@@ -259,7 +203,7 @@ class Body {
         }
     }
 
-    calcTrajAdv(target, logMap) {
+    calcShipTraj(target, logMap) {
 
         this.trajectory = [];
         this.trajTarget = [];
@@ -277,7 +221,7 @@ class Body {
         if (this.parent === null || target === undefined) { return; }
 
         if (target.name === this.parent.name) {
-            this.calcTrajAdvAlone(logMap);
+            this.calcShipTrajNoTarget(logMap);
             return;
         }
 
@@ -427,7 +371,8 @@ class Body {
         // if (apoapsisTime === 0 || apoapsisTime === time) { this.apoapsis = undefined; }
     }
 
-    calcTrajAdvAlone(logMap) {
+
+    calcShipTrajNoTarget(logMap) {
 
         // ship compared to parent
         let px = this.x - this.parent.x;
@@ -515,7 +460,7 @@ class Body {
         // if (apoapsisTime === 0 || apoapsisTime === time) { this.apoapsis = undefined; }
     }
 
-    calcPlan(progradeV, radialInV, target, isFollowSelf, logMap) {
+    calcShipPlan(progradeV, radialInV, target, isFollowShip, logMap) {
 
         this.plan = [];
         this.planTarget = [];
@@ -528,12 +473,8 @@ class Body {
 
         if (this.parent === null || target === undefined) { return; }
 
-        if (this.name === this.parent.name) {
-            this.calcPlanTargetAlone(target, logMap);
-            return;
-
-        } else if (target.name === this.parent.name) {
-            this.calcPlanAlone(progradeV, radialInV, logMap);
+        if (target.name === this.parent.name) {
+            this.calcPlanNoTarget(progradeV, radialInV, logMap);
             return;
         }
 
@@ -567,7 +508,7 @@ class Body {
         let dtvy = this.vy - target.vy;
         let dtdist = Math.hypot(dtvx, dtvy);
 
-        if (isFollowSelf) {
+        if (isFollowShip) {
             pvx += progradeV * pvx0 / dist - radialInV * pvy0 / dist;
             pvy += radialInV * pvx0 / dist + progradeV * pvy0 / dist;
         } else {
@@ -672,63 +613,7 @@ class Body {
         }
     }
 
-    calcPlanTargetAlone(target, logMap) {
-
-        // target compared to parent
-        let tx = target.x - this.parent.x;
-        let ty = target.y - this.parent.y;
-
-        this.trajTarget = [{ x: tx, y: ty }];
-
-        let tvx = target.vx - this.parent.vx;
-        let tvy = target.vy - this.parent.vy;
-
-        // prep find closest points
-        let closestDist;
-        let closestTime;
-        let time = 0;
-
-        for (time = 0; time < 1000; time++) {
-
-            // parent <- target
-            let dist2 = Math.hypot(tx, ty);
-            let grav2 = this.parent.mass / dist2 ** 2;
-
-            let tax = grav2 * -tx / dist2;
-            let tay = grav2 * -ty / dist2;
-
-            // find closest approach
-            if (closestDist === undefined) {
-                closestDist = dist2;
-
-            } else if (dist2 < closestDist) {
-                closestDist = dist2;
-                closestTime = time;
-                this.planTargetClosest = { x: tx, y: ty };
-            }
-
-            let planPrecision = Math.min(dist2 / Math.hypot(tvx, tvy) / 100);
-
-            // move target
-            tvx += tax * planPrecision;
-            tvy += tay * planPrecision;
-
-            tx += tvx * planPrecision;
-            ty += tvy * planPrecision;
-
-            this.planTarget.push({ x: tx, y: ty });
-
-            // completed loop, break
-            let dtt = Math.hypot(tx - this.trajTarget[0].x, ty - this.trajTarget[0].y);
-            if (dtt < dist2 / 60 && time > 1000 / 2) { break; }
-        }
-
-        if (closestTime === time) {
-            this.planTargetClosest = undefined;
-        }
-    }
-
-    calcPlanAlone(progradeV, radialInV, logMap) {
+    calcPlanNoTarget(progradeV, radialInV, logMap) {
 
         // ship compared to parent
         let px = this.x - this.parent.x;
@@ -792,38 +677,11 @@ class Body {
         }
     }
 
-    // drawTrail(ctx, camera, logMap) {
-
-    //     if (this.trail.length == 0) { return; }
-
-    //     // let zoom = 2 ** (camera.zoom / 4);
-
-    //     ctx.beginPath();
-    //     for (let i = 0; i < this.trail.length; i++) {
-
-    //         // let nx = (this.trail[i].x + this.parent.x - camera.x) / zoom + ctx.canvas.width / 2;
-    //         // let ny = (this.trail[i].y + this.parent.y - camera.y) / zoom + ctx.canvas.height / 2;
-
-    //         let np = this.calcXY(ctx, camera, this.trail[i].x + this.parent.x, this.trail[i].y + this.parent.y);
-    //         let nx = np.x;
-    //         let ny = np.y;
-
-    //         if (i === 0) {
-    //             ctx.moveTo(nx, ny);
-    //         } else {
-    //             ctx.lineTo(nx, ny);
-    //         }
-    //     }
-    //     // ctx.strokeStyle = this.color;
-    //     ctx.strokeStyle = "red";
-    //     ctx.stroke();
-    // }
-
-    drawTrajectory(ctx, camera, target, isFollowSelf, isHavePlan, logMap) {
+    drawTrajectory(ctx, camera, target, isFollowShip, isHavePlan, logMap) {
 
         if (this.trajectory.length == 0) { return; }
 
-        if (target !== undefined && !isFollowSelf) {
+        if (target !== undefined && !isFollowShip) {
 
             ctx.beginPath();
             for (let i = 0; i < this.trajFrameTarg.length; i++) {
@@ -887,12 +745,12 @@ class Body {
         }
     }
 
-    drawPlan(ctx, camera, isHavePlan, target, isFollowSelf, isPlanning, logMap) {
+    drawPlan(ctx, camera, isHavePlan, target, isFollowShip, isPlanning, logMap) {
 
         if (this.plan.length === 0) { return; }
         if (!isHavePlan) { return; }
 
-        if (target !== undefined && !isFollowSelf) {
+        if (target !== undefined && !isFollowShip) {
 
             ctx.beginPath();
             for (let i = 0; i < this.planFrameTarg.length; i++) {
@@ -1212,9 +1070,9 @@ class Body {
         }
     }
 
-    drawName(ctx, camera, isShip, isFollowSelf, stationsMap, logMap) {
+    drawName(ctx, camera, isShip, isFollowShip, stationsMap, logMap) {
 
-        if (isShip && isFollowSelf) { return; }
+        if (isShip && isFollowShip) { return; }
 
         let zoom = 2 ** (camera.zoom / 4);
 
