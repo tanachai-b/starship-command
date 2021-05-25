@@ -515,7 +515,7 @@ class Body {
         // if (apoapsisTime === 0 || apoapsisTime === time) { this.apoapsis = undefined; }
     }
 
-    calcPlan(progradeV, radialInV, target, logMap) {
+    calcPlan(progradeV, radialInV, target, isFollowSelf, logMap) {
 
         this.plan = [];
         this.planTarget = [];
@@ -547,10 +547,6 @@ class Body {
         let pvy0 = this.vy - this.parent.vy;
         let dist = Math.hypot(pvx0, pvy0);
 
-        // add planned velocity (progradeV, radialInV)
-        let pvx = pvx0 + progradeV * pvx0 / dist - radialInV * pvy0 / dist;
-        let pvy = pvy0 + radialInV * pvx0 / dist + progradeV * pvy0 / dist;
-
         // target compared to parent
         let tx = target.x - this.parent.x;
         let ty = target.y - this.parent.y;
@@ -561,6 +557,23 @@ class Body {
 
         let tvx = target.vx - this.parent.vx;
         let tvy = target.vy - this.parent.vy;
+
+
+        // add planned velocity (progradeV, radialInV)
+        let pvx = pvx0;
+        let pvy = pvy0;
+
+        let dtvx = this.vx - target.vx;
+        let dtvy = this.vy - target.vy;
+        let dtdist = Math.hypot(dtvx, dtvy);
+
+        if (isFollowSelf) {
+            pvx += progradeV * pvx0 / dist - radialInV * pvy0 / dist;
+            pvy += radialInV * pvx0 / dist + progradeV * pvy0 / dist;
+        } else {
+            pvx += progradeV * dtvx / dtdist - radialInV * dtvy / dtdist;
+            pvy += radialInV * dtvx / dtdist + progradeV * dtvy / dtdist;
+        }
 
         // prep find closest points
         let closestDist;

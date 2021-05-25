@@ -353,32 +353,33 @@ class Game {
             let refFrame = this.camFocus;
             if (refFrame.name === this.controlShip.name) { refFrame = this.focus; }
 
-            let dvx = this.controlShip.vx - refFrame.vx;
-            let dvy = this.controlShip.vy - refFrame.vy;
+            let ship = this.controlShip;
+
+            let dvx = ship.vx - refFrame.vx;
+            let dvy = ship.vy - refFrame.vy;
             let prograde = Math.atan2(dvy, dvx);
 
-            let curDir = this.controlShip.r;
+            let curDir = ship.r;
 
             let dist = ((((prograde + heading - curDir + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
-
 
             let precision = 10 ** (this.speed / 3);
 
             if (dist < 0) {
 
-                if (Math.sign(this.controlShip.vr) * this.controlShip.vr / power * this.controlShip.vr * precision / 2 > dist) {
-                    this.controlShip.vr -= power;
+                if (Math.sign(ship.vr) * ship.vr / power * ship.vr * precision / 2 > dist) {
+                    ship.vr -= power;
                     this.fuel -= power / 100;
                 } else {
-                    this.controlShip.vr += power;
+                    ship.vr += power;
                     this.fuel -= power / 100;
                 }
             } else {
-                if (Math.sign(this.controlShip.vr) * this.controlShip.vr / power * this.controlShip.vr * precision / 2 < dist) {
-                    this.controlShip.vr += power;
+                if (Math.sign(ship.vr) * ship.vr / power * ship.vr * precision / 2 < dist) {
+                    ship.vr += power;
                     this.fuel -= power / 100;
                 } else {
-                    this.controlShip.vr -= power;
+                    ship.vr -= power;
                     this.fuel -= power / 100;
                 }
             }
@@ -550,7 +551,7 @@ class Game {
 
     calcPlan() {
         if (this.controlShip === undefined) { return; }
-        this.controlShip.calcPlan(this.progradeV, this.radialInV, this.target, this.logMap);
+        this.controlShip.calcPlan(this.progradeV, this.radialInV, this.target, this.isFollowSelf, this.logMap);
     }
 
     toggleMode() {
@@ -1107,11 +1108,11 @@ class Game {
         topText.push("  Circularize Velocity : " + this.capitalizeFirstChar("", 29));
         topText.push("");
         topText.push("");
-        topText.push("                Plan : " + this.capitalizeFirstChar("", 29));
+        topText.push("               Plan dV : " + this.formatNumber(this.plannedFuel, 29));
         topText.push("---------------------   -----------------------------");
         topText.push("           Prograde dV : " + this.formatNumber(this.progradeV, 29));
         topText.push("          Radial-In dV : " + this.formatNumber(-this.radialInV, 29));
-        topText.push("              Total dV : " + this.formatNumber(-this.plannedFuel, 29));
+        // topText.push("              Total dV : " + this.formatNumber(-this.plannedFuel, 29));
         topText.push("");
         topText.push("          Available dV : " + this.formatNumber(this.fuel, 29));
         topText.push("                  Fuel : " + this.formatNumber(this.fuel, 29));
@@ -1389,140 +1390,117 @@ class Game {
         this.speed = Math.max(this.speed, -12);
     }
 
-    // cycleSolSys(direction) {
-
-    //     this.camSolSysIndex += direction;
-    //     this.camSolSysIndex = (this.camSolSysIndex + this.camSolSys.length) % this.camSolSys.length;
-    //     this.focus = this.camSolSys[this.camSolSysIndex];
-    //     this.target = this.camSolSys[this.camSolSysIndex];
-
-    //     // this.controlShip.switchParent(this.focus);
-    //     this.heading = "Manual";
-    //     // this.isFollowSelf = false;
-    //     this.changeFocus(this.focus);
-
-    //     this.camMoonIndex = 0;
-    //     this.camTargetIndex = 0;
-    // }
-
     refFrameUp() {
         if (this.focus.parent === null) { return; }
 
-        this.target = this.focus;
-        this.focus = this.focus.parent;
+        let newfocus = this.focus.parent;
+        let newtarget = this.focus;
 
-        if (!this.isFollowSelf) {
-            this.changeFocus(this.target);
+        if (this.isFollowSelf) {
+            this.recalcPlan(newfocus);
         } else {
-            this.changeFocus(this.focus);
+            this.recalcPlan(newtarget);
         }
 
+        this.focus = newfocus;
+        this.target = newtarget;
+
+        this.controlShip.parent = this.focus;
         this.heading = "Manual";
     }
 
     refFrameDown() {
-        this.focus = this.target;
 
-        if (!this.isFollowSelf) {
-            this.changeFocus(this.target);
-        } else {
-            this.changeFocus(this.focus);
+        let newfocus = this.target;
+
+        if (this.isFollowSelf) {
+            this.recalcPlan(newfocus);
         }
 
+        this.focus = newfocus;
+
+        this.controlShip.parent = this.focus;
         this.heading = "Manual";
-    }
-
-    changeFocus(newFocus) {
-
-        if (this.controlShip === undefined) { return; }
-
-        let ship = this.controlShip;
-        let vx = ship.vx - ship.parent.vx;
-        let vy = ship.vy - ship.parent.vy;
-        let dist = Math.hypot(vx, vy);
-
-        // update plan Vs
-        let nvx = ship.vx + this.progradeV * vx / dist - this.radialInV * vy / dist;
-        let nvy = ship.vy + this.progradeV * vy / dist + this.radialInV * vx / dist;
-
-        let fvx = ship.vx - newFocus.vx;
-        let fvy = ship.vy - newFocus.vy;
-        let fdist = Math.hypot(fvx, fvy);
-
-        let dvx = nvx - newFocus.vx - fvx;
-        let dvy = nvy - newFocus.vy - fvy;
-
-        let npv = dvx * fvx / fdist - dvy * -fvy / fdist;
-        let nrv = dvy * fvx / fdist + dvx * -fvy / fdist;
-
-        this.progradeV = npv;
-        this.radialInV = nrv;
-
-        ship.parent = newFocus;
     }
 
     cycleTarget(direction) {
 
-        // if (this.camSolSysIndex === 0) {
-
-        //     this.camTargetIndex += direction;
-        //     this.camTargetIndex = (this.camTargetIndex + this.camSolSys.length) % this.camSolSys.length;
-        //     this.target = this.camSolSys[this.camTargetIndex];
-
-        // } else {
-        //     let moons = this.camMoons[this.camSolSys[this.camSolSysIndex].name];
-        //     if (moons === null) { return; }
-
-        //     this.camTargetIndex += direction;
-        //     this.camTargetIndex = (this.camTargetIndex + moons.length) % moons.length;
-        //     this.target = moons[this.camTargetIndex];
-        // }
+        let newtarget = this.target;
 
         while (true) {
             let childLength = this.focus.child.length;
-            let childIndex = this.focus.childMap[this.target.name];
+            let childIndex = this.focus.childMap[newtarget.name];
 
             if (childLength === 0) { return; }
 
             if (childIndex === undefined) {
 
                 if (direction > 0) {
-                    this.target = this.focus.child[0];
-
+                    newtarget = this.focus.child[0];
                 } else {
-                    this.target = this.focus.child[this.focus.child.length - 1];
+                    newtarget = this.focus.child[this.focus.child.length - 1];
                 }
 
             } else {
                 childIndex += direction
 
                 if (childIndex < 0 || childIndex >= childLength) {
-                    this.target = this.focus;
-
+                    newtarget = this.focus;
                 } else {
-                    this.target = this.focus.child[childIndex];
+                    newtarget = this.focus.child[childIndex];
                 }
             }
 
-            if (!this.isFollowSelf) {
-                this.changeFocus(this.target);
-            } else {
-                this.changeFocus(this.focus);
-            }
-            this.heading = "Manual";
-
-            if (this.target.name !== this.controlShip.name) { break; }
+            if (newtarget.name !== this.controlShip.name) { break; }
         }
+
+        if (!this.isFollowSelf) {
+            this.recalcPlan(newtarget);
+        }
+
+        this.target = newtarget;
+        this.heading = "Manual";
     }
 
     toggleFollowSelf() {
         this.isFollowSelf = !this.isFollowSelf;
 
-        if (!this.isFollowSelf) {
-            this.changeFocus(this.target);
+        if (this.isFollowSelf) {
+            this.recalcPlan(this.focus);
         } else {
-            this.changeFocus(this.focus);
+            this.recalcPlan(this.target);
         }
-        this.heading = "Manual";
+    }
+
+    recalcPlan(newFocus) {
+
+        if (this.controlShip === undefined) { return; }
+        if (this.progradeV === 0 && this.radialInV === 0) { return; }
+
+        let ship = this.controlShip;
+
+        let refFrame = this.camFocus;
+        if (refFrame.name === this.controlShip.name) { refFrame = this.focus; }
+
+        let dvx = ship.vx - refFrame.vx;
+        let dvy = ship.vy - refFrame.vy;
+        let dist = Math.hypot(dvx, dvy);
+
+        // update plan Vs
+        let nvx = ship.vx + this.progradeV * dvx / dist - this.radialInV * dvy / dist;
+        let nvy = ship.vy + this.progradeV * dvy / dist + this.radialInV * dvx / dist;
+
+        let fvx = ship.vx - newFocus.vx;
+        let fvy = ship.vy - newFocus.vy;
+        let fdist = Math.hypot(fvx, fvy);
+
+        let dvx2 = nvx - newFocus.vx - fvx;
+        let dvy2 = nvy - newFocus.vy - fvy;
+
+        let npv = dvx2 * fvx / fdist - dvy2 * -fvy / fdist;
+        let nrv = dvy2 * fvx / fdist + dvx2 * -fvy / fdist;
+
+        this.progradeV = npv;
+        this.radialInV = nrv;
     }
 }
