@@ -45,7 +45,7 @@ class Simulator {
         this.engine = "Thruster";
 
         this.progradeV = 0;
-        this.radialInV = 0;
+        this.radialOutV = 0;
         this.plannedFuel = 0;
 
         this.maxFuel = 999999;
@@ -268,7 +268,7 @@ class Simulator {
             else if (this.heading === "Retrograde") { heading = Math.PI; }
             else if (this.heading === "Radial-out") { heading = Math.PI / 2; }
             else if (this.heading === "Radial-in") { heading = -Math.PI / 2; }
-            else if (this.heading === "Planned") { heading = Math.atan2(this.radialInV, this.progradeV); }
+            else if (this.heading === "Planned") { heading = Math.atan2(this.radialOutV, this.progradeV); }
             else { return; }
 
             let refFrame = this.camFocus;
@@ -337,10 +337,10 @@ class Simulator {
         if (this.mode === "Planning") {
             if (this.pressedKeys.W) { this.progradeV += power; }
             if (this.pressedKeys.S) { this.progradeV -= power; }
-            if (this.pressedKeys.A) { this.radialInV -= power; }
-            if (this.pressedKeys.D) { this.radialInV += power; }
+            if (this.pressedKeys.A) { this.radialOutV -= power; }
+            if (this.pressedKeys.D) { this.radialOutV += power; }
 
-            this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
+            this.plannedFuel = Math.hypot(this.progradeV, this.radialOutV);
 
         } else {
 
@@ -366,7 +366,7 @@ class Simulator {
                 this.fuel = Math.max(this.fuel, 0);
 
                 // minus current thrust from planned route / planned fuel
-                if (this.progradeV !== 0 || this.radialInV !== 0) {
+                if (this.progradeV !== 0 || this.radialOutV !== 0) {
 
                     let ship = this.currentShip;
 
@@ -377,8 +377,8 @@ class Simulator {
                     let dvy = ship.vy - refFrame.vy;
                     let dist = Math.hypot(dvx, dvy);
 
-                    let pvx = dvx + this.progradeV * dvx / dist - this.radialInV * dvy / dist;
-                    let pvy = dvy + this.radialInV * dvx / dist + this.progradeV * dvy / dist;
+                    let pvx = dvx + this.progradeV * dvx / dist - this.radialOutV * dvy / dist;
+                    let pvy = dvy + this.radialOutV * dvx / dist + this.progradeV * dvy / dist;
 
                     let nvx = dvx + vx1;
                     let nvy = dvy + vy1;
@@ -388,9 +388,9 @@ class Simulator {
                     let dpvy = pvy - nvy;
 
                     this.progradeV = dpvx * nvx / ndist - dpvy * -nvy / ndist;
-                    this.radialInV = dpvy * nvx / ndist + dpvx * -nvy / ndist;
+                    this.radialOutV = dpvy * nvx / ndist + dpvx * -nvy / ndist;
 
-                    this.plannedFuel = Math.hypot(this.progradeV, this.radialInV);
+                    this.plannedFuel = Math.hypot(this.progradeV, this.radialOutV);
                 }
 
                 this.currentShip.vx += vx1;
@@ -459,7 +459,7 @@ class Simulator {
 
     calcShipPlan() {
         if (this.currentShip === undefined) { return; }
-        this.currentShip.calcShipPlan(this.progradeV, this.radialInV, this.target, this.isFollowShip, this.logMap);
+        this.currentShip.calcShipPlan(this.progradeV, this.radialOutV, this.target, this.isFollowShip, this.logMap);
     }
 
     moveCamera() {
@@ -571,20 +571,20 @@ class Simulator {
         offScreenCanvas.height = this.c.height;
         let offCtx = offScreenCanvas.getContext("2d");
 
-        let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
+        let isHavePlan = this.progradeV !== 0 || this.radialOutV !== 0;
         let isPlanning = this.mode === "Planning";
 
         if (this.isDrawTrajToPrimary) {
             for (let i = this.bodies.length - 1; i >= 0; i--) {
                 if (this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name) { continue; }
-                this.bodies[i].drawTraj(offCtx, this.camera, undefined, false, false, this.logMap);
+                this.bodies[i].drawTraj(offCtx, this.camera, this.target, this.isFollowShip, this.logMap);
             }
         }
 
         if (this.currentShip !== undefined) {
-            this.currentShip.drawTraj(offCtx, this.camera, this.target, this.isFollowShip, isHavePlan, this.logMap);
+            this.currentShip.drawTraj(offCtx, this.camera, this.target, this.isFollowShip, this.logMap);
             this.currentShip.drawPlan(offCtx, this.camera, isHavePlan, this.target, this.isFollowShip, isPlanning, this.logMap);
-            this.currentShip.drawPlanTarget(offCtx, this.camera, isHavePlan, isPlanning, this.logMap);
+            this.currentShip.drawPlanTarget(offCtx, this.camera, isPlanning, this.logMap);
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
@@ -764,7 +764,7 @@ class Simulator {
     addSideTextRight(offCtx) {
 
         let ship = this.currentShip;
-        let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
+        let isHavePlan = this.progradeV !== 0 || this.radialOutV !== 0;
 
         let primary = "N/A";
         if (this.focus.parent !== null) { primary = this.focus.parent.name; }
@@ -903,15 +903,15 @@ class Simulator {
         topText.push("");
         topText.push("      Closest Approach          Actual            Plan");
         topText.push("---------------------   -----------------------------");
-        topText.push("              Distance : " + this.formatNumber(closestDist, 13) + this.formatNumber(planDistText, 16, true));
-        topText.push("     Relative Velocity : " + this.formatNumber(approachV, 13) + this.formatNumber(planApproachV, 16, true));
+        topText.push("              Distance : " + this.formatNumber(closestDist, 13) + this.formatNumber(planDistText, 16));
+        topText.push("     Relative Velocity : " + this.formatNumber(approachV, 13) + this.formatNumber(planApproachV, 16));
         topText.push("  Circularize Velocity : " + this.capitalizeFirstChar("", 29));
         topText.push("");
         topText.push("");
         topText.push("               Plan dV : " + this.formatNumber(this.plannedFuel, 29));
         topText.push("---------------------   -----------------------------");
         topText.push("           Prograde dV : " + this.formatNumber(this.progradeV, 29));
-        topText.push("          Radial-In dV : " + this.formatNumber(-this.radialInV, 29));
+        topText.push("          Radial-Out dV : " + this.formatNumber(this.radialOutV, 29));
         topText.push("");
         topText.push("          Available dV : " + this.formatNumber(this.fuel, 29));
         topText.push("                  Fuel : " + this.formatNumber(this.fuel, 29));
@@ -1235,7 +1235,6 @@ class Simulator {
         if (this.isPause) { return; }
 
         if (this.mode === "Planning") { return; }
-        if (this.engine === "RCS") { return; }
 
         let headingGoal = "Manual";
         switch (key) {
@@ -1246,6 +1245,8 @@ class Simulator {
             case "F": headingGoal = "Planned"; break;
             case "G": headingGoal = "Hold"; break;
         }
+
+        if (this.engine === "RCS" && headingGoal !== "Hold") { return; }
 
         if (this.heading !== headingGoal) {
             this.heading = headingGoal;
@@ -1287,7 +1288,7 @@ class Simulator {
         if (this.isPause) { return; }
 
         this.progradeV = 0;
-        this.radialInV = 0;
+        this.radialOutV = 0;
         this.plannedFuel = 0;
 
         this.mode = "Pilot";
@@ -1375,14 +1376,12 @@ class Simulator {
         } else {
             this.recalcPlan(this.target);
         }
-
-        this.heading = "Manual";
     }
 
     recalcPlan(newFocus) {
 
         if (this.currentShip === undefined) { return; }
-        if (this.progradeV === 0 && this.radialInV === 0) { return; }
+        if (this.progradeV === 0 && this.radialOutV === 0) { return; }
 
         let ship = this.currentShip;
 
@@ -1394,8 +1393,8 @@ class Simulator {
         let dist = Math.hypot(dvx, dvy);
 
         // update plan Vs
-        let nvx = ship.vx + this.progradeV * dvx / dist - this.radialInV * dvy / dist;
-        let nvy = ship.vy + this.progradeV * dvy / dist + this.radialInV * dvx / dist;
+        let nvx = ship.vx + this.progradeV * dvx / dist - this.radialOutV * dvy / dist;
+        let nvy = ship.vy + this.progradeV * dvy / dist + this.radialOutV * dvx / dist;
 
         let fvx = ship.vx - newFocus.vx;
         let fvy = ship.vy - newFocus.vy;
@@ -1408,6 +1407,7 @@ class Simulator {
         let nrv = dvy2 * fvx / fdist + dvx2 * -fvy / fdist;
 
         this.progradeV = npv;
-        this.radialInV = nrv;
+        this.radialOutV = nrv;
+        this.plannedFuel = Math.hypot(this.progradeV, this.radialOutV);
     }
 }

@@ -472,7 +472,7 @@ class Body {
         // if (apoapsisTime === 0 || apoapsisTime === time) { this.apoapsis = undefined; }
     }
 
-    calcShipPlan(progradeV, radialInV, target, isFollowShip, logMap) {
+    calcShipPlan(progradeV, radialOutV, target, isFollowShip, logMap) {
 
         this.plan = [];
         this.planTarget = [];
@@ -486,7 +486,7 @@ class Body {
         if (this.parent === null || target === undefined) { return; }
 
         if (target.name === this.parent.name) {
-            this.calcPlanNoTarget(progradeV, radialInV, logMap);
+            this.calcPlanNoTarget(progradeV, radialOutV, logMap);
             return;
         }
 
@@ -511,7 +511,6 @@ class Body {
         let tvx = target.vx - this.parent.vx;
         let tvy = target.vy - this.parent.vy;
 
-
         // add planned velocity (progradeV, radialInV)
         let pvx = pvx0;
         let pvy = pvy0;
@@ -521,11 +520,11 @@ class Body {
         let dtdist = Math.hypot(dtvx, dtvy);
 
         if (isFollowShip) {
-            pvx += progradeV * pvx0 / dist - radialInV * pvy0 / dist;
-            pvy += radialInV * pvx0 / dist + progradeV * pvy0 / dist;
+            pvx += progradeV * pvx0 / dist - radialOutV * pvy0 / dist;
+            pvy += radialOutV * pvx0 / dist + progradeV * pvy0 / dist;
         } else {
-            pvx += progradeV * dtvx / dtdist - radialInV * dtvy / dtdist;
-            pvy += radialInV * dtvx / dtdist + progradeV * dtvy / dtdist;
+            pvx += progradeV * dtvx / dtdist - radialOutV * dtvy / dtdist;
+            pvy += radialOutV * dtvx / dtdist + progradeV * dtvy / dtdist;
         }
 
         // prep find closest points
@@ -625,7 +624,7 @@ class Body {
         }
     }
 
-    calcPlanNoTarget(progradeV, radialInV, logMap) {
+    calcPlanNoTarget(progradeV, radialOutV, logMap) {
 
         // ship compared to parent
         let px = this.x - this.parent.x;
@@ -638,8 +637,8 @@ class Body {
         let dist = Math.hypot(pvx0, pvy0);
 
         // add planned velocity (progradeV, radialInV)
-        let pvx = pvx0 + progradeV * pvx0 / dist - radialInV * pvy0 / dist;
-        let pvy = pvy0 + radialInV * pvx0 / dist + progradeV * pvy0 / dist;
+        let pvx = pvx0 + progradeV * pvx0 / dist - radialOutV * pvy0 / dist;
+        let pvy = pvy0 + radialOutV * pvx0 / dist + progradeV * pvy0 / dist;
 
         // prep find closest points
         let closestDist;
@@ -689,7 +688,7 @@ class Body {
         }
     }
 
-    drawTraj(ctx, camera, target, isFollowShip, isHavePlan, logMap) {
+    drawTraj(ctx, camera, target, isFollowShip, logMap) {
 
         if (this.trajectory.length == 0) { return; }
 
@@ -842,7 +841,7 @@ class Body {
         }
     }
 
-    drawPlanTarget(ctx, camera, isHavePlan, isPlanning, logMap) {
+    drawPlanTarget(ctx, camera, isPlanning, logMap) {
 
         if (this.planTarget.length == 0) { return; }
 
