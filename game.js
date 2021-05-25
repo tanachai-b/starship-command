@@ -617,6 +617,7 @@ class Simulator {
         offScreenCanvas.height = this.c.height;
         let offCtx = offScreenCanvas.getContext("2d");
 
+        this.addHeadingIndic(offCtx);
         this.addCrossHair(offCtx);
         this.addSideTextLeft(offCtx);
         this.addSideTextRight(offCtx);
@@ -631,50 +632,103 @@ class Simulator {
         this.ctx.drawImage(offScreenCanvas, 0, 0);
     }
 
+    addHeadingIndic(offCtx) {
+
+        if (this.heading === "Manual") { return; }
+
+        // calc angle
+        let ship = this.currentShip;
+
+        let refFrame = this.camFocus;
+        if (refFrame.name === ship.name) { refFrame = this.focus; }
+
+        let dvx = ship.vx - refFrame.vx;
+        let dvy = ship.vy - refFrame.vy;
+
+        let zoom = 2 ** (this.camera.zoom / 4);
+
+        // prep draw
+        let color = "#00FFA3";
+        if (this.mode === "Planning") { color = "#FF307C"; }
+        if (this.engine === "RCS") { color = "#001EFF"; }
+
+        let p0 = new Point(24, 48);
+        let p1 = new Point(48, 48);
+        let p2 = new Point(48, 24);
+        let p3 = new Point(-24, 48);
+        let p4 = new Point(-48, 48);
+        let p5 = new Point(-48, 24);
+        let p6 = new Point(-24, -48);
+        let p7 = new Point(-48, -48);
+        let p8 = new Point(-48, -24);
+        let p9 = new Point(24, -48);
+        let p10 = new Point(48, -48);
+        let p11 = new Point(48, -24);
+
+        let l0 = new Line([p0, p1, p2]);
+        let l1 = new Line([p3, p4, p5]);
+        let l2 = new Line([p6, p7, p8]);
+        let l3 = new Line([p9, p10, p11]);
+
+        let crossHair = new Shape([l0, l1, l2, l3]);
+
+        let crossHair1 = crossHair.project(new Camera(0, 0, Math.atan2(dvy, dvx), 0), this.logMap);
+        let cam1 = new Camera((-ship.x + this.camera.x) / zoom, (-ship.y + this.camera.y) / zoom, this.camera.r, 0);
+
+        crossHair1.draw(cam1, offCtx, 1, color, this.logMap);
+    }
+
     addCrossHair(offCtx) {
 
-        let cx = this.c.width / 2;
-        let cy = this.c.height / 2;
+        // calc angle
+        let ship = this.currentShip;
 
-        offCtx.beginPath();
-        offCtx.moveTo(cx + -64, cy + 0);
-        offCtx.lineTo(cx + -32, cy + 0);
-        offCtx.moveTo(cx + 32, cy + 0);
-        offCtx.lineTo(cx + 64, cy + 0);
-        offCtx.moveTo(cx + 0, cy + -64);
-        offCtx.lineTo(cx + 0, cy + -32);
-        offCtx.moveTo(cx + 0, cy + 32);
-        offCtx.lineTo(cx + 0, cy + 64);
+        let refFrame = this.camFocus;
+        if (refFrame.name === ship.name) { refFrame = this.focus; }
 
-        offCtx.lineWidth = 2;
-        offCtx.strokeStyle = "#00FFA3";
-        if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
-        if (this.engine === "RCS") { offCtx.strokeStyle = "#001EFF"; }
-        offCtx.stroke();
+        let dvx = ship.vx - refFrame.vx;
+        let dvy = ship.vy - refFrame.vy;
+
+        let zoom = 2 ** (this.camera.zoom / 4);
+
+        // prep draw
+        let color = "#00FFA3";
+        if (this.mode === "Planning") { color = "#FF307C"; }
+        if (this.engine === "RCS") { color = "#001EFF"; }
+
+        let p0 = new Point(-64, 0);
+        let p1 = new Point(-32, 0);
+        let p2 = new Point(32, 0);
+        let p3 = new Point(96, 0);
+        let p4 = new Point(0, -64);
+        let p5 = new Point(0, -32);
+        let p6 = new Point(0, 32);
+        let p7 = new Point(0, 64);
+
+        let l0 = new Line([p0, p1]);
+        let l1 = new Line([p2, p3]);
+        let l2 = new Line([p4, p5]);
+        let l3 = new Line([p6, p7]);
+
+        let crossHair = new Shape([l0, l1, l2, l3]);
+
+        let crossHair1 = crossHair.project(new Camera(0, 0, Math.atan2(dvy, dvx), 0), this.logMap);
+        let cam1 = new Camera((-ship.x + this.camera.x) / zoom, (-ship.y + this.camera.y) / zoom, this.camera.r, 0);
 
         if (this.frameCount % 100 < 80) {
+            if (this.heading === "Retrograde") { crossHair1.lineList[0].draw(cam1, offCtx, 2, color, this.logMap); }
+            if (this.heading === "Prograde") { crossHair1.lineList[1].draw(cam1, offCtx, 2, color, this.logMap); }
+            if (this.heading === "Radial-in") { crossHair1.lineList[2].draw(cam1, offCtx, 2, color, this.logMap); }
+            if (this.heading === "Radial-out") { crossHair1.lineList[3].draw(cam1, offCtx, 2, color, this.logMap); }
+            if (this.heading === "Hold") { crossHair1.draw(cam1, offCtx, 2, color, this.logMap); }
+            if (this.heading === "Planned") { crossHair1.draw(cam1, offCtx, 2, color, this.logMap); }
+        }
 
-            if (this.heading !== "Manual") {
-                offCtx.beginPath();
-                offCtx.moveTo(cx + 24, cy + 48);
-                offCtx.lineTo(cx + 48, cy + 48);
-                offCtx.lineTo(cx + 48, cy + 24);
-                offCtx.moveTo(cx - 24, cy + 48);
-                offCtx.lineTo(cx - 48, cy + 48);
-                offCtx.lineTo(cx - 48, cy + 24);
-                offCtx.moveTo(cx - 24, cy - 48);
-                offCtx.lineTo(cx - 48, cy - 48);
-                offCtx.lineTo(cx - 48, cy - 24);
-                offCtx.moveTo(cx + 24, cy - 48);
-                offCtx.lineTo(cx + 48, cy - 48);
-                offCtx.lineTo(cx + 48, cy - 24);
-            }
-
-            offCtx.lineWidth = 1;
-            offCtx.strokeStyle = "#00FFA3";
-            if (this.mode === "Planning") { offCtx.strokeStyle = "#FF307C"; }
-            if (this.engine === "RCS") { offCtx.strokeStyle = "#006EFF"; }
-            offCtx.stroke();
+        if (this.heading !== "Hold" && this.heading !== "Planned" || this.heading === "Manual") {
+            if (this.heading !== "Retrograde") { crossHair1.lineList[0].draw(cam1, offCtx, 2, color, this.logMap); }
+            if (this.heading !== "Prograde") { crossHair1.lineList[1].draw(cam1, offCtx, 2, color, this.logMap); }
+            if (this.heading !== "Radial-in") { crossHair1.lineList[2].draw(cam1, offCtx, 2, color, this.logMap); }
+            if (this.heading !== "Radial-out") { crossHair1.lineList[3].draw(cam1, offCtx, 2, color, this.logMap); }
         }
     }
 
@@ -1234,8 +1288,6 @@ class Simulator {
 
         if (this.isPause) { return; }
 
-        if (this.mode === "Planning") { return; }
-
         let headingGoal = "Manual";
         switch (key) {
             case "W": headingGoal = "Prograde"; break;
@@ -1247,6 +1299,7 @@ class Simulator {
         }
 
         if (this.engine === "RCS" && headingGoal !== "Hold") { return; }
+        if (this.engine === "Planning" && headingGoal !== "Hold") { return; }
 
         if (this.heading !== headingGoal) {
             this.heading = headingGoal;
