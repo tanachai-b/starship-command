@@ -1,5 +1,19 @@
 "use strict";
 
+class Camera {
+    constructor(x, y, r, zoom) {
+
+        this.x = x;
+        this.y = y;
+        this.r = r;
+        this.zoom = zoom;
+
+        this.vx = 0;
+        this.vy = 0;
+        this.vr = 0;
+    }
+}
+
 class Body {
 
     constructor(name, color = "#888888", radius, density, parent, distance, angle) {
@@ -17,20 +31,19 @@ class Body {
         this.child = [];
         this.childMap = {};
 
-        this.x = distance * Math.cos(-angle / 180 * Math.PI);
-        this.y = distance * Math.sin(-angle / 180 * Math.PI);
-
         this.lastx;
         this.lasty;
 
+        this.x = distance * Math.cos(-angle / 180 * Math.PI);
+        this.y = distance * Math.sin(-angle / 180 * Math.PI);
+        this.r = 0;
+
         this.vx = 0;
         this.vy = 0;
+        this.vr = 0;
 
         this.ax = 0;
         this.ay = 0;
-
-        this.r = 0;
-        this.vr = 0;
 
         this.trajectory = [];
         this.trajTarget = [];
@@ -52,7 +65,7 @@ class Body {
 
         this.periapsis;
         this.apoapsis;
-        this.argPeri;
+        this.argOfPeri;
 
         if (parent !== null) {
 
@@ -65,7 +78,7 @@ class Body {
             this.vx = parent.vx;
             this.vy = parent.vy;
 
-            this.orbit(parent);
+            this.setOrbit(parent);
             this.r = Math.atan2(this.vy - parent.vy, this.vx - parent.vx);
         }
 
@@ -74,7 +87,7 @@ class Body {
         // this.targetPlanColor = "";
     }
 
-    orbit(primary) {
+    setOrbit(primary) {
 
         let dx = this.x - primary.x;
         let dy = this.y - primary.y;
@@ -216,7 +229,7 @@ class Body {
 
         this.periapsis = undefined;
         this.apoapsis = undefined;
-        this.argPeri = undefined;
+        this.argOfPeri = undefined;
 
         if (this.parent === null || target === undefined) { return; }
 
@@ -309,12 +322,12 @@ class Body {
             // find periapsis
             if (this.periapsis === undefined) {
                 this.periapsis = dist;
-                this.argPeri = Math.atan2(py, px);
+                this.argOfPeri = Math.atan2(py, px);
                 periapsisTime = time;
 
             } else if (dist < this.periapsis) {
                 this.periapsis = dist;
-                this.argPeri = Math.atan2(py, px);
+                this.argOfPeri = Math.atan2(py, px);
                 periapsisTime = time;
             }
 
@@ -371,7 +384,6 @@ class Body {
         // if (apoapsisTime === 0 || apoapsisTime === time) { this.apoapsis = undefined; }
     }
 
-
     calcShipTrajNoTarget(logMap) {
 
         // ship compared to parent
@@ -416,12 +428,12 @@ class Body {
             // find periapsis
             if (this.periapsis === undefined) {
                 this.periapsis = dist;
-                this.argPeri = Math.atan2(py, px);
+                this.argOfPeri = Math.atan2(py, px);
                 periapsisTime = time;
 
             } else if (dist < this.periapsis) {
                 this.periapsis = dist;
-                this.argPeri = Math.atan2(py, px);
+                this.argOfPeri = Math.atan2(py, px);
                 periapsisTime = time;
             }
 
@@ -677,11 +689,11 @@ class Body {
         }
     }
 
-    drawTrajectory(ctx, camera, target, isFollowShip, isHavePlan, logMap) {
+    drawTraj(ctx, camera, target, isFollowShip, isHavePlan, logMap) {
 
         if (this.trajectory.length == 0) { return; }
 
-        if (target !== undefined && !isFollowShip) {
+        if (!isFollowShip) {
 
             ctx.beginPath();
             for (let i = 0; i < this.trajFrameTarg.length; i++) {
@@ -750,7 +762,7 @@ class Body {
         if (this.plan.length === 0) { return; }
         if (!isHavePlan) { return; }
 
-        if (target !== undefined && !isFollowShip) {
+        if (!isFollowShip) {
 
             ctx.beginPath();
             for (let i = 0; i < this.planFrameTarg.length; i++) {

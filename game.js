@@ -1,26 +1,12 @@
 "use strict";
 
-class Camera {
-    constructor(x, y, r, zoom) {
-
-        this.x = x;
-        this.y = y;
-        this.r = r;
-        this.zoom = zoom;
-
-        this.vx = 0;
-        this.vy = 0;
-        this.vr = 0;
-    }
-}
-
-class Game {
+class Simulator {
 
     constructor() {
 
         this.version = "V0.0.1 (2021-05-23)";
 
-        this.c = document.getElementById("canvas");
+        this.c = document.getElementById("simulator");
         this.ctx = this.c.getContext("2d");
         this.starryBackground;
         this.scanlineOverlay;
@@ -30,8 +16,8 @@ class Game {
         this.zoom = 25;
         this.pressedKeys = {};
 
-        this.enableBlurEffect = true;
-        this.drawTrajToPrimary = false;
+        this.isEnableBlurEffect = true;
+        this.isDrawTrajToPrimary = false;
 
         this.lastFrameTime;
         this.frameRate;
@@ -68,17 +54,18 @@ class Game {
         // this.maxCargo = 10000;
         // this.cargo = 10000;
         // this.cash = 0;
+
+        this.initiate();
+        this.buildMap();
+        this.simLoop();
     }
 
     initiate() {
-
         document.body.addEventListener("keydown", this.keydown.bind(this), false);
         document.body.addEventListener("keyup", this.keyup.bind(this), false);
-
-        this.buildGameMap();
     }
 
-    buildGameMap() {
+    buildMap() {
 
         let sun = new Body("sun", "#FFF200", 696340, 1.409, null, 0, 0);
         this.bodies.push(sun);
@@ -187,7 +174,7 @@ class Game {
         this.target = earth;
     }
 
-    async gameLoop() {
+    async simLoop() {
 
         const timer = ms => new Promise(res => setTimeout(res, ms));
 
@@ -464,7 +451,7 @@ class Game {
             if (this.currentShip !== undefined && body.name === this.currentShip.name) {
                 body.calcShipTraj(this.target, this.logMap);
 
-            } else if (this.drawTrajToPrimary) {
+            } else if (this.isDrawTrajToPrimary) {
                 body.calcBodyTraj(this.logMap);
             }
         }
@@ -560,7 +547,7 @@ class Game {
         this.ctx.translate(-this.camera.x / 10000000, -this.camera.y / 10000000);
         this.ctx.translate(-cw, -ch);
 
-        if (this.enableBlurEffect) {
+        if (this.isEnableBlurEffect) {
             this.ctx.filter = "blur(16px)";
             this.ctx.drawImage(this.starryBackground, 0, 0);
         }
@@ -582,61 +569,39 @@ class Game {
         let offScreenCanvas = document.createElement("canvas");
         offScreenCanvas.width = this.c.width;
         offScreenCanvas.height = this.c.height;
-
         let offCtx = offScreenCanvas.getContext("2d");
 
-        for (let i = this.bodies.length - 1; i >= 0; i--) {
+        let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
+        let isPlanning = this.mode === "Planning";
 
-            let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
-
-            if (this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, this.target, this.isFollowShip, isHavePlan, this.logMap);
-
-            } else if (this.drawTrajToPrimary) {
-                this.bodies[i].drawTrajectory(offCtx, this.camera, undefined, false, isHavePlan, this.logMap);
+        if (this.isDrawTrajToPrimary) {
+            for (let i = this.bodies.length - 1; i >= 0; i--) {
+                if (this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name) { continue; }
+                this.bodies[i].drawTraj(offCtx, this.camera, undefined, false, false, this.logMap);
             }
         }
 
-        for (let i = this.bodies.length - 1; i >= 0; i--) {
-
-            let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
-            let isPlanning = this.mode === "Planning";
-
-            this.bodies[i].drawPlanTarget(offCtx, this.camera, isHavePlan, isPlanning, this.logMap);
-
-            if (this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name) {
-                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, this.target, this.isFollowShip, isPlanning, this.logMap);
-
-            } else if (this.drawTrajToPrimary) {
-                this.bodies[i].drawPlan(offCtx, this.camera, isHavePlan, undefined, false, false, this.logMap);
-            }
+        if (this.currentShip !== undefined) {
+            this.currentShip.drawTraj(offCtx, this.camera, this.target, this.isFollowShip, isHavePlan, this.logMap);
+            this.currentShip.drawPlan(offCtx, this.camera, isHavePlan, this.target, this.isFollowShip, isPlanning, this.logMap);
+            this.currentShip.drawPlanTarget(offCtx, this.camera, isHavePlan, isPlanning, this.logMap);
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
-
             let isShip = this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name;
             let isFuelStation = this.fuelStationsMap[this.bodies[i].name] !== undefined;
-
             this.bodies[i].drawBody(offCtx, this.camera, isShip, isFuelStation, this.logMap);
         }
 
         for (let i = this.bodies.length - 1; i >= 0; i--) {
-
             let isShip = this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name;
             let isFocus = this.bodies[i].name === this.focus.name;
-            let isPlanning = this.mode === "Planning";
             let isTarget = this.bodies[i].name === this.target.name;
-            let isHavePlan = this.progradeV !== 0 || this.radialInV !== 0;
-
             this.bodies[i].drawMarker(offCtx, this.camera, isShip, isFocus, isPlanning, isTarget, isHavePlan, this.logMap);
-        }
-
-        for (let i = this.bodies.length - 1; i >= 0; i--) {
-            let isShip = this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name;
             this.bodies[i].drawName(offCtx, this.camera, isShip, this.isFollowShip, this.fuelStationsMap, this.logMap);
         }
 
-        if (this.enableBlurEffect) {
+        if (this.isEnableBlurEffect) {
             this.ctx.filter = "blur(16px)";
             this.ctx.drawImage(offScreenCanvas, 0, 0);
         }
@@ -650,7 +615,6 @@ class Game {
         let offScreenCanvas = document.createElement("canvas");
         offScreenCanvas.width = this.c.width;
         offScreenCanvas.height = this.c.height;
-
         let offCtx = offScreenCanvas.getContext("2d");
 
         this.addCrossHair(offCtx);
@@ -658,7 +622,7 @@ class Game {
         this.addSideTextRight(offCtx);
         this.addModeBorder(offCtx);
 
-        if (this.enableBlurEffect) {
+        if (this.isEnableBlurEffect) {
             this.ctx.filter = "blur(16px)";
             this.ctx.drawImage(offScreenCanvas, 0, 0);
         }
@@ -808,14 +772,14 @@ class Game {
         let periapsis = "N/A";
         let apoapsis = "N/A";
         let semimajor = "N/A";
-        let argPeri = "N/A";
+        let argOfPeri = "N/A";
         let period = "N/A";
 
         if (ship !== undefined) {
             periapsis = ship.periapsis;
             apoapsis = ship.apoapsis;
             semimajor = (periapsis + apoapsis) / 2;
-            argPeri = ship.argPeri;
+            argOfPeri = ship.argOfPeri;
             period = 2 * Math.PI * (semimajor ** 3 / this.focus.mass) ** (1 / 2);
         }
 
@@ -887,12 +851,6 @@ class Game {
             approachV = ship.trajApproachV;
         }
 
-        // fuel usage (planned)
-        let plannedDeltaV = "N/A";
-        if (this.plannedFuel > 0) {
-            plannedDeltaV = this.plannedFuel;
-        }
-
         // closest approach (planned)
         let planDistText = "N/A";
         let planApproachV = "N/A";
@@ -923,7 +881,7 @@ class Game {
         topText.push("            Periapsis : " + this.formatNumber(periapsis, 29));
         topText.push("             Apoapsis : " + this.formatNumber(apoapsis, 29));
         topText.push("       Semimajor Axis : " + this.formatNumber(semimajor, 29));
-        topText.push("Argument of Periapsis : " + this.formatAngle(argPeri, 29));
+        topText.push("Argument of Periapsis : " + this.formatAngle(argOfPeri, 29));
         topText.push("         True Anomaly : " + this.formatAngle(trueAnom, 29));
         topText.push("               Period : " + this.formatNumber(period * 1000, 29));
         topText.push("");
@@ -954,7 +912,6 @@ class Game {
         topText.push("---------------------   -----------------------------");
         topText.push("           Prograde dV : " + this.formatNumber(this.progradeV, 29));
         topText.push("          Radial-In dV : " + this.formatNumber(-this.radialInV, 29));
-        // topText.push("              Total dV : " + this.formatNumber(-this.plannedFuel, 29));
         topText.push("");
         topText.push("          Available dV : " + this.formatNumber(this.fuel, 29));
         topText.push("                  Fuel : " + this.formatNumber(this.fuel, 29));
@@ -1134,7 +1091,7 @@ class Game {
             }
         }
 
-        if (this.enableBlurEffect) {
+        if (this.isEnableBlurEffect) {
             this.ctx.filter = "opacity(2%) blur(2px)";
             this.ctx.drawImage(this.scanlineOverlay, 0, (this.frameCount % 64) / 4);
         }
@@ -1217,8 +1174,8 @@ class Game {
             case "0_KeyF": event.preventDefault(); this.setHeading("F"); break;
             case "0_KeyG": event.preventDefault(); this.setHeading("G"); break;
 
-            case "0_Backslash": event.preventDefault(); this.drawTrajToPrimary = !this.drawTrajToPrimary; break;
-            case "0_Backspace": event.preventDefault(); this.enableBlurEffect = !this.enableBlurEffect; break;
+            case "0_Backslash": event.preventDefault(); this.isDrawTrajToPrimary = !this.isDrawTrajToPrimary; break;
+            case "0_Backspace": event.preventDefault(); this.isEnableBlurEffect = !this.isEnableBlurEffect; break;
         }
 
         // for (let key in this.pressedKeys) { this.logMap[key] = this.pressedKeys[key]; }
@@ -1268,9 +1225,7 @@ class Game {
     }
 
     cycleSimSpeed(direction) {
-
         this.simSpeed += direction;
-
         this.simSpeed = Math.min(this.simSpeed, 12);
         this.simSpeed = Math.max(this.simSpeed, -12);
     }
@@ -1339,6 +1294,7 @@ class Game {
     }
 
     refFrameUp() {
+
         if (this.focus.parent === null) { return; }
 
         let newfocus = this.focus.parent;
@@ -1411,6 +1367,7 @@ class Game {
     }
 
     toggleFollowSelf() {
+
         this.isFollowShip = !this.isFollowShip;
 
         if (this.isFollowShip) {
@@ -1418,6 +1375,8 @@ class Game {
         } else {
             this.recalcPlan(this.target);
         }
+
+        this.heading = "Manual";
     }
 
     recalcPlan(newFocus) {

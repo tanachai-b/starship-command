@@ -28,7 +28,7 @@
 </head>
 
 <body>
-    <canvas id="canvas" width="1722px" height="861px"></canvas>
+    <canvas id="simulator" width="1722px" height="861px"></canvas>
     <div id="log">log</div>
 </body>
 
@@ -36,14 +36,8 @@
 <script src="game.js"></script>
 
 <script>
-
     "use strict";
-
-    let game = new Game();
-
-    game.initiate();
-    game.gameLoop();
-
+    let simulator = new Simulator();
 </script>
 
 </html>
