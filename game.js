@@ -13,7 +13,7 @@ class Simulator {
 
         this.isPause = false;
         this.simSpeed = -12;
-        this.zoom = 25;
+        this.zoom = 10;
         this.pressedKeys = {};
 
         this.isEnableBlurEffect = true;
@@ -136,9 +136,9 @@ class Simulator {
 
         // ========================
 
-        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -120);
+        let fuelStation1 = new Body("fuelStation1", "#349FC9", 0.02, 0.5, earth, 10000, -115);
         this.bodies.push(fuelStation1);
-        this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 0 };
+        this.fuelStationsMap.fuelStation1 = { body: fuelStation1, fuel: 20000 };
 
         let fuelStation2 = new Body("fuelStation2", "#349FC9", 0.02, 0.5, earth, 30000, -0);
         this.bodies.push(fuelStation2);
@@ -150,7 +150,7 @@ class Simulator {
 
         // ========================
 
-        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 10000.05, -120.00005);
+        let starship = new Body("starship", "#00FFA3", 0.005, 0.5, earth, 9000, -120);
         this.bodies.push(starship);
 
         // ========================
@@ -170,8 +170,11 @@ class Simulator {
 
         // set initial focus/target
         this.currentShip = starship;
+
         this.focus = earth;
-        this.target = earth;
+        this.target = fuelStation1;
+
+        this.currentShip.parent = this.focus;
     }
 
     async simLoop() {
@@ -433,7 +436,7 @@ class Simulator {
             let dist = Math.hypot(dx, dy);
             if (dist > refuelDistance) { continue; }
 
-            if (station.fuel > 0) {
+            if (station.fuel > 0 && this.fuel < this.maxFuel) {
 
                 this.fuel += exchangeRate * precision;
                 station.fuel -= exchangeRate * precision;
@@ -577,7 +580,7 @@ class Simulator {
         if (this.isDrawTrajToPrimary) {
             for (let i = this.bodies.length - 1; i >= 0; i--) {
                 if (this.currentShip !== undefined && this.bodies[i].name === this.currentShip.name) { continue; }
-                this.bodies[i].drawTraj(offCtx, this.camera, this.target, this.isFollowShip, this.logMap);
+                this.bodies[i].drawTraj(offCtx, this.camera, this.target, true, this.logMap);
             }
         }
 
@@ -784,7 +787,7 @@ class Simulator {
         let bottomText = [];
         // bottomText.push("FPS              : " + this.frameRate);
         // bottomText.push("");
-        // bottomText.push("Zoom             : " + this.zoom);
+        bottomText.push("Zoom             : " + this.zoom);
         bottomText.push("Simulation Speed : " + this.simSpeed);
         bottomText.push("");
         bottomText.push("[Backspace]      : Toggle Screen Effect");
@@ -928,9 +931,9 @@ class Simulator {
         // texts.push("Orbit the Moon and come back to FuelStation1");
 
         topText.push("");
-        topText.push("       Reference Frame : " + this.capitalizeFirstChar(this.focus.name, 29));
+        topText.push("     Orbital Elements : " + this.capitalizeFirstChar("", 29));
         topText.push("---------------------   -----------------------------");
-        topText.push("              Primary : " + this.capitalizeFirstChar(primary, 29));
+        topText.push("              Primary : " + this.capitalizeFirstChar(this.focus.name, 29));
         topText.push("");
         topText.push("            Periapsis : " + this.formatNumber(periapsis, 29));
         topText.push("             Apoapsis : " + this.formatNumber(apoapsis, 29));
@@ -947,10 +950,11 @@ class Simulator {
         topText.push("");
         topText.push("                Target : " + this.capitalizeFirstChar(this.target.name, 29));
         topText.push("---------------------   -----------------------------");
-        // topText.push("                Radius : " + this.formatNumber(this.target.radius, 29));
-        // topText.push("               Density : " + this.formatDecimal(this.target.density, 29));
-        // topText.push("                  Mass : " + this.formatNumber(this.target.mass, 29));
-        // topText.push("");
+        topText.push("                Radius : " + this.formatNumber(this.target.radius, 29));
+        topText.push("               Density : " + this.formatDecimal(this.target.density, 29));
+        topText.push("                  Mass : " + this.formatNumber(this.target.mass, 29));
+        topText.push("   Distance To Primary : " + this.formatNumber("N/A", 29));
+        topText.push("");
         topText.push("              Distance : " + this.formatNumber(targDist, 29));
         topText.push("     Relative Velocity : " + this.formatNumber(relativeV, 29));
         topText.push("");
@@ -1299,7 +1303,7 @@ class Simulator {
         }
 
         if (this.engine === "RCS" && headingGoal !== "Hold") { return; }
-        if (this.engine === "Planning" && headingGoal !== "Hold") { return; }
+        if (this.mode === "Planning" && headingGoal !== "Hold") { return; }
 
         if (this.heading !== headingGoal) {
             this.heading = headingGoal;

@@ -172,6 +172,9 @@ class Body {
 
         } else {
 
+            // let vx0 = this.vx;
+            // let vy0 = this.vy;
+
             this.vx += this.ax * precision;
             this.vy += this.ay * precision;
 
@@ -180,6 +183,9 @@ class Body {
 
             this.x += this.vx * precision;
             this.y += this.vy * precision;
+
+            // this.x += vx0 * precision + (this.vx - vx0) * precision * 101 / 100;
+            // this.y += vy0 * precision + (this.vy - vy0) * precision * 101 / 100;
 
             this.r += this.vr * precision;
             this.r %= 2 * Math.PI;
