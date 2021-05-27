@@ -2,12 +2,15 @@
 
 class Simulator {
 
-    constructor() {
+    constructor(canvas, log) {
 
-        this.version = "V0.0.1 (2021-05-23)";
+        this.version = "V0.0.1 (2021-05-27)";
 
-        this.c = document.getElementById("simulator");
-        this.ctx = this.c.getContext("2d");
+        this.canvas = canvas;
+        this.log = log;
+
+        this.ctx = this.canvas.getContext("2d");
+
         this.starryBackground;
         this.scanlineOverlay;
 
@@ -200,7 +203,7 @@ class Simulator {
             this.drawScanlines();
 
             this.calcFrameCountFrameRate();
-            if (!this.isPause) { this.log(); }
+            if (!this.isPause) { this.logOutput(); }
 
             await timer(1);
         }
@@ -517,16 +520,16 @@ class Simulator {
 
     drawBackground() {
 
-        let cw = this.c.width;
-        let ch = this.c.height;
+        let cw = this.canvas.width;
+        let ch = this.canvas.height;
 
         let zoom = 1.01 ** (this.camera.zoom / 4) / 1;
 
         if (this.starryBackground === undefined) {
 
             this.starryBackground = document.createElement("canvas");
-            this.starryBackground.width = this.c.width * 3;
-            this.starryBackground.height = this.c.height * 3;
+            this.starryBackground.width = this.canvas.width * 3;
+            this.starryBackground.height = this.canvas.height * 3;
 
             let offCtx = this.starryBackground.getContext("2d");
 
@@ -570,8 +573,8 @@ class Simulator {
     drawBodies() {
 
         let offScreenCanvas = document.createElement("canvas");
-        offScreenCanvas.width = this.c.width;
-        offScreenCanvas.height = this.c.height;
+        offScreenCanvas.width = this.canvas.width;
+        offScreenCanvas.height = this.canvas.height;
         let offCtx = offScreenCanvas.getContext("2d");
 
         let isHavePlan = this.progradeV !== 0 || this.radialOutV !== 0;
@@ -616,8 +619,8 @@ class Simulator {
     drawHUD() {
 
         let offScreenCanvas = document.createElement("canvas");
-        offScreenCanvas.width = this.c.width;
-        offScreenCanvas.height = this.c.height;
+        offScreenCanvas.width = this.canvas.width;
+        offScreenCanvas.height = this.canvas.height;
         let offCtx = offScreenCanvas.getContext("2d");
 
         this.addHeadingIndic(offCtx);
@@ -804,7 +807,7 @@ class Simulator {
             y += 16;
         }
 
-        y = this.c.height;
+        y = this.canvas.height;
         for (let text of bottomText) {
 
             offCtx.textBaseline = "bottom";
@@ -815,7 +818,7 @@ class Simulator {
         offCtx.textAlign = "center";
         offCtx.textBaseline = "bottom";
         offCtx.font = "13px Syne Mono";
-        offCtx.fillText("© 2021 Tanachai Bunlutangtum, All Rights Reserved", this.c.width / 2, this.c.height - 4);
+        offCtx.fillText("© 2021 Tanachai Bunlutangtum, All Rights Reserved", this.canvas.width / 2, this.canvas.height - 4);
     }
 
     addSideTextRight(offCtx) {
@@ -981,7 +984,7 @@ class Simulator {
 
         let y = 0;
         for (let text of topText) {
-            offCtx.fillText(text, this.c.width - 8, 8 + y);
+            offCtx.fillText(text, this.canvas.width - 8, 8 + y);
             y += 16;
         }
     }
@@ -1048,14 +1051,14 @@ class Simulator {
                 offCtx.textBaseline = "middle";
                 offCtx.font = "64px Syne Mono";
                 offCtx.fillStyle = "#FF3300";;
-                offCtx.fillText("OUT OF FUEL!", this.c.width / 2, this.c.height / 2);
+                offCtx.fillText("OUT OF FUEL!", this.canvas.width / 2, this.canvas.height / 2);
 
             } else if (this.fuel < 1000) {
                 offCtx.textAlign = "center";
                 offCtx.textBaseline = "bottom";
                 offCtx.font = "48px Syne Mono";
                 offCtx.fillStyle = "#FF3300";;
-                offCtx.fillText("LOW FUEL!", this.c.width / 2, this.c.height - 96);
+                offCtx.fillText("LOW FUEL!", this.canvas.width / 2, this.canvas.height - 96);
             }
         }
 
@@ -1064,57 +1067,57 @@ class Simulator {
         offCtx.textBaseline = "top";
         offCtx.font = "32px Syne Mono";
         offCtx.fillStyle = "#00FFA3";
-        offCtx.fillText("Reference Frame: " + refFrame, this.c.width / 2, 16);
+        offCtx.fillText("Reference Frame: " + refFrame, this.canvas.width / 2, 16);
 
         offCtx.font = "24px Syne Mono";
         offCtx.textBaseline = "bottom";
-        offCtx.fillText("Heading: " + this.capitalizeFirstChar(this.heading), this.c.width / 2, this.c.height - 32);
+        offCtx.fillText("Heading: " + this.capitalizeFirstChar(this.heading), this.canvas.width / 2, this.canvas.height - 32);
 
         offCtx.textBaseline = "top";;
         offCtx.fillStyle = "#FFE100";;
-        offCtx.fillText("Target: " + this.capitalizeFirstChar(this.target.name), this.c.width / 2, 64);
+        offCtx.fillText("Target: " + this.capitalizeFirstChar(this.target.name), this.canvas.width / 2, 64);
 
         // flashing mode text
         if (this.isPause) {
 
             offCtx.strokeStyle = "#FFE100";
             offCtx.lineWidth = 5;
-            offCtx.strokeRect(0, 0, this.c.width, this.c.height);
+            offCtx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
 
             if (this.frameCount % 100 < 80) {
                 offCtx.textAlign = "center";
                 offCtx.textBaseline = "bottom";
                 offCtx.font = "48px Syne Mono";
                 offCtx.fillStyle = "#FFE100";;
-                offCtx.fillText("Paused", this.c.width / 2, this.c.height - 96);
+                offCtx.fillText("Paused", this.canvas.width / 2, this.canvas.height - 96);
             }
 
         } else if (this.mode === "Planning") {
 
             offCtx.strokeStyle = "#FF307C";
             offCtx.lineWidth = 5;
-            offCtx.strokeRect(0, 0, this.c.width, this.c.height);
+            offCtx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
 
             if (this.frameCount % 100 < 80) {
                 offCtx.textAlign = "center";
                 offCtx.textBaseline = "bottom";
                 offCtx.font = "48px Syne Mono";
                 offCtx.fillStyle = "#FF307C";;
-                offCtx.fillText("Plan", this.c.width / 2, this.c.height - 96);
+                offCtx.fillText("Plan", this.canvas.width / 2, this.canvas.height - 96);
             }
 
         } else if (this.engine === "RCS") {
 
             offCtx.strokeStyle = "#001EFF";
             offCtx.lineWidth = 5;
-            offCtx.strokeRect(0, 0, this.c.width, this.c.height);
+            offCtx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
 
             if (this.frameCount % 100 < 80) {
                 offCtx.textAlign = "center";
                 offCtx.textBaseline = "bottom";
                 offCtx.font = "48px Syne Mono";
                 offCtx.fillStyle = "#001EFF";;
-                offCtx.fillText("RCS", this.c.width / 2, this.c.height - 96);
+                offCtx.fillText("RCS", this.canvas.width / 2, this.canvas.height - 96);
             }
         }
     }
@@ -1124,8 +1127,8 @@ class Simulator {
         if (this.scanlineOverlay === undefined) {
 
             this.scanlineOverlay = document.createElement("canvas");
-            this.scanlineOverlay.width = this.c.width;
-            this.scanlineOverlay.height = this.c.height;
+            this.scanlineOverlay.width = this.canvas.width;
+            this.scanlineOverlay.height = this.canvas.height;
 
             let overlayCtx = this.scanlineOverlay.getContext("2d");
 
@@ -1165,7 +1168,7 @@ class Simulator {
         if (this.frameCount >= 1000) { this.frameCount = 0; }
     }
 
-    log() {
+    logOutput() {
 
         let logStr = "log items: " + Object.keys(this.logMap).length + "<br>";
 
@@ -1173,8 +1176,7 @@ class Simulator {
             logStr += key + ": " + this.logMap[key] + "<br>";
         }
 
-        let log = document.getElementById("log");
-        log.innerHTML = logStr;
+        this.log.innerHTML = logStr;
     }
 
     keydown(event) {

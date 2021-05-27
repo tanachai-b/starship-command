@@ -28,16 +28,16 @@
 </head>
 
 <body>
-    <canvas id="simulator" width="1722px" height="861px"></canvas>
+    <canvas id="canvas" width="1722px" height="861px"></canvas>
     <div id="log">log</div>
 </body>
 
-<script src="body.js"></script>
-<script src="game.js"></script>
+<script src="Simulator.js"></script>
+<script src="Body.js"></script>
 
 <script>
     "use strict";
-    let simulator = new Simulator();
+    let simulator = new Simulator(document.getElementById("canvas"), document.getElementById("log"));
 </script>
 
 </html>
